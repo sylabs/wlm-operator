@@ -237,7 +237,7 @@ func getVolumesMount(cr *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
 func getEnvs(cr *slurmv1alpha1.SlurmJob) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
 		{
-			Name: "POD_NAME",
+			Name: "JOB_NAME",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.name",
