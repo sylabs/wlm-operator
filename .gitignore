@@ -18,5 +18,5 @@ _obj
 _test
 _output
 .kube
-.idea
 build/*
+bin/
