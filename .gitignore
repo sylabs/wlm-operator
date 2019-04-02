@@ -12,4 +12,11 @@
 *.out
 .idea
 
+
+# Folders
+_obj
+_test
+_output
+.kube
+.idea
 build/*
