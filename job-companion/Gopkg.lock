@@ -43,7 +43,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:de235a01f0226c05b74a369daa0e48d93e514f1cce17d1fe3ed468faf60b6dd0"
+  digest = "1:e153160f812434aab0f42fd464ab128739ad2a6bcdbad5bc87f7cd50ad4e87cb"
   name = "github.com/sylabs/slurm-operator"
   packages = [
     "controller/pkg/slurm",
@@ -51,7 +51,7 @@
     "controller/pkg/slurm/ssh",
   ]
   pruneopts = "UT"
-  revision = "bb1086cb4186b65034555f633e37aa32b709d74e"
+  revision = "a001ba8e31782b14c8174836af56c1aa5b010756"
 
 [[projects]]
   branch = "master"
