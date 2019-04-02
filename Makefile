@@ -2,13 +2,13 @@
 V := @
 
 BIN_DIR := ./bin
-JOB_COMPANION := $(BIN_DIR)/job-companion
+SLURM_CONTROLLER := $(BIN_DIR)/slurm-controller
 
-all: $(JOB_COMPANION)
+all: $(SLURM_CONTROLLER)
 
-$(JOB_COMPANION):
+$(SLURM_CONTROLLER):
 	@echo " GO" $@
-	$(V)GOOS=linux CGO_ENABLED=0 go build -o $(JOB_COMPANION) ./cmd
+	$(V)go build -o $(SLURM_CONTROLLER) ./controller/cmd
 
 .PHONY: clean
 clean:
@@ -35,8 +35,12 @@ lint:
 
 .PHONY: push
 push:
+	$(V)cd job-companion
 	$(V)docker build -t sylabsio/slurm:job-companion .
 	$(V)docker push sylabsio/slurm:job-companion
 
 dep:
-	$(V)dep ensure --vendor-only
+	$(V)for dir in `ls -d */` ; do \
+    	echo " DEP" $${dir} ; \
+    	(cd  $${dir} && dep ensure --vendor-only); \
+	done
