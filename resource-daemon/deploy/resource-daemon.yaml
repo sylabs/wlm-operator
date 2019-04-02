@@ -45,21 +45,22 @@ data:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: s-resource-daemon
+  name: slurm-rd
 spec:
   selector:
     matchLabels:
-      name: s-resource-daemon
+      name: slurm-rd
   template:
     metadata:
       labels:
-        name: s-resource-daemon
+        name: slurm-rd
     spec:
       serviceAccountName: slurm-resource-daemon
       containers:
-      - name: s-resource-daemon
-        image: cali4888/rd:0.0.14
-        command: ["./main", "--config", "/syslurm/slurm-cfg.yaml"]
+      - name: slurm-rd
+        image: sylabsio/slurm:resource-daemon
+        imagePullPolicy: Always
+        args: ["--config", "/syslurm/slurm-cfg.yaml"]
         env:
         - name: MY_NODE_NAME
           valueFrom:

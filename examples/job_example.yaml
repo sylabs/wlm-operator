@@ -1,0 +1,6 @@
+apiVersion: slurm.sylabs.io/v1alpha1
+kind: SlurmJob
+metadata:
+  name: example-slurmjob
+spec:
+  batch: hostname

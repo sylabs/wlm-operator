@@ -15,9 +15,7 @@ spec:
       serviceAccountName: slurm-job-operator
       containers:
         - name: slurm-job-operator
-          image: cali4888/slurm-operator:0.0.49
-          command:
-          - slurm-job-operator
+          image: sylabsio/slurm:operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE

@@ -24,26 +24,23 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
-	"gopkg.in/yaml.v2"
-
 	"github.com/sylabs/slurm-operator/controller/pkg/slurm"
 	"github.com/sylabs/slurm-operator/controller/pkg/slurm/rest"
 	"github.com/sylabs/slurm-operator/controller/pkg/slurm/ssh"
+	"gopkg.in/yaml.v2"
 )
 
-const envPodName = "POD_NAME"
+const envJobName = "JOB_NAME"
 
 var (
-	podName = os.Getenv(envPodName)
+	jobName = os.Getenv(envJobName)
 
 	configPath = flag.String("config", "", "slurm config path on host machine")
-
-	overSSH = flag.Bool("ssh", false, "defines whether job will be executed over ssh or locally")
-
-	collectResultMountPath = flag.String("cr-mount", "", "path to the volume/directory where results should be collected, empty if results should not be collected")
-	fileToCollectPath      = flag.String("file-to-collect", "", "path to a specific file that should be collected as job result, if omitted - default slurm-{JobID}.out will be collected")
-
+	overSSH    = flag.Bool("ssh", false, "defines whether job will be executed over ssh or locally")
+	mountPath  = flag.String("cr-mount", "",
+		"path to the volume/directory where results should be collected, empty if results should not be collected")
+	resultsPath = flag.String("file-to-collect", "",
+		"path to a specific file that should be collected as job result, if omitted - default slurm-{JobID}.out will be collected")
 	batch = flag.String("batch", "", "batch script that will be executed on slurm cluster")
 )
 
@@ -97,10 +94,10 @@ func main() {
 	}
 
 	var ops *collectOptions
-	if mp := *collectResultMountPath; mp != "" {
+	if mp := *mountPath; mp != "" {
 		ops = &collectOptions{
 			Mount: mp,
-			From:  *fileToCollectPath,
+			From:  *resultsPath,
 		}
 	}
 
@@ -199,8 +196,8 @@ func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
 	}
 	defer fromFile.Close()
 
-	// creating folder with POD_NAME on attached volume
-	dirName := path.Join(cOps.Mount, podName)
+	// creating folder with JOB_NAME on attached volume
+	dirName := path.Join(cOps.Mount, jobName)
 	if err := os.MkdirAll(dirName, 0755); err != nil {
 		return errors.Wrap(err, "can't create dir on mounted volume")
 	}

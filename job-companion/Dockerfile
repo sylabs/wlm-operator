@@ -12,3 +12,4 @@ COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /usr/local/go/src/github.com/sylabs/slurm-operator/job-companion/main /app/
 USER appuser
 WORKDIR /app
+ENTRYPOINT ["./main"]

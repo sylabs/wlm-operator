@@ -1,3 +1,17 @@
+// Copyright (c) 2019 Sylabs, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package slurmjob
 
 import (
@@ -22,11 +36,8 @@ import (
 )
 
 const (
-	jobCompanionVersion = "0.0.38"
-
-	imageName = "cali4888/jt1"
-
-	slurmCfgPath = "/syslurm/slurm-cfg.yaml"
+	jobCompanionImage = "sylabsio/slurm:job-companion"
+	slurmCfgPath      = "/syslurm/slurm-cfg.yaml"
 )
 
 var log = logf.Log.WithName("controller_slurmjob")
@@ -154,17 +165,16 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	if cr.Spec.SSH != nil {
 		ssh = true
 	}
-	command := []string{
-		"./main",
+	args := []string{
 		fmt.Sprintf("--batch=%s", cr.Spec.Batch),
 		fmt.Sprintf("--config=%s", slurmCfgPath),
 		fmt.Sprintf("--ssh=%t", ssh),
 	}
 
 	if cr.Spec.Results != nil {
-		command = append(command, fmt.Sprintf("--cr-mount=%s", "/collect"))
+		args = append(args, fmt.Sprintf("--cr-mount=%s", "/collect"))
 		if cr.Spec.Results.From != "" {
-			command = append(command, fmt.Sprintf("--file-to-collect=%s", cr.Spec.Results.From))
+			args = append(args, fmt.Sprintf("--file-to-collect=%s", cr.Spec.Results.From))
 		}
 	}
 
@@ -177,9 +187,10 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:    "jt1",
-					Image:   fmt.Sprintf("%s:%s", imageName, jobCompanionVersion),
-					Command: command,
+					Name:            "jt1",
+					Image:           jobCompanionImage,
+					ImagePullPolicy: corev1.PullAlways,
+					Args:            args,
 					Resources: corev1.ResourceRequirements{
 						Requests: resourceRequest,
 						Limits:   resourceRequest,
@@ -237,7 +248,7 @@ func getVolumesMount(cr *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
 func getEnvs(cr *slurmv1alpha1.SlurmJob) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
 		{
-			Name: "POD_NAME",
+			Name: "JOB_NAME",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.name",
