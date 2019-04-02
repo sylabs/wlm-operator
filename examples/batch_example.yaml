@@ -1,0 +1,13 @@
+apiVersion: slurm.sylabs.io/v1alpha1
+kind: SlurmJob
+metadata:
+  name: slurm-batch-example
+spec:
+  batch: |
+    #!/bin/sh
+    ##SBATCH --nodes=1
+    srun sleep 5
+    srun hostname
+  timeLimit: 20
+  nodeSelector:
+    slurm.sylabs.io/cuda: '10'
