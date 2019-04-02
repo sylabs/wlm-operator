@@ -159,7 +159,6 @@ func (c *Client) Open(path string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create sftp client")
 	}
-	sC.Open()
 
 	file, err := sC.Open(path)
 	if os.IsNotExist(err) {

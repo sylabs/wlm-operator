@@ -1,0 +1,9 @@
+github.com/gogo/protobuf v0.0.0-20171007142547-342cbe0a0415/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
+github.com/spf13/pflag v1.0.1 h1:aCvUg6QPl3ibpQUxyLkrEkCHtPqYJL4x9AuhqVqFis4=
+github.com/spf13/pflag v1.0.1/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnInEg4=
+golang.org/x/tools v0.0.0-20170428054726-2382e3994d48 h1:Al/HKLBwsMBsWhxa71LOWO8MeCbD21L+x5rHb83JHjI=
+golang.org/x/tools v0.0.0-20170428054726-2382e3994d48/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
+k8s.io/gengo v0.0.0-20181106084056-51747d6e00da h1:ZMvcXtMVbhUCtCuiSEzBV+Eur4swzfdxx6ZyX3qT6dk=
+k8s.io/gengo v0.0.0-20181106084056-51747d6e00da/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8IAqLxYwwyPxAX1Pzy0ii0=
+k8s.io/klog v0.0.0-20181108234604-8139d8cb77af h1:s6rm8OxBbyDNSRkpyAd5OL4icUdBICVw9+mFADa+t5E=
+k8s.io/klog v0.0.0-20181108234604-8139d8cb77af/go.mod h1:Gq+BEi5rUBO/HRz0bTSXDUcqjScdoY3a9IHpCEIOOfk=
