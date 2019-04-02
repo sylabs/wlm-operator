@@ -154,17 +154,16 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	if cr.Spec.SSH != nil {
 		ssh = true
 	}
-	command := []string{
-		"./main",
+	args := []string{
 		fmt.Sprintf("--batch=%s", cr.Spec.Batch),
 		fmt.Sprintf("--config=%s", slurmCfgPath),
 		fmt.Sprintf("--ssh=%t", ssh),
 	}
 
 	if cr.Spec.Results != nil {
-		command = append(command, fmt.Sprintf("--cr-mount=%s", "/collect"))
+		args = append(args, fmt.Sprintf("--cr-mount=%s", "/collect"))
 		if cr.Spec.Results.From != "" {
-			command = append(command, fmt.Sprintf("--file-to-collect=%s", cr.Spec.Results.From))
+			args = append(args, fmt.Sprintf("--file-to-collect=%s", cr.Spec.Results.From))
 		}
 	}
 
@@ -177,9 +176,9 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:    "jt1",
-					Image:   fmt.Sprintf("%s:%s", imageName, jobCompanionVersion),
-					Command: command,
+					Name:  "jt1",
+					Image: fmt.Sprintf("%s:%s", imageName, jobCompanionVersion),
+					Args:  args,
 					Resources: corev1.ResourceRequirements{
 						Requests: resourceRequest,
 						Limits:   resourceRequest,
