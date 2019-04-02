@@ -35,12 +35,25 @@ lint:
 
 .PHONY: push
 push:
-	$(V)cd job-companion
-	$(V)docker build -t sylabsio/slurm:job-companion .
-	$(V)docker push sylabsio/slurm:job-companion
+	$(V)for dir in `ls -d */ | tr -d /` ; do \
+		if [ -a $${dir}/Dockerfile ]; then \
+    		echo " PUSH" $${dir} ; \
+			(cd  $${dir} && \
+			docker build -t sylabsio/slurm:$${dir} . && \
+			docker push sylabsio/slurm:$${dir}); \
+    	fi ; \
+		if [ "$${dir}" = "operator" ]; then \
+    		echo " PUSH" $${dir} ; \
+			(cd  $${dir} && \
+			operator-sdk build sylabsio/slurm:$${dir} && \
+			docker push sylabsio/slurm:$${dir}); \
+		fi ; \
+	done
+
+
 
 dep:
-	$(V)for dir in `ls -d */` ; do \
+	$(V)for dir in `ls -d */ | tr -d /` ; do \
     	echo " DEP" $${dir} ; \
     	(cd  $${dir} && dep ensure --vendor-only); \
 	done

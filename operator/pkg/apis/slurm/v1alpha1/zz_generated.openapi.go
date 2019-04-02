@@ -13,11 +13,11 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJob":        schema_pkg_apis_slurm_v1alpha1_SlurmJob(ref),
-		"github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobResults": schema_pkg_apis_slurm_v1alpha1_SlurmJobResults(ref),
-		"github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobSSH":     schema_pkg_apis_slurm_v1alpha1_SlurmJobSSH(ref),
-		"github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobSpec":    schema_pkg_apis_slurm_v1alpha1_SlurmJobSpec(ref),
-		"github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobStatus":  schema_pkg_apis_slurm_v1alpha1_SlurmJobStatus(ref),
+		"github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJob":        schema_pkg_apis_slurm_v1alpha1_SlurmJob(ref),
+		"github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobResults": schema_pkg_apis_slurm_v1alpha1_SlurmJobResults(ref),
+		"github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobSSH":     schema_pkg_apis_slurm_v1alpha1_SlurmJobSSH(ref),
+		"github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobSpec":    schema_pkg_apis_slurm_v1alpha1_SlurmJobSpec(ref),
+		"github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobStatus":  schema_pkg_apis_slurm_v1alpha1_SlurmJobStatus(ref),
 	}
 }
 
@@ -48,19 +48,19 @@ func schema_pkg_apis_slurm_v1alpha1_SlurmJob(ref common.ReferenceCallback) commo
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobSpec"),
+							Ref: ref("github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobStatus"),
+							Ref: ref("github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobSpec", "github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobSpec", "github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -168,13 +168,13 @@ func schema_pkg_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallback) c
 					"ssh": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SSH contains configuration to be used when running jobs on a remote cluster via ssh.",
-							Ref:         ref("github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobSSH"),
+							Ref:         ref("github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobSSH"),
 						},
 					},
 					"results": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Results may be specified for an optional results collection step. When specified, after job is completed all results will be downloaded from Slurm cluster with respect to this configuration.",
-							Ref:         ref("github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobResults"),
+							Ref:         ref("github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobResults"),
 						},
 					},
 				},
@@ -182,7 +182,7 @@ func schema_pkg_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobResults", "github.com/sylabs/slurm-crd/slurm-job-operator/pkg/apis/slurm/v1alpha1.SlurmJobSSH"},
+			"github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobResults", "github.com/sylabs/slurm-operator/operator/pkg/apis/slurm/v1alpha1.SlurmJobSSH"},
 	}
 }
 
