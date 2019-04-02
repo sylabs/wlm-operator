@@ -36,9 +36,7 @@ import (
 )
 
 const (
-	jobCompanionVersion = "0.0.38"
-
-	imageName = "cali4888/jt1"
+	jobCompanionImage = "sylabsio/slurm:job-companion"
 
 	slurmCfgPath = "/syslurm/slurm-cfg.yaml"
 )
@@ -190,9 +188,10 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  "jt1",
-					Image: fmt.Sprintf("%s:%s", imageName, jobCompanionVersion),
-					Args:  args,
+					Name:            "jt1",
+					Image:           jobCompanionImage,
+					ImagePullPolicy: corev1.PullAlways,
+					Args:            args,
 					Resources: corev1.ResourceRequirements{
 						Requests: resourceRequest,
 						Limits:   resourceRequest,
