@@ -196,7 +196,7 @@ func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
 	}
 	defer fromFile.Close()
 
-	// creating folder with POD_NAME on attached volume
+	// creating folder with JOB_NAME on attached volume
 	dirName := path.Join(cOps.Mount, jobName)
 	if err := os.MkdirAll(dirName, 0755); err != nil {
 		return errors.Wrap(err, "can't create dir on mounted volume")

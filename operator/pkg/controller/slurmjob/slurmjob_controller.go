@@ -37,8 +37,7 @@ import (
 
 const (
 	jobCompanionImage = "sylabsio/slurm:job-companion"
-
-	slurmCfgPath = "/syslurm/slurm-cfg.yaml"
+	slurmCfgPath      = "/syslurm/slurm-cfg.yaml"
 )
 
 var log = logf.Log.WithName("controller_slurmjob")
