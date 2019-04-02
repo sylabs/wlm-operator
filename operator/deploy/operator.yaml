@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slurm-job-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: slurm-job-operator
+  template:
+    metadata:
+      labels:
+        name: slurm-job-operator
+    spec:
+      serviceAccountName: slurm-job-operator
+      containers:
+        - name: slurm-job-operator
+          image: cali4888/slurm-operator:0.0.49
+          command:
+          - slurm-job-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "slurm-job-operator"
