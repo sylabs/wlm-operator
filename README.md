@@ -1,7 +1,7 @@
 # Slurm operator
 Singularity implementation of k8s operator for interacting with SLURM.
 
-# Slurm resource daemon
+## Slurm resource daemon
 
 Works as daemon set inside k8s cluster.
 
@@ -24,12 +24,11 @@ Labels:             slurm.sylabs.io/cuda=10.0
                     slurm.sylabs.io/infiniband=yes
 ```
 
-
-## Installation
+### Installation
 
 To start resource daemon run the following:
  
 ```bash
-kubectl apply -f deploy/setup.yaml
+kubectl apply -f resource-daemon/deploy/resource-daemon.yaml
 ``` 
 
