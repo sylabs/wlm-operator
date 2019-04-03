@@ -27,7 +27,7 @@ Slurm itself. Under the hood it runs Slurm binaries and returns Slurm response i
 so that `job-companion` understands it.
 
 Slurm controller should be run on each Kubernetes node where slurm jobs may be scheduled. 
-Steps for setting up slurm controller for a single node with installed Go are the following: 
+Steps for setting up slurm controller for a single node with installed Go 1.10+ are the following: 
 
 ```bash
 go get github.com/sylabs/slurm-operator
@@ -51,9 +51,24 @@ will not be covered here.
 
 ### Setting up slurm resource daemon
 
-Works as daemon set inside k8s cluster.
+Resource daemon is used for k8s node labeling and resource provisioning so that
+Slurm jobs will be correctly scheduled. It is also responsible for provisioning
+`job-companion` with correct slurm address. 
 
-It is responsible for configuring SLURM master address to connect to.
+Setting up resource daemon required a few steps. First of all you should determine
+which k8s nodes will be used for Slurm job scheduling. Further assumed that all k8s nodes
+are leveraged:
+
+```bash
+$ kubectl get nodes
+NAME       STATUS    ROLES     AGE       VERSION
+minikube   Ready     master    7d        v1.13.2
+```
+
+In the example above we have a single node cluster, and node name is `minikube`. 
+
+After nodes to configure are determined a configuration should be set up.
+
 
 It also configures node labels and resources according values taken from `slurm-config` k8s ConfigMap.
 
