@@ -8,7 +8,7 @@ all: $(SLURM_CONTROLLER)
 
 $(SLURM_CONTROLLER):
 	@echo " GO" $@
-	$(V)go build -o $(SLURM_CONTROLLER) ./controller/cmd
+	$(V)go build -o $(SLURM_CONTROLLER) ./cmd/controller
 
 .PHONY: clean
 clean:
@@ -35,25 +35,14 @@ lint:
 
 .PHONY: push
 push:
-	$(V)for dir in `ls -d */ | tr -d /` ; do \
-		if [ -a $${dir}/Dockerfile ]; then \
-    		echo " PUSH" $${dir} ; \
-			(cd  $${dir} && \
-			docker build -t sylabsio/slurm:$${dir} . && \
-			docker push sylabsio/slurm:$${dir}); \
-    	fi ; \
-		if [ "$${dir}" = "operator" ]; then \
-    		echo " PUSH" $${dir} ; \
-			(cd  $${dir} && \
-			operator-sdk build sylabsio/slurm:$${dir} && \
-			docker push sylabsio/slurm:$${dir}); \
-		fi ; \
+	$(V)for f in `ls docker | sed  's/Dockerfile.//'` ; do \
+		echo " PUSH" $${f} ; \
+		docker build -f docker/Dockerfile.$${f} -t sylabsio/slurm:$${f} . ;\
+		docker push sylabsio/slurm:$${f} ;\
 	done
 
 
 
 dep:
-	$(V)for dir in `ls -d */ | tr -d /` ; do \
-    	echo " DEP" $${dir} ; \
-    	(cd  $${dir} && dep ensure --vendor-only); \
-	done
+	dep ensure --vendor-only
+

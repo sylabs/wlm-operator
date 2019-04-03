@@ -1,0 +1,98 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: slurmjobs.slurm.sylabs.io
+spec:
+  group: slurm.sylabs.io
+  names:
+    kind: SlurmJob
+    plural: slurmjobs
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            batch:
+              description: Batch is a script that will be submitted to a Slurm cluster
+                as a batch job.
+              minLength: 1
+              type: string
+            nodeSelector:
+              description: 'NodeSelector is a selector which must be true for the
+                SlurmJob to fit on a node. Selector which must match a node''s labels
+                for the SlurmJob to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.'
+              type: object
+            resources:
+              description: 'Compute resources required by this SlurmJob. Cannot be
+                updated. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources.'
+              type: object
+            results:
+              description: Results may be specified for an optional results collection
+                step. When specified, after job is completed all results will be downloaded
+                from Slurm cluster with respect to this configuration.
+              properties:
+                from:
+                  description: From is a path to the results to be collected from
+                    a Slurm cluster.
+                  type: string
+                mount:
+                  description: Mount is a directory where job results will be stored.
+                    After results collection all job generated files can be found
+                    in Mount/<SlurmJob.Name> directory.
+                  type: object
+              required:
+              - mount
+              - from
+              type: object
+            ssh:
+              description: SSH contains configuration to be used when running jobs
+                on a remote cluster via ssh.
+              properties:
+                key:
+                  description: Key to use to connect to a remote Slurm cluster.
+                  type: object
+                password:
+                  description: Password to use when logging in as a User.
+                  type: object
+                user:
+                  description: User to be used when establishing ssh connection to
+                    a Slurm cluster.
+                  minLength: 1
+                  type: string
+              type: object
+          required:
+          - batch
+          type: object
+        status:
+          properties:
+            message:
+              type: string
+            status:
+              type: string
+          required:
+          - status
+          - message
+          type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
