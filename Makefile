@@ -50,10 +50,10 @@ push:
 		fi ; \
 	done
 
-
-
 dep:
 	$(V)for dir in `ls -d */ | tr -d /` ; do \
-    	echo " DEP" $${dir} ; \
-    	(cd  $${dir} && dep ensure --vendor-only); \
+		if [ -a $${dir}/Gopkg.toml ]; then \
+	    	echo " DEP" $${dir} ; \
+			(cd  $${dir} && dep ensure --vendor-only); \
+    	fi ; \
 	done
