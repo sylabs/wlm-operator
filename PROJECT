@@ -1,0 +1,3 @@
+version: "1"
+domain: sylabs.io
+repo: github.com/sylabs/slurm-operator
