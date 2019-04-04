@@ -6,8 +6,8 @@ will spawn a `job-companion` container that will talk to slurm. There are two sl
 connection modes supported: local communication or ssh connection. The difference of
 that two modes and what cluster topology they require is illustrated below.
 
-![local mode](/docs/local-mode.png =500x500)
-![ssh mode](/docs/ssh-mode.png =500x500)
+![ssh mode](/docs/ssh-mode.png)
+![local mode](/docs/local-mode.png)
 
 Depending on the chosen mode installation steps may vary.
 
