@@ -151,7 +151,7 @@ clusterrole.rbac.authorization.k8s.io "slurm-resource-role" created
 clusterrolebinding.rbac.authorization.k8s.io "slurm-resource-bind" created
 daemonset.apps "slurm-rd" created
 
-$ kubectl get ds
+$ kubectl get daemonset
  NAME       DESIRED   CURRENT   READY     UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
  slurm-rd   1         1         1         1            1           <none>          1m
 ```
@@ -160,7 +160,7 @@ All labels and resources from `slurm-config` are prefixed with `slurm.sylabs.io`
 node. You can see them by running the following:
 
 ```bash
-kubectl describe no <node-name>
+kubectl describe node <node-name>
 ``` 
 
 You will see something like this:
@@ -203,7 +203,7 @@ serviceaccount "slurm-job-operator" created
 $ kubectl apply -f deploy/operator.yaml 
 deployment.apps "slurm-job-operator" created
 
-$ kubectl get deploy
+$ kubectl get deployment
 NAME                 DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 slurm-job-operator   1         1         1            1           37s
 ```
@@ -284,7 +284,7 @@ $ kubectl get slurmjob
 NAME      AGE
 cow       11s
 
-$ kubectl get po
+$ kubectl get pod
 NAME                                  READY     STATUS      RESTARTS   AGE
 cow-job                               0/1       Completed   0          30m
 ```
