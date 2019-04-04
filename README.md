@@ -246,7 +246,8 @@ spec:
 ```
 
 In the example above we will run lolcow Singularity container in Slurm and collect the results 
-to `/home/vagrant/job-results` located on node.
+to `/home/vagrant/job-results` located on node. Generally job results can be collected to any
+supported [k8s volume](https://kubernetes.io/docs/concepts/storage/volumes/).
 
 Before submitting this cow job you'll need to configure `slurm` config map and store Vagrant ssh
 key there as follows:
@@ -269,8 +270,9 @@ $ kubectl create secret generic  slurm --from-file=key=/Users/sasha/slurm/.vagra
 secret "slurm" created
 ```
 
-By default `job-companion` will be run with uid 1000, so you should make sure it has write access to
-a directory where you want to store the results (`/home/vagrant/job-results` in the example above).
+By default `job-companion` will be run with uid 1000, so you should make sure it has a read access to 
+`/var/lib/syslurm` to read Slurm cluster address and a write access to a volume where you want to store the
+results (host directory `/home/vagrant/job-results` in the example above).
 
 After that you can submit cow job:
 
