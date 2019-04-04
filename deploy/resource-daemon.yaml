@@ -26,22 +26,6 @@ roleRef:
   name: slurm-resource-role
   apiGroup: rbac.authorization.k8s.io
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: slurm-config
-  namespace: default
-data:
-  config: |
-    minikube:
-      slurm: 0.tcp.ngrok.io:11737
-      resources:
-        cpu: 2
-      labels:
-        infiniband: yes
-        cuda: 10.0
-        containers: singularity
----
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -77,6 +61,6 @@ spec:
       volumes:
         - name: slurm-cfg
           hostPath:
-            path: /var/syslurm
+            path: /var/lib/syslurm
             type: DirectoryOrCreate
       hostNetwork: true
