@@ -77,6 +77,7 @@ type SlurmJobSSH struct {
 	Password *v1.EnvVarSource `json:"password,omitempty"`
 }
 
+// SlurmJobResults is a schema for results collection.
 // +k8s:openapi-gen=true
 type SlurmJobResults struct {
 	// Mount is a directory where job results will be stored.
@@ -84,7 +85,7 @@ type SlurmJobResults struct {
 	Mount v1.Volume `json:"mount"`
 
 	// From is a path to the results to be collected from a Slurm cluster.
-	From string `json:"from"`
+	From string `json:"from,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
