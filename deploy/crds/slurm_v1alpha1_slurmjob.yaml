@@ -58,7 +58,6 @@ spec:
                   type: object
               required:
               - mount
-              - from
               type: object
             ssh:
               description: SSH contains configuration to be used when running jobs
