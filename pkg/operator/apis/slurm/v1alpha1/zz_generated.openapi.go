@@ -83,7 +83,8 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobResults(ref common.ReferenceCal
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "SlurmJobResults is a schema for results collection.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"mount": {
 						SchemaProps: spec.SchemaProps{
@@ -99,7 +100,7 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobResults(ref common.ReferenceCal
 						},
 					},
 				},
-				Required: []string{"mount", "from"},
+				Required: []string{"mount"},
 			},
 		},
 		Dependencies: []string{
