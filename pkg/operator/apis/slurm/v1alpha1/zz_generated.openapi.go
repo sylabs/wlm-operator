@@ -40,7 +40,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJob(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SlurmJob is the Schema for the slurmjobs API",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -84,7 +83,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobResults(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SlurmJobResults is a schema for results collection.",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"mount": {
 						SchemaProps: spec.SchemaProps{
@@ -113,7 +111,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSSH(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SlurmJobSSH is a Schema for required data to execute job via ssh",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"user": {
 						SchemaProps: spec.SchemaProps{
@@ -147,7 +144,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SlurmJobSpec defines the desired state of SlurmJob",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"batch": {
 						SchemaProps: spec.SchemaProps{
@@ -161,7 +157,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 							Description: "NodeSelector is a selector which must be true for the SlurmJob to fit on a node. Selector which must match a node's labels for the SlurmJob to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -176,7 +171,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 							Description: "Compute resources required by this SlurmJob. Cannot be updated. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"integer"},
@@ -211,8 +205,7 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobStatus(ref common.ReferenceCall
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "SlurmJobStatus defines the observed state of SlurmJob",
-				Type:        []string{"object"},
+				Description: "SlurmJobStatus defines the observed state of a SlurmJob.",
 				Properties: map[string]spec.Schema{
 					"status": {
 						SchemaProps: spec.SchemaProps{
@@ -230,5 +223,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobStatus(ref common.ReferenceCall
 				Required: []string{"status", "message"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
