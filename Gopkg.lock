@@ -978,6 +978,7 @@
     "github.com/operator-framework/operator-sdk/version",
     "github.com/pkg/errors",
     "github.com/pkg/sftp",
+    "github.com/spf13/cobra",
     "github.com/spf13/pflag",
     "github.com/stretchr/testify/require",
     "golang.org/x/crypto/ssh",
