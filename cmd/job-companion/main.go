@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
@@ -102,7 +103,7 @@ func main() {
 	}
 
 	if err := runBatch(client, *batch, ops); err != nil {
-		log.Fatal("running batch ", err)
+		log.Fatalf("could not run batch: %v", err)
 	}
 
 	log.Println("Job finished")
@@ -202,9 +203,9 @@ func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
 		return errors.Wrap(err, "can't create dir on mounted volume")
 	}
 
-	toFile, err := os.Create(path.Join(dirName, cOps.From))
+	toFile, err := os.Create(path.Join(dirName, filepath.Base(cOps.From)))
 	if err != nil {
-		return errors.Wrap(err, "can't create file with results on mounted volume")
+		return errors.Wrap(err, "could not create file with results on mounted volume")
 	}
 
 	if _, err := io.Copy(toFile, fromFile); err != nil {
