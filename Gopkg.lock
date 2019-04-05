@@ -269,14 +269,6 @@
   version = "v1.1.6"
 
 [[projects]]
-  digest = "1:58999a98719fddbac6303cb17e8d85b945f60b72f48e3a2df6b950b97fa926f1"
-  name = "github.com/konsorten/go-windows-terminal-sequences"
-  packages = ["."]
-  pruneopts = "NT"
-  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
-  version = "v1.0.2"
-
-[[projects]]
   digest = "1:47fa0ef6ae6b0387dacb77c7ab8827b4ef621650fd613e43ece61de4cb3f5019"
   name = "github.com/kr/fs"
   packages = ["."]
@@ -441,14 +433,6 @@
   pruneopts = "NT"
   revision = "1cf9852c553c5b7da2d5a4a091129a7822fed0c9"
   version = "v1.2.2"
-
-[[projects]]
-  digest = "1:587d2e689ba400b9e4687ed2f02074fbc07fb33fd5ef72d22b5d68ae470f1267"
-  name = "github.com/sirupsen/logrus"
-  packages = ["."]
-  pruneopts = "NT"
-  revision = "8bdbc7bcc01dcbb8ec23dc8a28e332258d25251f"
-  version = "v1.4.1"
 
 [[projects]]
   digest = "1:49b6e0d199dc20969bf7c9d14647313e1dd1b102178fad4ca999d8a9584edfab"
@@ -978,7 +962,6 @@
     "github.com/operator-framework/operator-sdk/version",
     "github.com/pkg/errors",
     "github.com/pkg/sftp",
-    "github.com/sirupsen/logrus",
     "github.com/spf13/pflag",
     "github.com/stretchr/testify/require",
     "golang.org/x/crypto/ssh",
