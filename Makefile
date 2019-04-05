@@ -41,8 +41,6 @@ push:
 		docker push sylabsio/slurm:$${f} ;\
 	done
 
-
-
 dep:
 	dep ensure --vendor-only
 

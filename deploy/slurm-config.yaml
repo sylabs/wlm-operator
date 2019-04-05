@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: slurm-config
+  namespace: default
+data:
+  config: |
+    minikube:
+      slurm: my.slurm.ssh:2222
+      resources:
+        cpu: 2
+      labels:
+        cuda: 10.0
+        containers: singularity
