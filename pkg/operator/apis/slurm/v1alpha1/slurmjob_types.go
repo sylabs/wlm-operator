@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// openapi-gen -o ../ -O zz_generated.openapi -p v1alpha1 -i .  -h text.txt
 package v1alpha1
 
 import (
@@ -52,7 +51,7 @@ type SlurmJobSpec struct {
 	Results *SlurmJobResults `json:"results,omitempty"`
 }
 
-// SlurmJobStatus defines the observed state of SlurmJob
+// SlurmJobStatus defines the observed state of a SlurmJob.
 // +k8s:openapi-gen=true
 type SlurmJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster

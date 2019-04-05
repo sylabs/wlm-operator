@@ -41,6 +41,10 @@ push:
 		docker push sylabsio/slurm:$${f} ;\
 	done
 
+.PHONY: dep
 dep:
-	dep ensure --vendor-only
+	$(V)dep ensure --vendor-only
 
+.PHONY: gen
+gen:
+	$(V)go generate generate.go

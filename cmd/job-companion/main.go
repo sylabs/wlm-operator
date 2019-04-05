@@ -24,7 +24,6 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	rd "github.com/sylabs/slurm-operator/internal/resource-daemon"
 	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/slurm/rest"
 	"github.com/sylabs/slurm-operator/pkg/slurm/ssh"
@@ -44,6 +43,10 @@ var (
 		"path to a specific file that should be collected as job result, if omitted - default slurm-{JobID}.out will be collected")
 	batch = flag.String("batch", "", "batch script that will be executed on slurm cluster")
 )
+
+type nodeConfig struct {
+	Addr string `yaml:"addr"`
+}
 
 type collectOptions struct {
 	Mount string
@@ -99,7 +102,7 @@ func main() {
 	}
 
 	if err := runBatch(client, *batch, ops); err != nil {
-		log.Fatal("running batch ", err)
+		log.Fatalf("could not run batch: %v", err)
 	}
 
 	log.Println("Job finished")
@@ -199,9 +202,9 @@ func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
 		return errors.Wrap(err, "can't create dir on mounted volume")
 	}
 
-	toFile, err := os.Create(path.Join(dirName, cOps.From))
+	toFile, err := os.Create(path.Join(dirName, filepath.Base(cOps.From)))
 	if err != nil {
-		return errors.Wrap(err, "can't create file with results on mounted volume")
+		return errors.Wrap(err, "could not create file with results on mounted volume")
 	}
 
 	if _, err := io.Copy(toFile, fromFile); err != nil {
