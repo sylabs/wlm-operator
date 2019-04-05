@@ -5,5 +5,5 @@ package resource_daemon
 // Job-companion uses addresses from the file for communicating with SLURM cluster.
 type NodeConfig struct {
 	SSHAddr   string `yaml:"ssh_addr"`
-	LocalAddr string `yaml:"local_add"`
+	LocalAddr string `yaml:"local_addr"`
 }
