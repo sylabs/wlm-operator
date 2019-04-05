@@ -24,6 +24,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	rd "github.com/sylabs/slurm-operator/internal/resource-daemon"
 	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/slurm/rest"
 	"github.com/sylabs/slurm-operator/pkg/slurm/ssh"
@@ -43,10 +44,6 @@ var (
 		"path to a specific file that should be collected as job result, if omitted - default slurm-{JobID}.out will be collected")
 	batch = flag.String("batch", "", "batch script that will be executed on slurm cluster")
 )
-
-type nodeConfig struct {
-	Addr string `yaml:"addr"`
-}
 
 type collectOptions struct {
 	Mount string
@@ -70,7 +67,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var cfg nodeConfig
+	var cfg rd.NodeConfig
 	err = yaml.NewDecoder(f).Decode(&cfg)
 	_ = f.Close()
 	if err != nil {
@@ -79,15 +76,15 @@ func main() {
 
 	var client slurm.Slurm
 	if *overSSH {
-		log.Printf("Job will be executed over SSH at: %s", cfg.Addr)
-		client, err = getSSHClient(cfg)
+		log.Printf("Job will be executed over SSH at: %s", cfg.SSHAddr)
+		client, err = getSSHClient(cfg.SSHAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 	} else {
-		log.Printf("Job will be executed locally by slurm-controller at: %s", cfg.Addr)
-		client, err = getLocalClient(cfg)
+		log.Printf("Job will be executed locally by slurm-controller at: %s", cfg.LocalAddr)
+		client, err = getLocalClient(cfg.LocalAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -108,7 +105,7 @@ func main() {
 	log.Println("Job finished")
 }
 
-func getSSHClient(cfg nodeConfig) (*ssh.Client, error) {
+func getSSHClient(addr string) (*ssh.Client, error) {
 	const (
 		envSSHPass = "SSH_PASSWORD"
 		envSSHKey  = "SSH_KEY"
@@ -124,7 +121,7 @@ func getSSHClient(cfg nodeConfig) (*ssh.Client, error) {
 		key = []byte(sshKey)
 	}
 
-	client, err := ssh.NewClient(sshUser, cfg.Addr, sshPass, key)
+	client, err := ssh.NewClient(sshUser, addr, sshPass, key)
 	if err != nil {
 		return nil, errors.Wrap(err, "initializing ssh client")
 	}
@@ -132,9 +129,9 @@ func getSSHClient(cfg nodeConfig) (*ssh.Client, error) {
 	return client, nil
 }
 
-func getLocalClient(cfg nodeConfig) (*rest.Client, error) {
+func getLocalClient(addr string) (*rest.Client, error) {
 	c := rest.Config{
-		ControllerAddress: cfg.Addr,
+		ControllerAddress: addr,
 		TimeOut:           10,
 	}
 	client, err := rest.NewClient(c)

@@ -101,7 +101,7 @@ metadata:
 data:
   config: |
     minikube:
-      slurm: my.slurm.ssh:2222
+      slurm_ssh: my.slurm.ssh:2222
       resources:
         cpu: 2
       labels:
@@ -131,7 +131,7 @@ Data
 config:
 ----
 minikube:
-  slurm: my.slurm.ssh:2222
+  slurm_ssh: my.slurm.ssh:2222
   resources:
     cpu: 2
   labels:

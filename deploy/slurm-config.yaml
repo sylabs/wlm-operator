@@ -6,7 +6,8 @@ metadata:
 data:
   config: |
     minikube:
-      slurm: my.slurm.ssh:2222
+      slurm_ssh: my.slurm.ssh:2222
+      slurm_local: localhost:8080
       resources:
         cpu: 2
       labels:
