@@ -1,6 +1,19 @@
 version: 2
 
 jobs:
+  lint:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/sylabs/slurm-operator
+    steps:
+      - checkout
+      - run:
+          name: Install golangci-lint v1.15
+          command: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
+      - run:
+          name: Linters
+          command: make lint
+
   test:
     docker:
       - image: circleci/golang:1.12
@@ -9,17 +22,12 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install golangci-lint v1.15
-          command: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
-      - run:
           name: Unit tests
           command: make test
-      - run:
-          name: Linters
-          command: make lint
 
 workflows:
   version: 2
   build_and_test:
     jobs:
+      - lint
       - test
