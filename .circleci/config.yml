@@ -13,7 +13,7 @@ jobs:
           command: make test
       - run:
           name: Linters
-          commands: make lint
+          command: make lint
 
 workflows:
   version: 2
