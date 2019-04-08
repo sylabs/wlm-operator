@@ -22,6 +22,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	rd "github.com/sylabs/slurm-operator/internal/resource-daemon"
 	"github.com/sylabs/slurm-operator/internal/resource-daemon/k8s"
 	"gopkg.in/yaml.v2"
 )
@@ -32,10 +33,11 @@ const (
 )
 
 type config struct {
-	SlurmAddress  string `yaml:"slurm"`
-	NodeName      string
-	NodeLabels    map[string]string `yaml:"labels"`
-	NodeResources map[string]int    `yaml:"resources"`
+	SlurmSSHAddress   string `yaml:"slurm_ssh"`
+	SlurmLocalAddress string `yaml:"slurm_local"`
+	NodeName          string
+	NodeLabels        map[string]string `yaml:"labels"`
+	NodeResources     map[string]int    `yaml:"resources"`
 }
 
 var defaultNodeLabels = map[string]string{
@@ -68,7 +70,7 @@ func main() {
 		log.Fatalf("could not configure resource daemon: %v", err)
 	}
 
-	if err = writeRemoteClusterConfig(*configPath, config.SlurmAddress); err != nil {
+	if err = writeRemoteClusterConfig(*configPath, config.SlurmSSHAddress, config.SlurmLocalAddress); err != nil {
 		log.Fatalf("could not write remote cluster config: %v", err)
 	}
 
@@ -106,25 +108,24 @@ func readConfig() (*config, error) {
 	if !ok {
 		return nil, errNotConfigured
 	}
-	if nodeConfig.SlurmAddress == "" {
-		return nil, fmt.Errorf("no slurm address specified for node")
+	if nodeConfig.SlurmSSHAddress == "" && nodeConfig.SlurmLocalAddress == "" {
+		return nil, fmt.Errorf("either ssh or local SLURM address have to be specified in config map")
 	}
 
 	nodeConfig.NodeName = nodeName
 	return &nodeConfig, nil
 }
 
-func writeRemoteClusterConfig(path, slurmAddr string) error {
+func writeRemoteClusterConfig(path, slurmSSHAddr, slurmLocalAddr string) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("could not create slurm config file: %v", err)
 	}
 	defer f.Close()
 
-	var nodeConfig = struct {
-		Addr string `yaml:"addr"`
-	}{
-		Addr: slurmAddr,
+	var nodeConfig = rd.NodeConfig{
+		SSHAddr:   slurmSSHAddr,
+		LocalAddr: slurmLocalAddr,
 	}
 	if err = yaml.NewEncoder(f).Encode(nodeConfig); err != nil {
 		return fmt.Errorf("could not encode node config: %v", err)
