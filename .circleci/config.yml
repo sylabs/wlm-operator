@@ -27,16 +27,16 @@ jobs:
   publish:
     docker:
       - image: circleci/golang:1.12
-      working_directory: /go/src/github.com/sylabs/slurm-operator
-      steps:
-        - checkout
-        - setup_remote_docker
-        - run:
-            name: Login
-            command: docker login -u $DOCKER_USER -p $DOCKER_PASS
-        - run:
-            name: Build and push
-            command: make push
+    working_directory: /go/src/github.com/sylabs/slurm-operator
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Login
+          command: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: Build and push
+          command: make push
 
 
 workflows:
@@ -49,4 +49,3 @@ workflows:
           require:
             - lint
             - test
-
