@@ -44,7 +44,7 @@ To see available flags you can do
 The most simple way to run the controller:
 ```bash
 ./bin/slurm-controller 
-``` 
+```
 
 For production purposes you may want to set up controller as a service, but that topic
 will not be covered here.
@@ -71,18 +71,18 @@ After nodes to configure are determined a configuration should be set up. Genera
 scheme is the following:
 
 	<node1_name>:
-      slurm: <address of slurm to connect to via ssh OR address of slurm controller>
-      resources:
-        <resource name>: <quantity>
-      labels:
-        <label name>: <label value>
+	  slurm: <address of slurm to connect to via ssh OR address of slurm controller>
+	  resources:
+	    <resource name>: <quantity>
+	  labels:
+	    <label name>: <label value>
 	<node2_name>:
-      slurm: <address of slurm to connect to via ssh OR address of slurm controller>
-      resources:
-        <resource name>: <quantity>
-      labels:
-        <label name>: <label value>
-    ...
+	  slurm: <address of slurm to connect to via ssh OR address of slurm controller>
+	  resources:
+	    <resource name>: <quantity>
+	  labels:
+	    <label name>: <label value>
+	...
 
 Resources and labels reflect Slurm cluster capabilities behind the node. They will be applied 
 to the node allowing more precise job scheduling. 
@@ -102,6 +102,7 @@ data:
   config: |
     minikube:
       slurm_ssh: my.slurm.ssh:2222
+      # slurm_local: {SLURM_CONTROLLER_ADDR} if you want to use slurm-controller
       resources:
         cpu: 2
       labels:
@@ -132,6 +133,7 @@ config:
 ----
 minikube:
   slurm_ssh: my.slurm.ssh:2222
+  # slurm_local: {SLURM_CONTROLLER_ADDR} if you want to use slurm-controller
   resources:
     cpu: 2
   labels:
@@ -161,7 +163,7 @@ node. You can see them by running the following:
 
 ```bash
 kubectl describe node <node-name>
-``` 
+```
 
 You will see something like this:
 
