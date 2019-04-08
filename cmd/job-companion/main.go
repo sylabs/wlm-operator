@@ -46,10 +46,6 @@ var (
 	batch = flag.String("batch", "", "batch script that will be executed on slurm cluster")
 )
 
-type nodeConfig struct {
-	Addr string `yaml:"addr"`
-}
-
 type collectOptions struct {
 	Mount string
 	From  string

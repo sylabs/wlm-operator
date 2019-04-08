@@ -1,3 +1,4 @@
+// nolint: golint
 package resource_daemon
 
 // NodeConfig contains SLURM cluster local/ssh address.
