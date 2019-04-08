@@ -46,7 +46,7 @@ workflows:
       - lint
       - test
       - publish:
-          filter:
+          filters:
             branches:
               only:
                 - master
