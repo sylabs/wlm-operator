@@ -18,16 +18,35 @@ jobs:
     docker:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/sylabs/slurm-operator
-
     steps:
       - checkout
       - run:
           name: Unit tests
           command: make test
 
+  publish:
+    docker:
+      - image: circleci/golang:1.12
+      working_directory: /go/src/github.com/sylabs/slurm-operator
+      steps:
+        - checkout
+        - setup_remote_docker
+        - run:
+            name: Login
+            command: docker login -u $DOCKER_USER -p $DOCKER_PASS
+        - run:
+            name: Build and push
+            command: make push
+
+
 workflows:
   version: 2
-  build_and_test:
+  build_test_publish:
     jobs:
       - lint
       - test
+      - publish:
+          require:
+            - lint
+            - test
+
