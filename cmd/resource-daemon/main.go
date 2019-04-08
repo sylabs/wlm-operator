@@ -109,7 +109,7 @@ func readConfig() (*config, error) {
 		return nil, errNotConfigured
 	}
 	if nodeConfig.SlurmSSHAddress == "" && nodeConfig.SlurmLocalAddress == "" {
-		return nil, fmt.Errorf("whether ssh or local SLURM address have to be specified in config map")
+		return nil, fmt.Errorf("either ssh or local SLURM address have to be specified in config map")
 	}
 
 	nodeConfig.NodeName = nodeName
