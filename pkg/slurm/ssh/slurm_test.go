@@ -18,9 +18,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/sylabs/slurm-operator/pkg/controller"
-
-	"github.com/sylabs/slurm-operator/controller/vendor/github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 func TestClient_OpenFile(t *testing.T) {
@@ -29,7 +27,7 @@ func TestClient_OpenFile(t *testing.T) {
 	addr := "0.tcp.ngrok.io:11111"
 	password := "-"
 
-	c, err := controller.NewClient(user, addr, password, nil)
+	c, err := NewClient(user, addr, password, nil)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
