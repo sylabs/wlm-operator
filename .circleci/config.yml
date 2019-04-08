@@ -46,6 +46,6 @@ workflows:
       - lint
       - test
       - publish:
-          require:
+          requires:
             - lint
             - test
