@@ -1,3 +1,4 @@
+// nolint: golint
 package slurm_operator
 
 //go:generate go run vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go -O zz_generated.deepcopy -i ./pkg/operator/apis/slurm/v1alpha1 -h COPYRIGHT

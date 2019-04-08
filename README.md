@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/sylabs/slurm-operator/tree/master.svg?style=svg)](https://circleci.com/gh/sylabs/slurm-operator/tree/master)
+
 # Slurm operator
 Singularity implementation of k8s operator for interacting with Slurm.
 
