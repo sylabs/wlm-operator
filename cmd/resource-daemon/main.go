@@ -23,11 +23,12 @@ import (
 	"path"
 	"syscall"
 
+	rd "github.com/sylabs/slurm-operator/internal/resource-daemon"
+
 	"github.com/pkg/errors"
 
 	"github.com/fsnotify/fsnotify"
 
-	rd "github.com/sylabs/slurm-operator/internal/resource-daemon"
 	"github.com/sylabs/slurm-operator/internal/resource-daemon/k8s"
 	"gopkg.in/yaml.v2"
 )
@@ -70,52 +71,70 @@ func main() {
 		log.Fatalf("could not create k8s client: %v", err)
 	}
 
-	config, err := loadConfig(*slurmConfigMapPath)
-	if err != nil && err != errNotConfigured {
-		log.Fatalf("could not configure resource daemon: %s", err)
-	}
-
-	if err := patchNode(k8sClient, config, *nodeConfigPath); err != nil {
+	if err := watchAndUpdate(k8sClient, *slurmConfigMapPath, *nodeConfigPath); err != nil {
 		log.Fatal(err)
 	}
-	defer cleanUp(k8sClient, config, *nodeConfigPath)
+}
+
+func watchAndUpdate(client *k8s.Client, configPath, targetPath string) error {
+	var cfg *config
+	defer func() {
+		cleanUp(client, cfg, targetPath)
+	}()
+
+	update := func() error {
+		cleanUp(client, cfg, targetPath)
+
+		config, err := loadConfig(configPath)
+		if err != nil {
+			if err == errNotConfigured {
+				log.Println("No node configuration was found, skipping configuration")
+				return nil
+			}
+
+			return errors.Wrap(err, "could not configure resource daemon")
+		}
+
+		if err := patchNode(client, config, targetPath); err != nil {
+			return errors.Wrap(err, "could not update node")
+		}
+
+		cfg = config
+
+		return nil
+	}
+
+	if err := update(); err != nil {
+		return err
+	}
 
 	sCh := make(chan os.Signal, 1)
 	signal.Notify(sCh, syscall.SIGINT, syscall.SIGTERM)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 	defer watcher.Close()
 
-	dirToListen := path.Dir(*slurmConfigMapPath)
+	dirToListen := path.Dir(configPath)
 
 	log.Printf("Start listening %s for changes", dirToListen)
 	if err := watcher.Add(dirToListen); err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	for {
 		select {
 		case s := <-sCh:
 			log.Printf("Finished with: %s", s)
-			return
+			return nil
 		case err := <-watcher.Errors:
 			log.Printf("Watcher err: %s", err)
 		case e := <-watcher.Events:
 			if e.Op&fsnotify.Remove == fsnotify.Remove {
-				config, err := loadConfig(*slurmConfigMapPath)
-				if err != nil && err != errNotConfigured {
-					log.Println(err)
-					return
-				}
-				cleanUp(k8sClient, config, *nodeConfigPath)
-				if err := patchNode(k8sClient, config, *nodeConfigPath); err != nil {
-					log.Println(err)
-					return
+				if err := update(); err != nil {
+					return err
 				}
 			}
 		}
@@ -123,11 +142,6 @@ func main() {
 }
 
 func patchNode(client *k8s.Client, cfg *config, targetCfgPath string) error {
-	if cfg == nil {
-		log.Println("No node configuration was found, skipping configuration")
-		return nil
-	}
-
 	if err := writeRemoteClusterConfig(targetCfgPath, cfg.SlurmSSHAddress, cfg.SlurmLocalAddress); err != nil {
 		return errors.Wrap(err, "could not write remote cluster config")
 	}
@@ -135,6 +149,7 @@ func patchNode(client *k8s.Client, cfg *config, targetCfgPath string) error {
 	if err := configureLabels(client, cfg); err != nil {
 		return errors.Wrap(err, "could not configure node labels")
 	}
+
 	if err := configureResources(client, cfg); err != nil {
 		return errors.Wrap(err, "could not configure node resources")
 	}
@@ -224,20 +239,21 @@ func configureResources(k8sClient *k8s.Client, config *config) error {
 }
 
 func cleanUp(k8sClient *k8s.Client, cfg *config, nodeCfgPath string) {
+	if err := os.Remove(nodeCfgPath); err != nil {
+		log.Printf("Could not delete config on the node: %s", err)
+	}
+
 	if cfg == nil {
-		log.Println("Nothing to clean up")
+		log.Println("There are no k8s resources to clean up")
 		return
 	}
 
 	if err := k8sClient.RemoveNodeLabels(cfg.NodeName, cfg.NodeLabels); err != nil {
-		log.Printf("could not remove node labels: %s", err)
+		log.Printf("Could not remove node labels: %s", err)
 	}
 
 	if err := k8sClient.RemoveNodeResources(cfg.NodeName, cfg.NodeResources); err != nil {
-		log.Printf("could not remove node resources: %s", err)
+		log.Printf("Could not remove node resources: %s", err)
 	}
 
-	if err := os.Remove(nodeCfgPath); err != nil {
-		log.Printf("could not delete config on the node: %s", err)
-	}
 }
