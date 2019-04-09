@@ -66,9 +66,9 @@ spec:
             path: /var/lib/syslurm
             type: DirectoryOrCreate
         - name: slurm-cfg-map-vol
-            configMap:
-              name: slurm-config
-              items:
-                - key: config
-                  path: slurm
+          configMap:
+            name: slurm-config
+            items:
+              - key: config
+                path: slurm
       hostNetwork: true

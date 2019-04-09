@@ -50,8 +50,6 @@ var (
 	}
 
 	errNotConfigured = fmt.Errorf("node is not configured")
-
-	slurmConfigMap *config
 )
 
 func main() {
@@ -72,10 +70,15 @@ func main() {
 		log.Fatalf("could not create k8s client: %v", err)
 	}
 
-	if err := patchNode(k8sClient, *slurmConfigMapPath, *nodeConfigPath); err != nil {
+	config, err := loadConfig(*slurmConfigMapPath)
+	if err != nil && err != errNotConfigured {
+		log.Fatalf("could not configure resource daemon: %s", err)
+	}
+
+	if err := patchNode(k8sClient, config, *nodeConfigPath); err != nil {
 		log.Fatal(err)
 	}
-	defer cleanUp(k8sClient, slurmConfigMap, *nodeConfigPath)
+	defer cleanUp(k8sClient, config, *nodeConfigPath)
 
 	sCh := make(chan os.Signal, 1)
 	signal.Notify(sCh, syscall.SIGINT, syscall.SIGTERM)
@@ -104,8 +107,13 @@ func main() {
 			log.Printf("Watcher err: %s", err)
 		case e := <-watcher.Events:
 			if e.Op&fsnotify.Remove == fsnotify.Remove {
-				cleanUp(k8sClient, slurmConfigMap, *nodeConfigPath)
-				if err := patchNode(k8sClient, *slurmConfigMapPath, *nodeConfigPath); err != nil {
+				config, err := loadConfig(*slurmConfigMapPath)
+				if err != nil && err != errNotConfigured {
+					log.Println(err)
+					return
+				}
+				cleanUp(k8sClient, config, *nodeConfigPath)
+				if err := patchNode(k8sClient, config, *nodeConfigPath); err != nil {
 					log.Println(err)
 					return
 				}
@@ -114,61 +122,55 @@ func main() {
 	}
 }
 
-func patchNode(client *k8s.Client, cfgPath, targetCfgPath string) error {
-	if err := loadConfig(cfgPath); err != nil {
-		if err == errNotConfigured {
-			log.Println("No node configuration was found, skipping configuration")
-			return nil
-		}
-
-		return errors.Wrap(err, "could not configure resource daemon")
+func patchNode(client *k8s.Client, cfg *config, targetCfgPath string) error {
+	if cfg == nil {
+		log.Println("No node configuration was found, skipping configuration")
+		return nil
 	}
 
-	if err := writeRemoteClusterConfig(targetCfgPath, slurmConfigMap.SlurmSSHAddress, slurmConfigMap.SlurmLocalAddress); err != nil {
+	if err := writeRemoteClusterConfig(targetCfgPath, cfg.SlurmSSHAddress, cfg.SlurmLocalAddress); err != nil {
 		return errors.Wrap(err, "could not write remote cluster config")
 	}
 
-	if err := configureLabels(client, slurmConfigMap); err != nil {
+	if err := configureLabels(client, cfg); err != nil {
 		return errors.Wrap(err, "could not configure node labels")
 	}
-	if err := configureResources(client, slurmConfigMap); err != nil {
+	if err := configureResources(client, cfg); err != nil {
 		return errors.Wrap(err, "could not configure node resources")
 	}
 
 	return nil
 }
 
-func loadConfig(p string) error {
+func loadConfig(p string) (*config, error) {
 	nodeName := os.Getenv(envMyNodeName)
 	if nodeName == "" {
-		return errors.Errorf("missing %s environment variable", envMyNodeName)
+		return nil, errors.Errorf("missing %s environment variable", envMyNodeName)
 	}
 	log.Printf("Coufigured to work as %s node", nodeName)
 
 	f, err := os.Open(p)
 	if err != nil {
-		return errors.Wrapf(err, "can't open config at: %s", p)
+		return nil, errors.Wrapf(err, "can't open config at: %s", p)
 	}
 	defer f.Close()
 
 	var cfg map[string]config
 	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil {
-		return errors.Wrap(err, "could not unmarshal config")
+		return nil, errors.Wrap(err, "could not unmarshal config")
 	}
 
 	nodeConfig, ok := cfg[nodeName]
 	if !ok {
-		return errNotConfigured
+		return nil, errNotConfigured
 	}
 	if nodeConfig.SlurmSSHAddress == "" && nodeConfig.SlurmLocalAddress == "" {
-		return errors.New("either ssh or local SLURM address have to be specified in config map")
+		return nil, errors.New("either ssh or local SLURM address have to be specified in config map")
 	}
 
 	nodeConfig.NodeName = nodeName
 
-	slurmConfigMap = &nodeConfig
-
-	return nil
+	return &nodeConfig, nil
 }
 
 func writeRemoteClusterConfig(path, slurmSSHAddr, slurmLocalAddr string) error {
