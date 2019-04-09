@@ -81,7 +81,7 @@ func ParseSacctResponse(raw string) ([]*JobInfo, error) {
 	for i, l := range lines {
 		splitted := strings.Split(l, "|")
 		if len(splitted) != 8 {
-			return nil, errors.New("have to be 7 sections")
+			return nil, errors.New("output must contain 7 sections")
 		}
 
 		startedAt, err := parseTime(splitted[0])
@@ -96,7 +96,7 @@ func ParseSacctResponse(raw string) ([]*JobInfo, error) {
 
 		exitCodeSplitted := strings.Split(splitted[2], ":")
 		if len(exitCodeSplitted) != 2 {
-			return nil, errors.New("exit code have to contain 2 sections")
+			return nil, errors.New("exit code must contain 2 sections")
 		}
 		exitCode, err := strconv.Atoi(exitCodeSplitted[0])
 		if err != nil {
@@ -117,10 +117,12 @@ func ParseSacctResponse(raw string) ([]*JobInfo, error) {
 	return infos, nil
 }
 
-func parseTime(t string) (time.Time, error) {
-	if t == "" || strings.ToLower(t) == "unknown" {
+func parseTime(timeStr string) (time.Time, error) {
+	const slurmTimeLayout = "2006-01-02T15:04:05"
+
+	if timeStr == "" || strings.ToLower(timeStr) == "unknown" {
 		return time.Time{}, nil
 	}
 
-	return time.Parse(time.RFC3339, t+"Z")
+	return time.Parse(slurmTimeLayout, timeStr)
 }
