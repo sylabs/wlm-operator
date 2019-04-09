@@ -20,13 +20,16 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/pkg/errors"
+
 	"k8s.io/apimachinery/pkg/types"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 )
 
 const (
-	opAdd = "add"
+	opAdd    = "add"
+	opRemove = "remove"
 )
 
 type operation struct {
@@ -71,12 +74,12 @@ func (c *Client) AddNodeResources(nodeName string, resources map[string]int) err
 	}
 	var buff bytes.Buffer
 	if err := json.NewEncoder(&buff).Encode(ops); err != nil {
-		return fmt.Errorf("could not encode resources patch: %v", err)
+		return errors.Wrap(err, "could not encode resources patch")
 	}
 
 	_, err := c.coreClient.Nodes().Patch(nodeName, types.JSONPatchType, buff.Bytes(), "status")
 	if err != nil {
-		return fmt.Errorf("could not patch node resources: %v", err)
+		return errors.Wrap(err, "could not patch node resources")
 	}
 	return nil
 }
@@ -97,12 +100,63 @@ func (c *Client) AddNodeLabels(nodeName string, labels map[string]string) error 
 
 	var buff bytes.Buffer
 	if err := json.NewEncoder(&buff).Encode(ops); err != nil {
-		return fmt.Errorf("could not encode labels patch: %v", err)
+		return errors.Wrap(err, "could not encode labels patch")
 	}
 
 	_, err := c.coreClient.Nodes().Patch(nodeName, types.JSONPatchType, buff.Bytes())
 	if err != nil {
-		return fmt.Errorf("could not patch node labels: %v", err)
+		return errors.Wrap(err, "could not patch node labels")
+	}
+	return nil
+}
+
+// RemoveNodeResources removes passed resources from node capacity
+func (c *Client) RemoveNodeResources(nodeName string, resources map[string]int) error {
+	// https://kubernetes.io/docs/tasks/administer-cluster/extended-resource-node/
+	const k8sResourceT = "/status/capacity/slurm.sylabs.io~1%s"
+
+	ops := make([]operation, 0, len(resources))
+	for k := range resources {
+		op := operation{
+			Op:   opRemove,
+			Path: fmt.Sprintf(k8sResourceT, k),
+		}
+		ops = append(ops, op)
+	}
+	var buff bytes.Buffer
+	if err := json.NewEncoder(&buff).Encode(ops); err != nil {
+		return errors.Wrap(err, "couldn't encode resources patch")
+	}
+
+	_, err := c.coreClient.Nodes().Patch(nodeName, types.JSONPatchType, buff.Bytes(), "status")
+	if err != nil {
+		return errors.Wrap(err, "couldn't path node resource")
+	}
+
+	return nil
+}
+
+// RemoveNodeLabels removes nodes labels from node
+func (c *Client) RemoveNodeLabels(nodeName string, labels map[string]string) error {
+	const k8sLabelT = "/metadata/labels/slurm.sylabs.io~1%s"
+
+	ops := make([]operation, 0, len(labels))
+	for k := range labels {
+		op := operation{
+			Op:   opRemove,
+			Path: fmt.Sprintf(k8sLabelT, k),
+		}
+		ops = append(ops, op)
+	}
+
+	var buff bytes.Buffer
+	if err := json.NewEncoder(&buff).Encode(ops); err != nil {
+		return errors.Wrap(err, "could not encode labels patch")
+	}
+
+	_, err := c.coreClient.Nodes().Patch(nodeName, types.JSONPatchType, buff.Bytes())
+	if err != nil {
+		return errors.Wrap(err, "could not patch node labels")
 	}
 	return nil
 }
