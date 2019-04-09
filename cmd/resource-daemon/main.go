@@ -117,7 +117,7 @@ func main() {
 func patchNode(client *k8s.Client, cfgPath, targetCfgPath string) error {
 	if err := loadConfig(cfgPath); err != nil {
 		if err == errNotConfigured {
-			log.Printf("No node configuration was found, skipping configuration")
+			log.Println("No node configuration was found, skipping configuration")
 			return nil
 		}
 
