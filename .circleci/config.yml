@@ -1,12 +1,46 @@
 version: 2
 
 jobs:
-  lint:
+  get_source:
     docker:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/sylabs/slurm-operator
     steps:
       - checkout
+      - persist_to_workspace:
+          root: /go
+          paths:
+            - src/github.com/sylabs/slurm-operator
+
+  build:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/sylabs/slurm-operator
+    steps:
+      - attach_workspace:
+          at: /go
+      - run:
+          name: Build controller
+          command: make
+
+  test:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/sylabs/slurm-operator
+    steps:
+      - attach_workspace:
+          at: /go
+      - run:
+          name: Unit tests
+          command: make test
+
+  lint:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/sylabs/slurm-operator
+    steps:
+      - attach_workspace:
+          at: /go
       - run:
           name: Install golangci-lint v1.15
           command: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
@@ -14,22 +48,13 @@ jobs:
           name: Linters
           command: make lint
 
-  test:
-    docker:
-      - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/slurm-operator
-    steps:
-      - checkout
-      - run:
-          name: Unit tests
-          command: make test
-
   publish:
     docker:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/sylabs/slurm-operator
     steps:
-      - checkout
+      - attach_workspace:
+          at: /go
       - setup_remote_docker
       - run:
           name: Login
@@ -43,13 +68,22 @@ workflows:
   version: 2
   build_test_publish:
     jobs:
-      - lint
-      - test
+      - get_source
+      - build:
+          requires:
+            - get_source
+      - test:
+          requires:
+            - get_source
+      - lint:
+          requires:
+            - get_source
       - publish:
           filters:
             branches:
               only:
                 - master
           requires:
-            - lint
+            - build
             - test
+            - lint
