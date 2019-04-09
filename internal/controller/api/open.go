@@ -16,9 +16,7 @@ package api
 
 import (
 	"io"
-	"log"
 	"net/http"
-	"os"
 
 	"github.com/sylabs/slurm-operator/pkg/slurm"
 )
@@ -26,10 +24,7 @@ import (
 // Open streams content of an arbitrary file.
 func (a *api) Open(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	d, _ := os.Getwd()
-	log.Println(d)
 	path := query.Get("path")
-	log.Println(path)
 	if path == "" {
 		http.Error(w, "no path query parameter is found", http.StatusBadRequest)
 		return

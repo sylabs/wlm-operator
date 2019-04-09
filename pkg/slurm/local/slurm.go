@@ -54,12 +54,12 @@ func (*Client) SAcct(jobID int64) ([]*slurm.JobInfo, error) {
 		"-o start,end,exitcode,state,comment,jobid,jobname",
 	)
 
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.Output()
 	if err != nil {
-		if out != nil {
-			log.Println(string(out))
+		ee, ok := err.(*exec.ExitError)
+		if ok {
+			return nil, errors.Wrapf(err, "failed to execute sacct: %s", ee.Stderr)
 		}
-
 		return nil, errors.Wrap(err, "failed to execute sacct")
 	}
 
