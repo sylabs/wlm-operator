@@ -44,7 +44,7 @@ spec:
       - name: slurm-rd
         image: sylabsio/slurm:resource-daemon
         imagePullPolicy: Always
-        args: ["--config-node", "/syslurm/slurm-cfg.yaml", "--slurm-config-map", "/etc/config/slurm"]
+        args: ["--node-config", "/syslurm/slurm-cfg.yaml", "--slurm-config-map", "/etc/config/slurm"]
         env:
         - name: MY_NODE_NAME
           valueFrom:
