@@ -83,13 +83,12 @@ func (c *Client) SAcct(jobID int64) ([]*slurm.JobInfo, error) {
 		return nil, errors.Wrap(err, "could not create new ssh session")
 	}
 
+	var stderr bytes.Buffer
+	s.Stderr = &stderr
 	cmd := fmt.Sprintf("%s -p -n -j %d -o start,end,exitcode,state,comment,jobid,jobname", sacctBinaryName, jobID)
-	out, err := s.CombinedOutput(cmd)
+	out, err := s.Output(cmd)
 	if err != nil {
-		if out != nil {
-			log.Println(string(out))
-		}
-		return nil, errors.Wrap(err, "failed to execute sacct")
+		return nil, errors.Wrapf(err, "failed to execute sacct: %s", stderr.String())
 	}
 
 	jInfo, err := slurm.ParseSacctResponse(string(out))
