@@ -10,7 +10,7 @@ jobs:
       - persist_to_workspace:
           root: /go
           paths:
-            - src/github.com/sylabs/singularity-cri
+            - src/github.com/sylabs/slurm-operator
 
   build:
     docker:
