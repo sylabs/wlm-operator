@@ -88,7 +88,7 @@ func (c *Client) SAcct(jobID int64) ([]*slurm.JobInfo, error) {
 	cmd := fmt.Sprintf("%s -p -n -j %d -o start,end,exitcode,state,comment,jobid,jobname", sacctBinaryName, jobID)
 	out, err := s.Output(cmd)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to execute sacct: %s", stderr)
+		return nil, errors.Wrapf(err, "failed to execute sacct: %s", stderr.String())
 	}
 
 	jInfo, err := slurm.ParseSacctResponse(string(out))
