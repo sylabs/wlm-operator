@@ -69,15 +69,15 @@ workflows:
   build_test_publish:
     jobs:
       - get_source
-      - build
-        requires:
-          - get_source
-      - test
-        requires:
-          - get_source
-      - lint
-        requires:
-          - get_source
+      - build:
+          requires:
+            - get_source
+      - test:
+          requires:
+            - get_source
+      - lint:
+          requires:
+            - get_source
       - publish:
           filters:
             branches:
