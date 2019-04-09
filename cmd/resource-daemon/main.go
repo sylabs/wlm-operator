@@ -228,7 +228,7 @@ func cleanUp(k8sClient *k8s.Client, cfg *config, nodeCfgPath string) {
 	}
 
 	if err := k8sClient.RemoveNodeLabels(cfg.NodeName, cfg.NodeLabels); err != nil {
-		log.Printf("could not remove node labels err: %s", err)
+		log.Printf("could not remove node labels: %s", err)
 	}
 
 	if err := k8sClient.RemoveNodeResources(cfg.NodeName, cfg.NodeResources); err != nil {
@@ -236,6 +236,6 @@ func cleanUp(k8sClient *k8s.Client, cfg *config, nodeCfgPath string) {
 	}
 
 	if err := os.Remove(nodeCfgPath); err != nil {
-		log.Printf("could not delete config on the node err: %s", err)
+		log.Printf("could not delete config on the node: %s", err)
 	}
 }

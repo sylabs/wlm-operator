@@ -125,12 +125,12 @@ func (c *Client) RemoveNodeResources(nodeName string, resources map[string]int) 
 	}
 	var buff bytes.Buffer
 	if err := json.NewEncoder(&buff).Encode(ops); err != nil {
-		return errors.Wrap(err, "couldn't encode resources patch")
+		return errors.Wrap(err, "could not encode resources patch")
 	}
 
 	_, err := c.coreClient.Nodes().Patch(nodeName, types.JSONPatchType, buff.Bytes(), "status")
 	if err != nil {
-		return errors.Wrap(err, "couldn't path node resource")
+		return errors.Wrap(err, "could not patch node resource")
 	}
 
 	return nil
