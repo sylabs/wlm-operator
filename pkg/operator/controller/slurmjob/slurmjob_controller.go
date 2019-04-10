@@ -146,12 +146,14 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 
 	// since we are running only slurm jobs, we need to be
 	// sure that pod will be allocated only on nodes with slurm support
-	selectorLabels := map[string]string{"slurm.sylabs.io/workload-manager": "slurm"}
+	selectorLabels := map[string]string{
+		"slurm.sylabs.io/workload-manager": "slurm",
+		"slurm.sylabs.io/integration-type": "local",
+	}
 	for k, v := range cr.Spec.NodeSelector {
 		selectorLabels[k] = v
 	}
 
-	selectorLabels["slurm.sylabs.io/integration-type"] = "local"
 	if cr.Spec.SSH != nil {
 		selectorLabels["slurm.sylabs.io/integration-type"] = "ssh"
 	}

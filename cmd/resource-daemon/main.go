@@ -98,7 +98,7 @@ func watchAndUpdate(client *k8s.Client, configPath, targetPath string) error {
 		}
 
 		if config.SlurmSSHAddress != "" && config.SlurmLocalAddress != "" {
-			log.Println("Warning! Both SSH and Local addresses are specified in ConfigMap. Local address will be used")
+			log.Println("Warning: both ssh and local addresses are provided, local address will be used")
 		}
 
 		if config.SlurmSSHAddress != "" {
