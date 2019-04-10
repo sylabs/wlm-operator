@@ -10,6 +10,8 @@ spec:
   names:
     kind: SlurmJob
     plural: slurmjobs
+    shortNames:
+    - sj
   scope: Namespaced
   validation:
     openAPIV3Schema:
