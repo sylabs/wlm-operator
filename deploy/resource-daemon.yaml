@@ -44,7 +44,7 @@ spec:
       - name: slurm-rd
         image: sylabsio/slurm:resource-daemon
         imagePullPolicy: Always
-        args: ["--config", "/syslurm/slurm-cfg.yaml"]
+        args: ["--node-config", "/syslurm/slurm-cfg.yaml", "--slurm-config-map", "/etc/config/slurm"]
         env:
         - name: MY_NODE_NAME
           valueFrom:
@@ -58,9 +58,17 @@ spec:
         volumeMounts:
           - name: slurm-cfg
             mountPath: /syslurm
+          - name: slurm-cfg-map-vol
+            mountPath: /etc/config
       volumes:
         - name: slurm-cfg
           hostPath:
             path: /var/lib/syslurm
             type: DirectoryOrCreate
+        - name: slurm-cfg-map-vol
+          configMap:
+            name: slurm-config
+            items:
+              - key: config
+                path: slurm
       hostNetwork: true
