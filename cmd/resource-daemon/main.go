@@ -35,6 +35,9 @@ import (
 
 const (
 	envMyNodeName = "MY_NODE_NAME"
+
+	sshLabel   = "slurm-ssh-ready"
+	localLabel = "slurm-local-ready"
 )
 
 type config struct {
@@ -93,6 +96,14 @@ func watchAndUpdate(client *k8s.Client, configPath, targetPath string) error {
 			}
 
 			return errors.Wrap(err, "could not configure resource daemon")
+		}
+
+		if config.SlurmLocalAddress != "" {
+			config.NodeLabels[localLabel] = "true"
+		}
+
+		if config.SlurmSSHAddress != "" {
+			config.NodeLabels[sshLabel] = "true"
 		}
 
 		if err := patchNode(client, config, targetPath); err != nil {
