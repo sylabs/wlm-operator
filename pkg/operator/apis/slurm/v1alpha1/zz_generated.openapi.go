@@ -39,7 +39,7 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJob(ref common.ReferenceCallback) 
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "SlurmJob is the Schema for the slurmjobs API",
+				Description: "SlurmJob is the Schema for the slurmjobs API.",
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{

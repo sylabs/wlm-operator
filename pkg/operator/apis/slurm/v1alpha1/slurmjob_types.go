@@ -89,8 +89,9 @@ type SlurmJobResults struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SlurmJob is the Schema for the slurmjobs API
+// SlurmJob is the Schema for the slurmjobs API.
 // +k8s:openapi-gen=true
+// +kubebuilder:resource:shortName=sj
 type SlurmJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -101,7 +102,7 @@ type SlurmJob struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SlurmJobList contains a list of SlurmJob
+// SlurmJobList contains a list of SlurmJob.
 type SlurmJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
