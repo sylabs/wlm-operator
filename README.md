@@ -241,6 +241,7 @@ spec:
       hostPath:
         path: /home/vagrant/job-results
         type: DirectoryOrCreate
+    from: slurm-4.out # can be omitted
   ssh:
     user: vagrant
     key:
@@ -321,3 +322,33 @@ WARNING: No default remote in use, falling back to: https://library.sylabs.io
                 ||----w |
                 ||     ||
 ```
+
+
+### Results collection
+
+Slurm operator supports result collection to a provided [k8s volume](https://kubernetes.io/docs/concepts/storage/volumes/)
+so that a user won't need to have access to a Slurm cluster to analyze job results.
+
+However, some configuration is required for this feature to work. More specifically, job-companion can collect results
+located on submit server only (i.e. k8s node in case of local mode, or slurm host at specified address in case
+of ssh mode), while slurm job can be scheduled on arbitrary slurm worker node. It means that some kind of a shared
+storage among slurm nodes should be configured so that despite of slurm worker node chosen to run a job, results will
+appear on submit server as well. 
+
+Let's walk through basic configuration steps for each mode. Further assumed that default results file
+is collected (_slurm-<jobID>.out_). This file can be found on Slurm worker node that is executing a job in a folder,
+from which job was submitted. Configuration for custom results file will differ in shared paths only.
+
+
+_**Local mode**_
+
+	$RESULTS_DIR = slurm-controller's working directory
+
+_**SSH mode**_
+
+	$RESULTS_DIR = home directory of a user from SSH config
+
+Share $RESULTS_DIR among all Slurm nodes, e.g set up nfs share for $RESULTS_DIR.
+
+
+
