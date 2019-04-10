@@ -151,6 +151,11 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 		selectorLabels[k] = v
 	}
 
+	selectorLabels["slurm.sylabs.io/integration-type"] = "local"
+	if cr.Spec.SSH != nil {
+		selectorLabels["slurm.sylabs.io/integration-type"] = "ssh"
+	}
+
 	var resourceRequest corev1.ResourceList
 	for k, v := range cr.Spec.Resources {
 		if resourceRequest == nil {
