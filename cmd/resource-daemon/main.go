@@ -36,8 +36,7 @@ import (
 const (
 	envMyNodeName = "MY_NODE_NAME"
 
-	sshLabel   = "slurm-ssh-ready"
-	localLabel = "slurm-local-ready"
+	integrationTypeLabel = "integration-type"
 )
 
 type config struct {
@@ -98,12 +97,16 @@ func watchAndUpdate(client *k8s.Client, configPath, targetPath string) error {
 			return errors.Wrap(err, "could not configure resource daemon")
 		}
 
-		if config.SlurmLocalAddress != "" {
-			config.NodeLabels[localLabel] = "true"
+		if config.SlurmSSHAddress != "" && config.SlurmLocalAddress != "" {
+			log.Println("Warning! Both SSH and Local addresses are specified in ConfigMap. Local address will be used")
 		}
 
 		if config.SlurmSSHAddress != "" {
-			config.NodeLabels[sshLabel] = "true"
+			config.NodeLabels[integrationTypeLabel] = "ssh"
+		}
+
+		if config.SlurmLocalAddress != "" {
+			config.NodeLabels[integrationTypeLabel] = "local"
 		}
 
 		if err := patchNode(client, config, targetPath); err != nil {
