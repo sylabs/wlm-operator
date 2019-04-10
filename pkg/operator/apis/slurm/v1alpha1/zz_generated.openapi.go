@@ -132,6 +132,7 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSSH(ref common.ReferenceCallbac
 						},
 					},
 				},
+				Required: []string{"user"},
 			},
 		},
 		Dependencies: []string{
