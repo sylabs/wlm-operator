@@ -76,6 +76,8 @@ spec:
                     a Slurm cluster.
                   minLength: 1
                   type: string
+              required:
+              - user
               type: object
           required:
           - batch

@@ -67,7 +67,7 @@ type SlurmJobStatus struct {
 type SlurmJobSSH struct {
 	// User to be used when establishing ssh connection to a Slurm cluster.
 	// +kubebuilder:validation:MinLength=1
-	User string `json:"user,omitempty"`
+	User string `json:"user"`
 
 	// Key to use to connect to a remote Slurm cluster.
 	Key *v1.EnvVarSource `json:"key,omitempty"`
