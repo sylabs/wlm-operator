@@ -6,6 +6,14 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: slurmjobs.slurm.sylabs.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  - JSONPath: .status.status
+    description: status of the kind
+    name: Status
+    type: string
   group: slurm.sylabs.io
   names:
     kind: SlurmJob
@@ -13,6 +21,8 @@ spec:
     shortNames:
     - sj
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -84,13 +94,11 @@ spec:
           type: object
         status:
           properties:
-            message:
-              type: string
             status:
+              description: Status reflects job status, e.g running, succeeded.
               type: string
           required:
           - status
-          - message
           type: object
   version: v1alpha1
 status:

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/golang/glog"
 	slurmv1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -39,8 +39,6 @@ const (
 	jobCompanionImage = "sylabsio/slurm:job-companion"
 	slurmCfgPath      = "/syslurm/slurm-cfg.yaml"
 )
-
-var log = logf.Log.WithName("controller_slurmjob")
 
 // Add creates a new SlurmJob Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -90,16 +88,14 @@ type ReconcileSlurmJob struct {
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a SlurmJob object and makes changes based on the state read
-// and what is in the SlurmJob.Spec
-// a Pod as an example
-func (r *ReconcileSlurmJob) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling SlurmJob")
+// Reconcile reads that state of the cluster for a SlurmJob object and makes changes
+// based on the state read and what is in the SlurmJob.Spec.
+func (r *ReconcileSlurmJob) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+	glog.Infof("Received reconcile request: %v", req)
 
 	// Fetch the SlurmJob instance
-	instance := &slurmv1alpha1.SlurmJob{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	sj := &slurmv1alpha1.SlurmJob{}
+	err := r.client.Get(context.Background(), req.NamespacedName, sj)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -107,35 +103,41 @@ func (r *ReconcileSlurmJob) Reconcile(request reconcile.Request) (reconcile.Resu
 			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
+		glog.Errorf("Could not get slurm job: %v", err)
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
+	// Translate SlurmJob to Pod
+	sjPod := newPodForCR(sj)
 
 	// Set SlurmJob instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(sj, sjPod, r.scheme); err != nil {
+		glog.Errorf("Could not set controller reference for pod: %v", err)
 		return reconcile.Result{}, err
 	}
 
 	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+	sjCurrentPod := &corev1.Pod{}
+	key := types.NamespacedName{Name: sjPod.Name, Namespace: sjPod.Namespace}
+	err = r.client.Get(context.Background(), key, sjCurrentPod)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+		glog.Infof("Creating new pod %q for slurm job %q", sjPod.Name, sj.Name)
+		err = r.client.Create(context.Background(), sjPod)
 		if err != nil {
-			return reconcile.Result{}, err
+			glog.Errorf("Could not create new pod: %v", err)
 		}
-
-		// Pod created successfully - don't requeue
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	return reconcile.Result{}, nil
+	glog.Infof("Updating slurm job %q", sj.Name)
+	// Otherwise smth has changed, need to update things
+	sj.Status.Status = string(sjCurrentPod.Status.Phase)
+	err = r.client.Status().Update(context.Background(), sj)
+	if err != nil {
+		glog.Errorf("Could not update slurm job: %v", err)
+	}
+	return reconcile.Result{}, err
 }
 
 // newPodForCR returns a slurm-job-companion pod with the same name/namespace as the cr
