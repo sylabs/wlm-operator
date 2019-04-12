@@ -58,8 +58,8 @@ type SlurmJobStatus struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	Status  string `json:"status"`
-	Message string `json:"message"`
+	// Status reflects job status, e.g running, succeeded.
+	Status string `json:"status"`
 }
 
 // SlurmJobSSH is a Schema for required data to execute job via ssh
@@ -92,6 +92,9 @@ type SlurmJobResults struct {
 // SlurmJob is the Schema for the slurmjobs API.
 // +k8s:openapi-gen=true
 // +kubebuilder:resource:shortName=sj
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status",description="status of the kind"
 type SlurmJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

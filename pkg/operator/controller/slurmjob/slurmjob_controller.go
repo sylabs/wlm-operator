@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/golang/glog"
 	slurmv1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -39,8 +39,6 @@ const (
 	jobCompanionImage = "sylabsio/slurm:job-companion"
 	slurmCfgPath      = "/syslurm/slurm-cfg.yaml"
 )
-
-var log = logf.Log.WithName("controller_slurmjob")
 
 // Add creates a new SlurmJob Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -90,16 +88,14 @@ type ReconcileSlurmJob struct {
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a SlurmJob object and makes changes based on the state read
-// and what is in the SlurmJob.Spec
-// a Pod as an example
-func (r *ReconcileSlurmJob) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling SlurmJob")
+// Reconcile reads that state of the cluster for a SlurmJob object and makes changes
+// based on the state read and what is in the SlurmJob.Spec.
+func (r *ReconcileSlurmJob) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+	glog.Infof("Received reconcile request: %v", req)
 
 	// Fetch the SlurmJob instance
-	instance := &slurmv1alpha1.SlurmJob{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	sj := &slurmv1alpha1.SlurmJob{}
+	err := r.client.Get(context.Background(), req.NamespacedName, sj)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -107,41 +103,50 @@ func (r *ReconcileSlurmJob) Reconcile(request reconcile.Request) (reconcile.Resu
 			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
+		glog.Errorf("Could not get slurm job: %v", err)
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
+	// Translate SlurmJob to Pod
+	sjPod := newPodForSJ(sj)
 
 	// Set SlurmJob instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
+	err = controllerutil.SetControllerReference(sj, sjPod, r.scheme)
+	if err != nil {
+		glog.Errorf("Could not set controller reference for pod: %v", err)
 		return reconcile.Result{}, err
 	}
 
 	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+	sjCurrentPod := &corev1.Pod{}
+	key := types.NamespacedName{Name: sjPod.Name, Namespace: sjPod.Namespace}
+	err = r.client.Get(context.Background(), key, sjCurrentPod)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+		glog.Infof("Creating new pod %q for slurm job %q", sjPod.Name, sj.Name)
+		err = r.client.Create(context.Background(), sjPod)
 		if err != nil {
+			glog.Errorf("Could not create new pod: %v", err)
 			return reconcile.Result{}, err
 		}
-
-		// Pod created successfully - don't requeue
 		return reconcile.Result{}, nil
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	glog.Infof("Updating slurm job %q", sj.Name)
+	// Otherwise smth has changed, need to update things
+	sj.Status.Status = string(sjCurrentPod.Status.Phase)
+	err = r.client.Status().Update(context.Background(), sj)
+	if err != nil {
+		glog.Errorf("Could not update slurm job: %v", err)
+		return reconcile.Result{}, err
+	}
 	return reconcile.Result{}, nil
 }
 
-// newPodForCR returns a slurm-job-companion pod with the same name/namespace as the cr
-func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
+// newPodForSJ returns a job-companion pod for the slurm job.
+func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	labels := map[string]string{
-		"app": cr.Name,
+		"app": sj.Name,
 	}
 
 	// since we are running only slurm jobs, we need to be
@@ -150,16 +155,16 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 		"slurm.sylabs.io/workload-manager": "slurm",
 		"slurm.sylabs.io/integration-type": "local",
 	}
-	for k, v := range cr.Spec.NodeSelector {
+	for k, v := range sj.Spec.NodeSelector {
 		selectorLabels[k] = v
 	}
 
-	if cr.Spec.SSH != nil {
+	if sj.Spec.SSH != nil {
 		selectorLabels["slurm.sylabs.io/integration-type"] = "ssh"
 	}
 
 	var resourceRequest corev1.ResourceList
-	for k, v := range cr.Spec.Resources {
+	for k, v := range sj.Spec.Resources {
 		if resourceRequest == nil {
 			resourceRequest = make(map[corev1.ResourceName]resource.Quantity)
 		}
@@ -169,26 +174,26 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	}
 
 	var ssh bool
-	if cr.Spec.SSH != nil {
+	if sj.Spec.SSH != nil {
 		ssh = true
 	}
 	args := []string{
-		fmt.Sprintf("--batch=%s", cr.Spec.Batch),
+		fmt.Sprintf("--batch=%s", sj.Spec.Batch),
 		fmt.Sprintf("--config=%s", slurmCfgPath),
 		fmt.Sprintf("--ssh=%t", ssh),
 	}
 
-	if cr.Spec.Results != nil {
+	if sj.Spec.Results != nil {
 		args = append(args, fmt.Sprintf("--cr-mount=%s", "/collect"))
-		if cr.Spec.Results.From != "" {
-			args = append(args, fmt.Sprintf("--file-to-collect=%s", cr.Spec.Results.From))
+		if sj.Spec.Results.From != "" {
+			args = append(args, fmt.Sprintf("--file-to-collect=%s", sj.Spec.Results.From))
 		}
 	}
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-job",
-			Namespace: cr.Namespace,
+			Name:      sj.Name + "-job",
+			Namespace: sj.Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
@@ -202,11 +207,11 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 						Requests: resourceRequest,
 						Limits:   resourceRequest,
 					},
-					Env:          getEnvs(cr),
-					VolumeMounts: getVolumesMount(cr),
+					Env:          getEnvs(sj),
+					VolumeMounts: getVolumesMount(sj),
 				},
 			},
-			Volumes:       getVolumes(cr),
+			Volumes:       getVolumes(sj),
 			NodeSelector:  selectorLabels,
 			HostNetwork:   true,
 			RestartPolicy: corev1.RestartPolicyNever,

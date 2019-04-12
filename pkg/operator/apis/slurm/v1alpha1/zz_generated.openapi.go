@@ -210,18 +210,13 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobStatus(ref common.ReferenceCall
 				Properties: map[string]spec.Schema{
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"message": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Status reflects job status, e.g running, succeeded.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
-				Required: []string{"status", "message"},
+				Required: []string{"status"},
 			},
 		},
 		Dependencies: []string{},
