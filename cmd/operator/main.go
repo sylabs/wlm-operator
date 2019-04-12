@@ -40,9 +40,9 @@ var (
 )
 
 func printVersion() {
-	glog.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
-	glog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	glog.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
+	glog.Infof("Go Version: %s", runtime.Version())
+	glog.Infof("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
+	glog.Infof("Version of operator-sdk: %v", sdkVersion.Version)
 }
 
 func main() {
