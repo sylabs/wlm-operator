@@ -40,6 +40,10 @@ spec:
                 SlurmJob to fit on a node. Selector which must match a node''s labels
                 for the SlurmJob to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.'
               type: object
+            podSecurityContext:
+              description: 'PodSecurityContext holds pod-level security attributes
+                and common container settings. More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.14/#podsecuritycontext-v1-core'
+              type: object
             resources:
               description: 'Compute resources required by this SlurmJob. Cannot be
                 updated. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources.'

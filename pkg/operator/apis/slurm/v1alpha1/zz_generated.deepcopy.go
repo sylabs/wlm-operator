@@ -144,6 +144,11 @@ func (in *SlurmJobSpec) DeepCopyInto(out *SlurmJobSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.PodSecurityContext != nil {
+		in, out := &in.PodSecurityContext, &out.PodSecurityContext
+		*out = new(v1.PodSecurityContext)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.SSH != nil {
 		in, out := &in.SSH, &out.SSH
 		*out = new(SlurmJobSSH)
