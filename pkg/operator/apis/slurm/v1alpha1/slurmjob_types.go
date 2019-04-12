@@ -42,6 +42,10 @@ type SlurmJobSpec struct {
 	// Cannot be updated. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources.
 	Resources map[string]int64 `json:"resources,omitempty"`
 
+	// PodSecurityContext holds pod-level security attributes and common container settings.
+	// More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.14/#podsecuritycontext-v1-core
+	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
+
 	// SSH contains configuration to be used when running jobs on a remote cluster via ssh.
 	SSH *SlurmJobSSH `json:"ssh,omitempty"`
 

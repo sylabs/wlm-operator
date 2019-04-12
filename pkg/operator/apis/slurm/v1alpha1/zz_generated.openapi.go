@@ -181,6 +181,12 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 							},
 						},
 					},
+					"podSecurityContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodSecurityContext holds pod-level security attributes and common container settings. More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.14/#podsecuritycontext-v1-core",
+							Ref:         ref("k8s.io/api/core/v1.PodSecurityContext"),
+						},
+					},
 					"ssh": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SSH contains configuration to be used when running jobs on a remote cluster via ssh.",
@@ -198,7 +204,7 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobResults", "github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobSSH"},
+			"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobResults", "github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobSSH", "k8s.io/api/core/v1.PodSecurityContext"},
 	}
 }
 
