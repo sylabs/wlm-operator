@@ -109,10 +109,11 @@ func (r *ReconcileSlurmJob) Reconcile(req reconcile.Request) (reconcile.Result, 
 	}
 
 	// Translate SlurmJob to Pod
-	sjPod := newPodForCR(sj)
+	sjPod := newPodForSJ(sj)
 
 	// Set SlurmJob instance as the owner and controller
-	if err := controllerutil.SetControllerReference(sj, sjPod, r.scheme); err != nil {
+	err = controllerutil.SetControllerReference(sj, sjPod, r.scheme)
+	if err != nil {
 		glog.Errorf("Could not set controller reference for pod: %v", err)
 		return reconcile.Result{}, err
 	}
@@ -126,8 +127,9 @@ func (r *ReconcileSlurmJob) Reconcile(req reconcile.Request) (reconcile.Result, 
 		err = r.client.Create(context.Background(), sjPod)
 		if err != nil {
 			glog.Errorf("Could not create new pod: %v", err)
+			return reconcile.Result{}, err
 		}
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	glog.Infof("Updating slurm job %q", sj.Name)
@@ -136,14 +138,15 @@ func (r *ReconcileSlurmJob) Reconcile(req reconcile.Request) (reconcile.Result, 
 	err = r.client.Status().Update(context.Background(), sj)
 	if err != nil {
 		glog.Errorf("Could not update slurm job: %v", err)
+		return reconcile.Result{}, err
 	}
-	return reconcile.Result{}, err
+	return reconcile.Result{}, nil
 }
 
-// newPodForCR returns a slurm-job-companion pod with the same name/namespace as the cr
-func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
+// newPodForSJ returns a job-companion pod for the slurm job.
+func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	labels := map[string]string{
-		"app": cr.Name,
+		"app": sj.Name,
 	}
 
 	// since we are running only slurm jobs, we need to be
@@ -152,16 +155,16 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 		"slurm.sylabs.io/workload-manager": "slurm",
 		"slurm.sylabs.io/integration-type": "local",
 	}
-	for k, v := range cr.Spec.NodeSelector {
+	for k, v := range sj.Spec.NodeSelector {
 		selectorLabels[k] = v
 	}
 
-	if cr.Spec.SSH != nil {
+	if sj.Spec.SSH != nil {
 		selectorLabels["slurm.sylabs.io/integration-type"] = "ssh"
 	}
 
 	var resourceRequest corev1.ResourceList
-	for k, v := range cr.Spec.Resources {
+	for k, v := range sj.Spec.Resources {
 		if resourceRequest == nil {
 			resourceRequest = make(map[corev1.ResourceName]resource.Quantity)
 		}
@@ -171,26 +174,26 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	}
 
 	var ssh bool
-	if cr.Spec.SSH != nil {
+	if sj.Spec.SSH != nil {
 		ssh = true
 	}
 	args := []string{
-		fmt.Sprintf("--batch=%s", cr.Spec.Batch),
+		fmt.Sprintf("--batch=%s", sj.Spec.Batch),
 		fmt.Sprintf("--config=%s", slurmCfgPath),
 		fmt.Sprintf("--ssh=%t", ssh),
 	}
 
-	if cr.Spec.Results != nil {
+	if sj.Spec.Results != nil {
 		args = append(args, fmt.Sprintf("--cr-mount=%s", "/collect"))
-		if cr.Spec.Results.From != "" {
-			args = append(args, fmt.Sprintf("--file-to-collect=%s", cr.Spec.Results.From))
+		if sj.Spec.Results.From != "" {
+			args = append(args, fmt.Sprintf("--file-to-collect=%s", sj.Spec.Results.From))
 		}
 	}
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-job",
-			Namespace: cr.Namespace,
+			Name:      sj.Name + "-job",
+			Namespace: sj.Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
@@ -204,11 +207,11 @@ func newPodForCR(cr *slurmv1alpha1.SlurmJob) *corev1.Pod {
 						Requests: resourceRequest,
 						Limits:   resourceRequest,
 					},
-					Env:          getEnvs(cr),
-					VolumeMounts: getVolumesMount(cr),
+					Env:          getEnvs(sj),
+					VolumeMounts: getVolumesMount(sj),
 				},
 			},
-			Volumes:       getVolumes(cr),
+			Volumes:       getVolumes(sj),
 			NodeSelector:  selectorLabels,
 			HostNetwork:   true,
 			RestartPolicy: corev1.RestartPolicyNever,
