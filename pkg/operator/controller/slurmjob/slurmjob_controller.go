@@ -197,7 +197,7 @@ func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
-			SecurityContext: cr.Spec.PodSecurityContext,
+			SecurityContext: sj.Spec.PodSecurityContext,
 			Containers: []corev1.Container{
 				{
 					Name:            "jt1",
