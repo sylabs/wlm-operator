@@ -6,7 +6,7 @@ metadata:
 data:
   config: |
     minikube:
-      slurm_local: http://localhost:8080
+      red_box_addr: http://localhost:8080
       resources:
         cpu: 2
       labels:
