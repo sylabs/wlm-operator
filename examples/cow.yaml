@@ -17,9 +17,3 @@ spec:
       hostPath:
         path: /home/vagrant/job-results
         type: DirectoryOrCreate
-  ssh:
-    user: vagrant
-    key:
-      secretKeyRef:
-        name: slurm
-        key: key
