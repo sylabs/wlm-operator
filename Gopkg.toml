@@ -101,11 +101,16 @@ required = [
 [prune]
   go-tests = true
   non-go = true
+  unused-packages = true
+
+  [[prune.project]]
+    name = "sigs.k8s.io/controller-tools"
+  	unused-packages = false
 
   [[prune.project]]
     name = "k8s.io/code-generator"
-    non-go = false
+  	unused-packages = false
 
   [[prune.project]]
-    name = "k8s.io/gengo"
-    non-go = false
+    name = "k8s.io/kube-openapi"
+  	unused-packages = false

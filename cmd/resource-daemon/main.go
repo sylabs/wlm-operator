@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -23,8 +24,8 @@ import (
 	"path"
 	"syscall"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
+	"github.com/sylabs/singularity-cri/pkg/fs"
 	"github.com/sylabs/slurm-operator/internal/k8s"
 	"gopkg.in/yaml.v2"
 )
@@ -126,47 +127,31 @@ func watchAndUpdate(wd *k8s.WatchDog, configPath string) error {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
-	watcher, err := fsnotify.NewWatcher()
+	dirToListen := path.Dir(configPath)
+	watcher, err := fs.NewWatcher(dirToListen, kubeletWatchPath)
 	if err != nil {
 		return errors.Wrap(err, "could not create file watcher")
 	}
 	defer watcher.Close()
 
-	dirToListen := path.Dir(configPath)
-	log.Printf("Start listening %s for changes", dirToListen)
-	if err := watcher.Add(dirToListen); err != nil {
-		return errors.Wrapf(err, "could not subscribe to %s changes", dirToListen)
-	}
-	log.Printf("Start listening %s for changes", kubeletWatchPath)
-	if err := watcher.Add(kubeletWatchPath); err != nil {
-		return errors.Wrapf(err, "could not subscribe to %s changes", kubeletWatchPath)
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	events := watcher.Watch(ctx)
 
 	for {
 		select {
 		case sig := <-signals:
 			log.Printf("Finished due to %s", sig)
 			return nil
-		case err := <-watcher.Errors:
-			log.Printf("Watcher err: %s", err)
-		case e := <-watcher.Events:
+		case e := <-events:
 			// we want to ignore all events except for config removal
 			// and kubelet socket creation
-			switch e.Name {
-			case configPath:
-				if e.Op&fsnotify.Remove != fsnotify.Remove {
-					continue
+			if (e.Path == configPath && e.Op == fs.OpRemove) ||
+				(e.Path == kubeletSocket && e.Op == fs.OpCreate) {
+				err := updateNode(wd, configPath)
+				if err != nil {
+					return errors.Wrap(err, "could not update node")
 				}
-			case kubeletSocket:
-				if e.Op&fsnotify.Create != fsnotify.Create {
-					continue
-				}
-			default:
-				continue
-			}
-			err := updateNode(wd, configPath)
-			if err != nil {
-				return errors.Wrap(err, "could not update node")
 			}
 		}
 	}
