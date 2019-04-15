@@ -307,6 +307,6 @@ from which job was submitted. Configuration for custom results file will differ 
 
 _**Local mode**_
 
-	$RESULTS_DIR = red-boxe's working directory
+	$RESULTS_DIR = red-box's working directory
 
 Share $RESULTS_DIR among all Slurm nodes, e.g set up nfs share for $RESULTS_DIR.
