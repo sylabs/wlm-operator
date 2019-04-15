@@ -253,5 +253,4 @@ func cleanUp(k8sClient *k8s.Client, cfg *config, nodeCfgPath string) {
 	if err := k8sClient.RemoveNodeResources(cfg.NodeName, cfg.NodeResources); err != nil {
 		log.Printf("Could not remove node resources: %s", err)
 	}
-
 }
