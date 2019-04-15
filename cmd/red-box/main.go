@@ -24,7 +24,7 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/sylabs/slurm-operator/internal/controller/api"
+	"github.com/sylabs/slurm-operator/internal/red-box/api"
 	"github.com/sylabs/slurm-operator/pkg/slurm/local"
 	"golang.org/x/sys/unix"
 )
