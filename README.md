@@ -68,13 +68,13 @@ After nodes to configure are determined a configuration should be set up. Genera
 scheme is the following:
 
 	<node1_name>:
-	  slurm_local: <address of slurm controller>
+	  red_box_addr: <address of slurm red box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
 	    <label name>: <label value>
 	<node2_name>:
-	  slurm: <address of slurm controller>
+	  rex_box_addr: <address of slurm red box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
@@ -98,7 +98,7 @@ metadata:
 data:
   config: |
     minikube:
-      slurm_local: http://localhost:8080
+      red_box_addr: http://localhost:8080
       resources:
         cpu: 2
       labels:
@@ -128,7 +128,7 @@ Data
 config:
 ----
 minikube:
-  slurm_local: http://localhost:8080
+  red_box_addr: http://localhost:8080
   resources:
     cpu: 2
   labels:

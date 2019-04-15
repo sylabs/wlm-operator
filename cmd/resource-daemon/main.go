@@ -38,16 +38,15 @@ const (
 )
 
 type config struct {
-	SlurmLocalAddress string `yaml:"slurm_local"`
-	NodeName          string
-	NodeLabels        map[string]string `yaml:"labels"`
-	NodeResources     map[string]int    `yaml:"resources"`
+	RedBoxAddress string `yaml:"red_box_addr"`
+	NodeName      string
+	NodeLabels    map[string]string `yaml:"labels"`
+	NodeResources map[string]int    `yaml:"resources"`
 }
 
 var (
 	defaultNodeLabels = map[string]string{
 		"workload-manager": "slurm",
-		"integration-type": "local",
 	}
 
 	errNotConfigured = fmt.Errorf("node is not configured")
@@ -142,7 +141,7 @@ func watchAndUpdate(client *k8s.Client, configPath, targetPath string) error {
 }
 
 func patchNode(client *k8s.Client, cfg *config, targetCfgPath string) error {
-	if err := writeRemoteClusterConfig(targetCfgPath, cfg.SlurmLocalAddress); err != nil {
+	if err := writeRemoteClusterConfig(targetCfgPath, cfg.RedBoxAddress); err != nil {
 		return errors.Wrap(err, "could not write remote cluster config")
 	}
 
@@ -179,7 +178,7 @@ func loadConfig(p string) (*config, error) {
 	if !ok {
 		return nil, errNotConfigured
 	}
-	if nodeConfig.SlurmLocalAddress == "" {
+	if nodeConfig.RedBoxAddress == "" {
 		return nil, errors.New("SLURM local address have to be specified in config map")
 	}
 
@@ -196,7 +195,7 @@ func writeRemoteClusterConfig(path, slurmLocalAddr string) error {
 	defer f.Close()
 
 	var nodeConfig = rd.NodeConfig{
-		LocalAddr: slurmLocalAddr,
+		Addr: slurmLocalAddr,
 	}
 	if err = yaml.NewEncoder(f).Encode(nodeConfig); err != nil {
 		return errors.Wrap(err, "could not encode node config")

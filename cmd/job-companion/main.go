@@ -73,8 +73,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Job will be executed locally by slurm-controller at: %s", cfg.LocalAddr)
-	client, err := getLocalClient(cfg.LocalAddr)
+	log.Printf("Job will be executed locally by slurm-controller at: %s", cfg.Addr)
+	client, err := getLocalClient(cfg.Addr)
 	if err != nil {
 		log.Fatal(err)
 	}

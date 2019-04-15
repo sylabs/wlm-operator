@@ -152,7 +152,7 @@ func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	// since we are running only slurm jobs, we need to be
 	// sure that pod will be allocated only on nodes with slurm support
 	selectorLabels := map[string]string{
-		"slurm.sylabs.io/integration-type": "local",
+		"slurm.sylabs.io/workload-manager": "slurm",
 	}
 	for k, v := range sj.Spec.NodeSelector {
 		selectorLabels[k] = v
