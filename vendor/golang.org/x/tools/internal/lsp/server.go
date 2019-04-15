@@ -75,7 +75,9 @@ type Server struct {
 	initializedMu sync.Mutex
 	initialized   bool // set once the server has received "initialize" request
 
-	signatureHelpEnabled          bool
+	// Configurations.
+	// TODO(rstambler): Separate these into their own struct?
+	usePlaceholders               bool
 	snippetsSupported             bool
 	configurationSupported        bool
 	dynamicConfigurationSupported bool
@@ -102,36 +104,14 @@ func (s *Server) Initialize(ctx context.Context, params *protocol.InitializePara
 	}
 	s.initialized = true // mark server as initialized now
 
-	// Check if the client supports snippets in completion items.
-	if x, ok := params.Capabilities["textDocument"].(map[string]interface{}); ok {
-		if x, ok := x["completion"].(map[string]interface{}); ok {
-			if x, ok := x["completionItem"].(map[string]interface{}); ok {
-				if x, ok := x["snippetSupport"].(bool); ok {
-					s.snippetsSupported = x
-				}
-			}
-		}
-	}
-	// Check if the client supports configuration messages.
-	if x, ok := params.Capabilities["workspace"].(map[string]interface{}); ok {
-		if x, ok := x["configuration"].(bool); ok {
-			s.configurationSupported = x
-		}
-		if x, ok := x["didChangeConfiguration"].(map[string]interface{}); ok {
-			if x, ok := x["dynamicRegistration"].(bool); ok {
-				s.dynamicConfigurationSupported = x
-			}
-		}
-	}
-
-	s.signatureHelpEnabled = true
-
 	// TODO(rstambler): Change this default to protocol.Incremental (or add a
 	// flag). Disabled for now to simplify debugging.
 	s.textDocumentSyncKind = protocol.Full
 
-	//We need a "detached" context so it does not get timeout cancelled.
-	//TODO(iancottrell): Do we need to copy any values across?
+	s.setClientCapabilities(params.Capabilities)
+
+	// We need a "detached" context so it does not get timeout cancelled.
+	// TODO(iancottrell): Do we need to copy any values across?
 	viewContext := context.Background()
 	folders := params.WorkspaceFolders
 	if len(folders) == 0 {
@@ -169,30 +149,34 @@ func (s *Server) Initialize(ctx context.Context, params *protocol.InitializePara
 
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
-			InnerServerCapabilities: protocol.InnerServerCapabilities{
-				CodeActionProvider: true,
-				CompletionProvider: &protocol.CompletionOptions{
-					TriggerCharacters: []string{"."},
-				},
-				DefinitionProvider:              true,
-				DocumentFormattingProvider:      true,
-				DocumentRangeFormattingProvider: true,
-				DocumentSymbolProvider:          true,
-				HoverProvider:                   true,
-				DocumentHighlightProvider:       true,
-				SignatureHelpProvider: &protocol.SignatureHelpOptions{
-					TriggerCharacters: []string{"(", ","},
-				},
-				TextDocumentSync: &protocol.TextDocumentSyncOptions{
-					Change:    s.textDocumentSyncKind,
-					OpenClose: true,
-				},
+			CodeActionProvider: true,
+			CompletionProvider: &protocol.CompletionOptions{
+				TriggerCharacters: []string{"."},
 			},
-			TypeDefinitionServerCapabilities: protocol.TypeDefinitionServerCapabilities{
-				TypeDefinitionProvider: true,
+			DefinitionProvider:              true,
+			DocumentFormattingProvider:      true,
+			DocumentRangeFormattingProvider: true,
+			DocumentSymbolProvider:          true,
+			HoverProvider:                   true,
+			DocumentHighlightProvider:       true,
+			SignatureHelpProvider: &protocol.SignatureHelpOptions{
+				TriggerCharacters: []string{"(", ","},
 			},
+			TextDocumentSync: &protocol.TextDocumentSyncOptions{
+				Change:    s.textDocumentSyncKind,
+				OpenClose: true,
+			},
+			TypeDefinitionProvider: true,
 		},
 	}, nil
+}
+
+func (s *Server) setClientCapabilities(caps protocol.ClientCapabilities) {
+	// Check if the client supports snippets in completion items.
+	s.snippetsSupported = caps.TextDocument.Completion.CompletionItem.SnippetSupport
+	// Check if the client supports configuration messages.
+	s.configurationSupported = caps.Workspace.Configuration
+	s.dynamicConfigurationSupported = caps.Workspace.DidChangeConfiguration.DynamicRegistration
 }
 
 func (s *Server) Initialized(ctx context.Context, params *protocol.InitializedParams) error {
@@ -346,28 +330,7 @@ func (s *Server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocu
 }
 
 func (s *Server) Completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
-	uri := span.NewURI(params.TextDocument.URI)
-	view := s.findView(ctx, uri)
-	f, m, err := newColumnMap(ctx, view, uri)
-	if err != nil {
-		return nil, err
-	}
-	spn, err := m.PointSpan(params.Position)
-	if err != nil {
-		return nil, err
-	}
-	rng, err := spn.Range(m.Converter)
-	if err != nil {
-		return nil, err
-	}
-	items, prefix, err := source.Completion(ctx, f, rng.Start)
-	if err != nil {
-		return nil, err
-	}
-	return &protocol.CompletionList{
-		IsIncomplete: false,
-		Items:        toProtocolCompletionItems(items, prefix, params.Position, s.snippetsSupported, s.signatureHelpEnabled),
-	}, nil
+	return s.completion(ctx, params)
 }
 
 func (s *Server) CompletionResolve(context.Context, *protocol.CompletionItem) (*protocol.CompletionItem, error) {
@@ -432,7 +395,7 @@ func (s *Server) SignatureHelp(ctx context.Context, params *protocol.TextDocumen
 	}
 	info, err := source.SignatureHelp(ctx, f, rng.Start)
 	if err != nil {
-		return nil, err
+		s.log.Infof(ctx, "no signature help for %s:%v:%v", uri, int(params.Position.Line), int(params.Position.Character))
 	}
 	return toProtocolSignatureHelp(info), nil
 }
@@ -520,17 +483,14 @@ func (s *Server) DocumentHighlight(ctx context.Context, params *protocol.TextDoc
 	if err != nil {
 		return nil, err
 	}
-
 	spn, err := m.PointSpan(params.Position)
 	if err != nil {
 		return nil, err
 	}
-
 	rng, err := spn.Range(m.Converter)
 	if err != nil {
 		return nil, err
 	}
-
 	spans := source.Highlight(ctx, f, rng.Start)
 	return toProtocolHighlight(m, spans), nil
 }
@@ -547,31 +507,7 @@ func (s *Server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 }
 
 func (s *Server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
-	uri := span.NewURI(params.TextDocument.URI)
-	view := s.findView(ctx, uri)
-	_, m, err := newColumnMap(ctx, view, uri)
-	if err != nil {
-		return nil, err
-	}
-	spn, err := m.RangeSpan(params.Range)
-	if err != nil {
-		return nil, err
-	}
-	edits, err := organizeImports(ctx, view, spn)
-	if err != nil {
-		return nil, err
-	}
-	return []protocol.CodeAction{
-		{
-			Title: "Organize Imports",
-			Kind:  protocol.SourceOrganizeImports,
-			Edit: &protocol.WorkspaceEdit{
-				Changes: &map[string][]protocol.TextEdit{
-					params.TextDocument.URI: edits,
-				},
-			},
-		},
-	}, nil
+	return s.codeAction(ctx, params)
 }
 
 func (s *Server) CodeLens(context.Context, *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
@@ -640,16 +576,19 @@ func (s *Server) processConfig(view *cache.View, config interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid config gopls type %T", config)
 	}
-	env := c["env"]
-	if env == nil {
-		return nil
+	// Get the environment for the go/packages config.
+	if env := c["env"]; env != nil {
+		menv, ok := env.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("invalid config gopls.env type %T", env)
+		}
+		for k, v := range menv {
+			view.Config.Env = applyEnv(view.Config.Env, k, v)
+		}
 	}
-	menv, ok := env.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid config gopls.env type %T", env)
-	}
-	for k, v := range menv {
-		view.Config.Env = applyEnv(view.Config.Env, k, v)
+	// Check if placeholders are enabled.
+	if usePlaceholders, ok := c["usePlaceholders"].(bool); ok {
+		s.usePlaceholders = usePlaceholders
 	}
 	return nil
 }

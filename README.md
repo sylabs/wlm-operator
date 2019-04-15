@@ -4,14 +4,9 @@
 Singularity implementation of k8s operator for interacting with Slurm.
 
 With slurm operator batch jobs can be managed via Kubernetes. To do that operator
-will spawn a `job-companion` container that will talk to slurm. There are two slurm
-connection modes supported: local communication or ssh connection. The difference of
-that two modes and what cluster topology they require is illustrated below.
+will spawn a `job-companion` container that will talk to slurm.
 
-![ssh mode](/docs/ssh-mode.png)
 ![local mode](/docs/local-mode.png)
-
-Depending on the chosen mode installation steps may vary.
 
 ## Installation
 
@@ -73,13 +68,13 @@ After nodes to configure are determined a configuration should be set up. Genera
 scheme is the following:
 
 	<node1_name>:
-	  slurm: <address of slurm to connect to via ssh OR address of slurm controller>
+	  red_box_addr: <address of slurm red box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
 	    <label name>: <label value>
 	<node2_name>:
-	  slurm: <address of slurm to connect to via ssh OR address of slurm controller>
+	  rex_box_addr: <address of slurm red box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
@@ -103,8 +98,7 @@ metadata:
 data:
   config: |
     minikube:
-      slurm_ssh: my.slurm.ssh:2222
-      # slurm_local: {SLURM_CONTROLLER_ADDR} if you want to use slurm-controller
+      red_box_addr: http://localhost:8080
       resources:
         cpu: 2
       labels:
@@ -134,8 +128,7 @@ Data
 config:
 ----
 minikube:
-  slurm_ssh: my.slurm.ssh:2222
-  # slurm_local: {SLURM_CONTROLLER_ADDR} if you want to use slurm-controller
+  red_box_addr: http://localhost:8080
   resources:
     cpu: 2
   labels:
@@ -219,7 +212,7 @@ That's it! After all those steps you can run Slurm jobs via Kubernetes.
 After installation k8s cluster will be capable to work with `SlurmJob` resource. The most
 convenient way to submit them is using YAML files, take a look at [basic examples](/examples).
 
-We will walk thought basic example that uses ssh to submit jobs to Slurm in Vagrant.
+We will walk thought basic example how to submit jobs to Slurm in Vagrant.
 
 ```yaml
 apiVersion: slurm.sylabs.io/v1alpha1
@@ -242,38 +235,11 @@ spec:
         path: /home/vagrant/job-results
         type: DirectoryOrCreate
     from: slurm-4.out # can be omitted
-  ssh:
-    user: vagrant
-    key:
-      secretKeyRef:
-        namek get : slurm
-        key: key
 ```
 
 In the example above we will run lolcow Singularity container in Slurm and collect the results 
 to `/home/vagrant/job-results` located on node. Generally job results can be collected to any
 supported [k8s volume](https://kubernetes.io/docs/concepts/storage/volumes/).
-
-Before submitting this cow job you'll need to configure `slurm` config map and store Vagrant ssh
-key there as follows:
-
-```bash
-$ vagrant ssh-config
-Host default
-  HostName 127.0.0.1
-  User vagrant
-  Port 2222
-  UserKnownHostsFile /dev/null
-  StrictHostKeyChecking no
-  PasswordAuthentication no
-  IdentityFile /Users/sasha/.vagrant/machines/default/virtualbox/private_key
-  IdentitiesOnly yes
-  LogLevel FATAL
-
-
-$ kubectl create secret generic  slurm --from-file=key=/Users/sasha/slurm/.vagrant/machines/default/virtualbox/private_key
-secret "slurm" created
-```
 
 By default `job-companion` will be run with uid 1000, so you should make sure it has a read access to 
 `/var/lib/syslurm` to read Slurm cluster address and a write access to a volume where you want to store the
@@ -282,7 +248,7 @@ results (host directory `/home/vagrant/job-results` in the example above).
 After that you can submit cow job:
 
 ```bash
-$ kubectl apply -f examples/cow-ssh.yaml 
+$ kubectl apply -f examples/cow.yaml 
 slurmjob.slurm.sylabs.io "cow" created
 
 $ kubectl get slurmjob
@@ -330,8 +296,7 @@ Slurm operator supports result collection to a provided [k8s volume](https://kub
 so that a user won't need to have access to a Slurm cluster to analyze job results.
 
 However, some configuration is required for this feature to work. More specifically, job-companion can collect results
-located on submit server only (i.e. k8s node in case of local mode, or slurm host at specified address in case
-of ssh mode), while slurm job can be scheduled on arbitrary slurm worker node. It means that some kind of a shared
+located on submit server only (i.e. k8s node in case of local mode), while slurm job can be scheduled on arbitrary slurm worker node. It means that some kind of a shared
 storage among slurm nodes should be configured so that despite of slurm worker node chosen to run a job, results will
 appear on submit server as well. 
 
@@ -344,11 +309,4 @@ _**Local mode**_
 
 	$RESULTS_DIR = slurm-controller's working directory
 
-_**SSH mode**_
-
-	$RESULTS_DIR = home directory of a user from SSH config
-
 Share $RESULTS_DIR among all Slurm nodes, e.g set up nfs share for $RESULTS_DIR.
-
-
-

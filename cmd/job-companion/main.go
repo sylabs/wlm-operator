@@ -28,7 +28,6 @@ import (
 	rd "github.com/sylabs/slurm-operator/internal/resource-daemon"
 	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/slurm/rest"
-	"github.com/sylabs/slurm-operator/pkg/slurm/ssh"
 	"gopkg.in/yaml.v2"
 )
 
@@ -38,7 +37,6 @@ var (
 	jobName = os.Getenv(envJobName)
 
 	configPath = flag.String("config", "", "slurm config path on host machine")
-	overSSH    = flag.Bool("ssh", false, "defines whether job will be executed over ssh or locally")
 	mountPath  = flag.String("cr-mount", "",
 		"path to the volume/directory where results should be collected, empty if results should not be collected")
 	resultsPath = flag.String("file-to-collect", "",
@@ -75,20 +73,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var client slurm.Slurm
-	if *overSSH {
-		log.Printf("Job will be executed over SSH at: %s", cfg.SSHAddr)
-		client, err = getSSHClient(cfg.SSHAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-	} else {
-		log.Printf("Job will be executed locally by slurm-controller at: %s", cfg.LocalAddr)
-		client, err = getLocalClient(cfg.LocalAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
+	log.Printf("Job will be executed locally by slurm-controller at: %s", cfg.Addr)
+	client, err := getLocalClient(cfg.Addr)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	var ops *collectOptions
@@ -104,30 +92,6 @@ func main() {
 	}
 
 	log.Println("Job finished")
-}
-
-func getSSHClient(addr string) (*ssh.Client, error) {
-	const (
-		envSSHPass = "SSH_PASSWORD"
-		envSSHKey  = "SSH_KEY"
-		envSSHUser = "SSH_USER"
-	)
-
-	sshPass := os.Getenv(envSSHPass)
-	sshKey := os.Getenv(envSSHKey)
-	sshUser := os.Getenv(envSSHUser)
-
-	var key []byte
-	if sshKey != "" {
-		key = []byte(sshKey)
-	}
-
-	client, err := ssh.NewClient(sshUser, addr, sshPass, key)
-	if err != nil {
-		return nil, errors.Wrap(err, "initializing ssh client")
-	}
-
-	return client, nil
 }
 
 func getLocalClient(addr string) (*rest.Client, error) {
