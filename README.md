@@ -13,7 +13,7 @@ will spawn a `job-companion` container that will talk to slurm.
 It is assumed you already have Kubernetes and Slurm clusters running in a topology
 suitable for the chosen connection mode. There are a couple steps needed to set up slurm operator:
 
-1. set up red box
+1. set up red-box
 2. set up slurm resource daemon on kubernetes cluster 
 3. set up slurm operator
 
@@ -68,13 +68,13 @@ After nodes to configure are determined a configuration should be set up. Genera
 scheme is the following:
 
 	<node1_name>:
-	  red_box_addr: <address of slurm red box>
+	  red_box_addr: <address of slurm red-box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
 	    <label name>: <label value>
 	<node2_name>:
-	  rex_box_addr: <address of slurm red box>
+	  rex_box_addr: <address of slurm red-box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
