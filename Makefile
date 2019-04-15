@@ -2,13 +2,13 @@
 V := @
 
 BIN_DIR := ./bin
-SLURM_CONTROLLER := $(BIN_DIR)/slurm-controller
+RED_BOX := $(BIN_DIR)/red-box
 
-all: $(SLURM_CONTROLLER)
+all: $(REX_BOX)
 
-$(SLURM_CONTROLLER):
+$(RED_BOX):
 	@echo " GO" $@
-	$(V)go build -o $(SLURM_CONTROLLER) ./cmd/controller
+	$(V)go build -o $(RED_BOX) ./cmd/red-box
 
 .PHONY: clean
 clean:
