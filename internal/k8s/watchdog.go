@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:golint
-package resource_daemon
+package k8s
 
 import (
 	"log"
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/slurm-operator/internal/k8s"
 	"gopkg.in/yaml.v2"
 )
 
@@ -31,16 +29,18 @@ type NodeConfig struct {
 	Addr string `yaml:"addr"`
 }
 
+// Patch represents changes that need to be applied to the node.
 type Patch struct {
 	RedBoxAddress string            `yaml:"red_box_addr"`
 	NodeLabels    map[string]string `yaml:"labels"`
 	NodeResources map[string]int    `yaml:"resources"`
 }
 
+// WatchDog is used to perform node patch and cleanup.
 type WatchDog struct {
 	NodeName       string
 	NodeConfigPath string
-	Client         *k8s.Client
+	Client         *Client
 	DefaultLabels  map[string]string
 
 	latestPatch *Patch

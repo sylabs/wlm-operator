@@ -26,7 +26,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
 	"github.com/sylabs/slurm-operator/internal/k8s"
-	rd "github.com/sylabs/slurm-operator/internal/resource-daemon"
 	"gopkg.in/yaml.v2"
 )
 
@@ -65,7 +64,7 @@ func main() {
 		log.Fatalf("could not create k8s client: %v", err)
 	}
 
-	wd := &rd.WatchDog{
+	wd := &k8s.WatchDog{
 		NodeName:       nodeName,
 		NodeConfigPath: *nodeConfigPath,
 		Client:         k8sClient,
@@ -77,14 +76,14 @@ func main() {
 	}
 }
 
-func loadPatch(nodeName, path string) (*rd.Patch, error) {
+func loadPatch(nodeName, path string) (*k8s.Patch, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not open config at %s", path)
 	}
 	defer f.Close()
 
-	var cfg map[string]*rd.Patch
+	var cfg map[string]*k8s.Patch
 	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal config")
 	}
@@ -94,12 +93,12 @@ func loadPatch(nodeName, path string) (*rd.Patch, error) {
 		return nil, errNotConfigured
 	}
 	if nodeConfig.RedBoxAddress == "" {
-		return nil, errors.New("SLURM local address have to be specified in config map")
+		return nil, errors.New("Red box address have to be specified in config map")
 	}
 	return nodeConfig, nil
 }
 
-func updateNode(wd *rd.WatchDog, configPath string) error {
+func updateNode(wd *k8s.WatchDog, configPath string) error {
 	config, err := loadPatch(wd.NodeName, configPath)
 	if err != nil {
 		if err == errNotConfigured {
@@ -116,7 +115,7 @@ func updateNode(wd *rd.WatchDog, configPath string) error {
 	return nil
 }
 
-func watchAndUpdate(wd *rd.WatchDog, configPath string) error {
+func watchAndUpdate(wd *k8s.WatchDog, configPath string) error {
 	if err := updateNode(wd, configPath); err != nil {
 		return errors.Wrap(err, "could not configure node for the first time")
 	}
