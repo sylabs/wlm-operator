@@ -15,28 +15,50 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"os"
+	"os/signal"
 
 	"github.com/sylabs/slurm-operator/internal/controller/api"
 	"github.com/sylabs/slurm-operator/pkg/slurm/local"
+	"golang.org/x/sys/unix"
 )
 
 func main() {
-	port := flag.Int("port", 8080, "port at which server will run")
-
+	sock := flag.String("socket", "red-box.sock", "unix socket to serve slurm API")
 	flag.Parse()
 
 	slurmClient, err := local.NewClient()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not create new local slurm client: %v", err)
 	}
 
 	router := api.NewSlurmRouter(slurmClient)
-	log.Printf("server started at %d", *port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), router); err != nil {
-		log.Fatal(err)
+	ln, err := net.Listen("unix", *sock)
+	if err != nil {
+		log.Fatalf("Could not listen unix: %v", err)
+	}
+	defer ln.Close()
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, unix.SIGINT, unix.SIGTERM, unix.SIGQUIT)
+
+	srv := http.Server{Handler: router}
+	go func() {
+		log.Printf("Starting server on %s", ln.Addr())
+		err := srv.Serve(ln)
+		if err != nil && err != http.ErrServerClosed {
+			log.Printf("Server stopped with error: %v", err)
+		}
+	}()
+
+	log.Printf("Shutting down due to %v", <-sig)
+	err = srv.Shutdown(context.Background())
+	if err != nil {
+		log.Printf("Could not shutdown server gracefully: %v", err)
 	}
 }
