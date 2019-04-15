@@ -13,37 +13,37 @@ will spawn a `job-companion` container that will talk to slurm.
 It is assumed you already have Kubernetes and Slurm clusters running in a topology
 suitable for the chosen connection mode. There are a couple steps needed to set up slurm operator:
 
-1. set up slurm controller (for local connection mode only)
+1. set up red-box
 2. set up slurm resource daemon on kubernetes cluster 
 3. set up slurm operator
 
-### Setting up slurm controller
+### Setting up red-box
 
-Slurm controller is a REST HTTP server that acts as a proxy between `job-companion` and
+Red-box is a REST HTTP server that acts as a proxy between `job-companion` and
 Slurm itself. Under the hood it runs Slurm binaries and returns Slurm response in a convenient form
 so that `job-companion` understands it.
 
-Slurm controller should be run on each Kubernetes node where slurm jobs may be scheduled. 
-Steps for setting up slurm controller for a single node with installed Go 1.10+ are the following: 
+Red-box should be run on each Kubernetes node where slurm jobs may be scheduled. 
+Steps for setting up red-box for a single node with installed Go 1.10+ are the following: 
 
 ```bash
 go get github.com/sylabs/slurm-operator
 cd $GOPATH/github.com/sylabs/slurm-operator
-make bin/slurm-controller
+make bin/red-box
 ```
-After that you should see `bin/slurm-controller` executable with controller ready to use.
+After that you should see `bin/red-box` executable with red-box ready to use.
 To see available flags you can do 
 
 ```bash
-./bin/slurm-controller -h
+./bin/red-box -h
 ```
 
-The most simple way to run the controller:
+The most simple way to run the red-box:
 ```bash
-./bin/slurm-controller 
+./bin/red-box
 ```
 
-For production purposes you may want to set up controller as a service, but that topic
+For production purposes you may want to set up red-box as a service, but that topic
 will not be covered here.
 
 ### Setting up slurm resource daemon
@@ -68,13 +68,13 @@ After nodes to configure are determined a configuration should be set up. Genera
 scheme is the following:
 
 	<node1_name>:
-	  red_box_addr: <address of slurm red box>
+	  red_box_addr: <address of slurm red-box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
 	    <label name>: <label value>
 	<node2_name>:
-	  rex_box_addr: <address of slurm red box>
+	  red_box_addr: <address of slurm red-box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
@@ -307,6 +307,6 @@ from which job was submitted. Configuration for custom results file will differ 
 
 _**Local mode**_
 
-	$RESULTS_DIR = slurm-controller's working directory
+	$RESULTS_DIR = red-box's working directory
 
 Share $RESULTS_DIR among all Slurm nodes, e.g set up nfs share for $RESULTS_DIR.
