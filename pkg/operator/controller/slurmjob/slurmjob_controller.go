@@ -152,15 +152,10 @@ func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	// since we are running only slurm jobs, we need to be
 	// sure that pod will be allocated only on nodes with slurm support
 	selectorLabels := map[string]string{
-		"slurm.sylabs.io/workload-manager": "slurm",
 		"slurm.sylabs.io/integration-type": "local",
 	}
 	for k, v := range sj.Spec.NodeSelector {
 		selectorLabels[k] = v
-	}
-
-	if sj.Spec.SSH != nil {
-		selectorLabels["slurm.sylabs.io/integration-type"] = "ssh"
 	}
 
 	var resourceRequest corev1.ResourceList
@@ -172,15 +167,9 @@ func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 		q := resource.NewQuantity(v, resource.DecimalSI)
 		resourceRequest[corev1.ResourceName(k)] = *q
 	}
-
-	var ssh bool
-	if sj.Spec.SSH != nil {
-		ssh = true
-	}
 	args := []string{
 		fmt.Sprintf("--batch=%s", sj.Spec.Batch),
 		fmt.Sprintf("--config=%s", slurmCfgPath),
-		fmt.Sprintf("--ssh=%t", ssh),
 	}
 
 	if sj.Spec.Results != nil {
@@ -197,7 +186,7 @@ func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
-			SecurityContext: cr.Spec.PodSecurityContext,
+			SecurityContext: sj.Spec.PodSecurityContext,
 			Containers: []corev1.Container{
 				{
 					Name:            "jt1",
@@ -208,7 +197,15 @@ func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 						Requests: resourceRequest,
 						Limits:   resourceRequest,
 					},
-					Env:          getEnvs(sj),
+					Env: []corev1.EnvVar{
+						{
+							Name: "JOB_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						}},
 					VolumeMounts: getVolumesMount(sj),
 				},
 			},
@@ -256,42 +253,4 @@ func getVolumesMount(cr *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
 	}
 
 	return vms
-}
-
-func getEnvs(cr *slurmv1alpha1.SlurmJob) []corev1.EnvVar {
-	envs := []corev1.EnvVar{
-		{
-			Name: "JOB_NAME",
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
-				},
-			},
-		},
-	}
-
-	if cr.Spec.SSH == nil {
-		return envs
-	}
-
-	envs = append(envs, corev1.EnvVar{
-		Name:  "SSH_USER",
-		Value: cr.Spec.SSH.User,
-	})
-
-	if cr.Spec.SSH.Key != nil {
-		envs = append(envs, corev1.EnvVar{
-			Name:      "SSH_KEY",
-			ValueFrom: cr.Spec.SSH.Key,
-		})
-	}
-
-	if cr.Spec.SSH.Password != nil {
-		envs = append(envs, corev1.EnvVar{
-			Name:      "SSH_PASSWORD",
-			ValueFrom: cr.Spec.SSH.Password,
-		})
-	}
-
-	return envs
 }

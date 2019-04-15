@@ -75,24 +75,6 @@ spec:
               required:
               - mount
               type: object
-            ssh:
-              description: SSH contains configuration to be used when running jobs
-                on a remote cluster via ssh.
-              properties:
-                key:
-                  description: Key to use to connect to a remote Slurm cluster.
-                  type: object
-                password:
-                  description: Password to use when logging in as a User.
-                  type: object
-                user:
-                  description: User to be used when establishing ssh connection to
-                    a Slurm cluster.
-                  minLength: 1
-                  type: string
-              required:
-              - user
-              type: object
           required:
           - batch
           type: object

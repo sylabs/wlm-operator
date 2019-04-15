@@ -46,9 +46,6 @@ type SlurmJobSpec struct {
 	// More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.14/#podsecuritycontext-v1-core
 	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
 
-	// SSH contains configuration to be used when running jobs on a remote cluster via ssh.
-	SSH *SlurmJobSSH `json:"ssh,omitempty"`
-
 	// Results may be specified for an optional results collection step.
 	// When specified, after job is completed all results will be downloaded from Slurm
 	// cluster with respect to this configuration.
@@ -64,20 +61,6 @@ type SlurmJobStatus struct {
 
 	// Status reflects job status, e.g running, succeeded.
 	Status string `json:"status"`
-}
-
-// SlurmJobSSH is a Schema for required data to execute job via ssh
-// +k8s:openapi-gen=true
-type SlurmJobSSH struct {
-	// User to be used when establishing ssh connection to a Slurm cluster.
-	// +kubebuilder:validation:MinLength=1
-	User string `json:"user"`
-
-	// Key to use to connect to a remote Slurm cluster.
-	Key *v1.EnvVarSource `json:"key,omitempty"`
-
-	// Password to use when logging in as a User.
-	Password *v1.EnvVarSource `json:"password,omitempty"`
 }
 
 // SlurmJobResults is a schema for results collection.

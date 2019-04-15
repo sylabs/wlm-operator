@@ -29,7 +29,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 	return map[string]common.OpenAPIDefinition{
 		"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJob":        schema_operator_apis_slurm_v1alpha1_SlurmJob(ref),
 		"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobResults": schema_operator_apis_slurm_v1alpha1_SlurmJobResults(ref),
-		"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobSSH":     schema_operator_apis_slurm_v1alpha1_SlurmJobSSH(ref),
 		"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobSpec":    schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref),
 		"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobStatus":  schema_operator_apis_slurm_v1alpha1_SlurmJobStatus(ref),
 	}
@@ -106,40 +105,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobResults(ref common.ReferenceCal
 	}
 }
 
-func schema_operator_apis_slurm_v1alpha1_SlurmJobSSH(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "SlurmJobSSH is a Schema for required data to execute job via ssh",
-				Properties: map[string]spec.Schema{
-					"user": {
-						SchemaProps: spec.SchemaProps{
-							Description: "User to be used when establishing ssh connection to a Slurm cluster.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"key": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Key to use to connect to a remote Slurm cluster.",
-							Ref:         ref("k8s.io/api/core/v1.EnvVarSource"),
-						},
-					},
-					"password": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Password to use when logging in as a User.",
-							Ref:         ref("k8s.io/api/core/v1.EnvVarSource"),
-						},
-					},
-				},
-				Required: []string{"user"},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.EnvVarSource"},
-	}
-}
-
 func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -187,12 +152,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 							Ref:         ref("k8s.io/api/core/v1.PodSecurityContext"),
 						},
 					},
-					"ssh": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SSH contains configuration to be used when running jobs on a remote cluster via ssh.",
-							Ref:         ref("github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobSSH"),
-						},
-					},
 					"results": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Results may be specified for an optional results collection step. When specified, after job is completed all results will be downloaded from Slurm cluster with respect to this configuration.",
@@ -204,7 +163,7 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobResults", "github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobSSH", "k8s.io/api/core/v1.PodSecurityContext"},
+			"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobResults", "k8s.io/api/core/v1.PodSecurityContext"},
 	}
 }
 
