@@ -74,7 +74,7 @@ scheme is the following:
 	  labels:
 	    <label name>: <label value>
 	<node2_name>:
-	  rex_box_addr: <address of slurm red-box>
+	  red_box_addr: <address of slurm red-box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
