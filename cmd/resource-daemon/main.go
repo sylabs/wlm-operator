@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"syscall"
 
 	"github.com/pkg/errors"
@@ -127,8 +128,8 @@ func watchAndUpdate(wd *k8s.WatchDog, configPath string) error {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
-	dirToListen := path.Dir(configPath)
-	watcher, err := fs.NewWatcher(dirToListen, kubeletWatchPath)
+	configDir := path.Dir(configPath)
+	watcher, err := fs.NewWatcher(configDir, kubeletWatchPath)
 	if err != nil {
 		return errors.Wrap(err, "could not create file watcher")
 	}
@@ -146,7 +147,7 @@ func watchAndUpdate(wd *k8s.WatchDog, configPath string) error {
 		case e := <-events:
 			// we want to ignore all events except for config removal
 			// and kubelet socket creation
-			if (e.Path == configPath && e.Op == fs.OpRemove) ||
+			if (filepath.Dir(e.Path) == configDir && e.Op == fs.OpRemove) ||
 				(e.Path == kubeletSocket && e.Op == fs.OpCreate) {
 				err := updateNode(wd, configPath)
 				if err != nil {

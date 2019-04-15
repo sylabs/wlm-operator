@@ -98,6 +98,10 @@ required = [
 [[override]]
   name = "github.com/golang/glog"
 
+[[constraint]]
+  name = "github.com/sylabs/singularity-cri"
+  version = "1.0.0-beta.1"
+
 [prune]
   go-tests = true
   non-go = true
