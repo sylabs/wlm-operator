@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 
 	"github.com/sylabs/slurm-operator/internal/controller/api"
 	"github.com/sylabs/slurm-operator/pkg/slurm/local"
@@ -42,23 +43,27 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not listen unix: %v", err)
 	}
-	defer ln.Close()
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, unix.SIGINT, unix.SIGTERM, unix.SIGQUIT)
+	var wg sync.WaitGroup
+	wg.Add(1)
 
 	srv := http.Server{Handler: router}
 	go func() {
-		log.Printf("Starting server on %s", ln.Addr())
-		err := srv.Serve(ln)
-		if err != nil && err != http.ErrServerClosed {
-			log.Printf("Server stopped with error: %v", err)
+		defer wg.Done()
+
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, unix.SIGINT, unix.SIGTERM, unix.SIGQUIT)
+		log.Printf("Shutting down due to %v", <-sig)
+		err = srv.Shutdown(context.Background())
+		if err != nil {
+			log.Printf("Could not shutdown server gracefully: %v", err)
 		}
 	}()
 
-	log.Printf("Shutting down due to %v", <-sig)
-	err = srv.Shutdown(context.Background())
-	if err != nil {
-		log.Printf("Could not shutdown server gracefully: %v", err)
+	log.Printf("Starting server on %s", ln.Addr())
+	err = srv.Serve(ln)
+	if err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Could not serve requests: %v", err)
 	}
+	wg.Wait()
 }
