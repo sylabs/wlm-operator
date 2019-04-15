@@ -35,12 +35,9 @@ import (
 
 const (
 	envMyNodeName = "MY_NODE_NAME"
-
-	integrationTypeLabel = "integration-type"
 )
 
 type config struct {
-	SlurmSSHAddress   string `yaml:"slurm_ssh"`
 	SlurmLocalAddress string `yaml:"slurm_local"`
 	NodeName          string
 	NodeLabels        map[string]string `yaml:"labels"`
@@ -50,6 +47,7 @@ type config struct {
 var (
 	defaultNodeLabels = map[string]string{
 		"workload-manager": "slurm",
+		"integration-type": "local",
 	}
 
 	errNotConfigured = fmt.Errorf("node is not configured")
@@ -95,18 +93,6 @@ func watchAndUpdate(client *k8s.Client, configPath, targetPath string) error {
 			}
 
 			return errors.Wrap(err, "could not configure resource daemon")
-		}
-
-		if config.SlurmSSHAddress != "" && config.SlurmLocalAddress != "" {
-			log.Println("Warning: both ssh and local addresses are provided, local address will be used")
-		}
-
-		if config.SlurmSSHAddress != "" {
-			config.NodeLabels[integrationTypeLabel] = "ssh"
-		}
-
-		if config.SlurmLocalAddress != "" {
-			config.NodeLabels[integrationTypeLabel] = "local"
 		}
 
 		if err := patchNode(client, config, targetPath); err != nil {
@@ -156,7 +142,7 @@ func watchAndUpdate(client *k8s.Client, configPath, targetPath string) error {
 }
 
 func patchNode(client *k8s.Client, cfg *config, targetCfgPath string) error {
-	if err := writeRemoteClusterConfig(targetCfgPath, cfg.SlurmSSHAddress, cfg.SlurmLocalAddress); err != nil {
+	if err := writeRemoteClusterConfig(targetCfgPath, cfg.SlurmLocalAddress); err != nil {
 		return errors.Wrap(err, "could not write remote cluster config")
 	}
 
@@ -193,8 +179,8 @@ func loadConfig(p string) (*config, error) {
 	if !ok {
 		return nil, errNotConfigured
 	}
-	if nodeConfig.SlurmSSHAddress == "" && nodeConfig.SlurmLocalAddress == "" {
-		return nil, errors.New("either ssh or local SLURM address have to be specified in config map")
+	if nodeConfig.SlurmLocalAddress == "" {
+		return nil, errors.New("SLURM local address have to be specified in config map")
 	}
 
 	nodeConfig.NodeName = nodeName
@@ -202,7 +188,7 @@ func loadConfig(p string) (*config, error) {
 	return &nodeConfig, nil
 }
 
-func writeRemoteClusterConfig(path, slurmSSHAddr, slurmLocalAddr string) error {
+func writeRemoteClusterConfig(path, slurmLocalAddr string) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return errors.Wrap(err, "could not create slurm config file")
@@ -210,7 +196,6 @@ func writeRemoteClusterConfig(path, slurmSSHAddr, slurmLocalAddr string) error {
 	defer f.Close()
 
 	var nodeConfig = rd.NodeConfig{
-		SSHAddr:   slurmSSHAddr,
 		LocalAddr: slurmLocalAddr,
 	}
 	if err = yaml.NewEncoder(f).Encode(nodeConfig); err != nil {
