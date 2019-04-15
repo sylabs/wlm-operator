@@ -4,7 +4,7 @@ V := @
 BIN_DIR := ./bin
 RED_BOX := $(BIN_DIR)/red-box
 
-all: $(REX_BOX)
+all: $(RED_BOX)
 
 $(RED_BOX):
 	@echo " GO" $@
