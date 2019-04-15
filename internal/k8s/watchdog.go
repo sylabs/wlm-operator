@@ -61,6 +61,7 @@ func (w *WatchDog) PatchNode(patch *Patch) error {
 	if err := w.configureResources(patch.NodeResources); err != nil {
 		return errors.Wrap(err, "could not configure node resources")
 	}
+	w.latestPatch = patch
 	return nil
 }
 
