@@ -30,7 +30,9 @@ import (
 )
 
 const (
-	envMyNodeName = "MY_NODE_NAME"
+	envMyNodeName    = "MY_NODE_NAME"
+	kubeletWatchPath = "/var/lib/kubelet/device-plugins/"
+	kubeletSocket    = kubeletWatchPath + "kubelet.sock"
 )
 
 var (
@@ -135,6 +137,10 @@ func watchAndUpdate(wd *k8s.WatchDog, configPath string) error {
 	if err := watcher.Add(dirToListen); err != nil {
 		return errors.Wrapf(err, "could not subscribe to %s changes", dirToListen)
 	}
+	log.Printf("Start listening %s for changes", kubeletWatchPath)
+	if err := watcher.Add(kubeletWatchPath); err != nil {
+		return errors.Wrapf(err, "could not subscribe to %s changes", kubeletWatchPath)
+	}
 
 	for {
 		select {
@@ -144,7 +150,18 @@ func watchAndUpdate(wd *k8s.WatchDog, configPath string) error {
 		case err := <-watcher.Errors:
 			log.Printf("Watcher err: %s", err)
 		case e := <-watcher.Events:
-			if e.Op&fsnotify.Remove != fsnotify.Remove {
+			// we want to ignore all events except for config removal
+			// and kubelet socket creation
+			switch e.Name {
+			case configPath:
+				if e.Op&fsnotify.Remove != fsnotify.Remove {
+					continue
+				}
+			case kubeletSocket:
+				if e.Op&fsnotify.Create != fsnotify.Create {
+					continue
+				}
+			default:
 				continue
 			}
 			err := updateNode(wd, configPath)
