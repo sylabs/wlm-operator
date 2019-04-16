@@ -22,9 +22,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm/local"
-
 	"github.com/stretchr/testify/require"
+	"github.com/sylabs/slurm-operator/pkg/slurm/local"
 )
 
 func newTestServer(_ *testing.T) (*httptest.Server, func()) {

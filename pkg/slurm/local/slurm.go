@@ -41,11 +41,15 @@ type Client struct{}
 
 // NewClient returns new local client.
 func NewClient() (*Client, error) {
+	var missing []string
 	for _, bin := range []string{sacctBinaryName, sbatchBinaryName, scancelBinaryName, srunBinaryName} {
 		_, err := exec.LookPath(bin)
 		if err != nil {
-			return nil, errors.Wrapf(err, "could not check %s existence", bin)
+			missing = append(missing, bin)
 		}
+	}
+	if len(missing) != 0 {
+		return nil, errors.Errorf("no slurm binaries found: %s", strings.Join(missing, ", "))
 	}
 	return &Client{}, nil
 }
