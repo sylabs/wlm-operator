@@ -103,6 +103,8 @@ func loadPatch(nodeName, path string) (*k8s.Patch, error) {
 }
 
 func updateNode(wd *k8s.WatchDog, configPath string) error {
+	log.Println("Cleaning node before patching")
+	wd.CleanNode()
 	config, err := loadPatch(wd.NodeName, configPath)
 	if err != nil {
 		if err == errNotConfigured {
@@ -112,6 +114,7 @@ func updateNode(wd *k8s.WatchDog, configPath string) error {
 		return errors.Wrap(err, "could not load patch")
 	}
 
+	log.Println("Patching node")
 	err = wd.PatchNode(config)
 	if err != nil {
 		return errors.Wrap(err, "could not patch node")

@@ -49,9 +49,7 @@ type WatchDog struct {
 // PatchNode applies passed patch to the node WatchDog is configured to work
 // with. PatchNode cleans up any patch applied before.
 func (w *WatchDog) PatchNode(patch *Patch) error {
-	if err := w.CleanNode(); err != nil {
-		return errors.Wrap(err, "could not cleanup node before patching")
-	}
+	w.latestPatch = patch
 	if err := writeNodeConfig(w.NodeConfigPath, patch.RedBoxAddress); err != nil {
 		return errors.Wrap(err, "could not write remote cluster config")
 	}
@@ -61,19 +59,18 @@ func (w *WatchDog) PatchNode(patch *Patch) error {
 	if err := w.configureResources(patch.NodeResources); err != nil {
 		return errors.Wrap(err, "could not configure node resources")
 	}
-	w.latestPatch = patch
 	return nil
 }
 
 // CleanNode reverts changes introduced with the latest PatchNode call.
-func (w *WatchDog) CleanNode() error {
+func (w *WatchDog) CleanNode() {
 	err := os.Remove(w.NodeConfigPath)
 	if err != nil && !os.IsNotExist(err) {
 		log.Printf("Could not delete config on the node: %s", err)
 	}
 
 	if w.latestPatch == nil {
-		return nil
+		return
 	}
 
 	if len(w.latestPatch.NodeLabels) != 0 {
@@ -95,25 +92,20 @@ func (w *WatchDog) CleanNode() error {
 			log.Printf("Could not remove node resources: %s", err)
 		}
 	}
-	return nil
 }
 
-func (w *WatchDog) configureLabels(labels map[string]string) error {
-	if err := w.Client.AddNodeLabels(w.NodeName, w.DefaultLabels); err != nil {
+func (w *WatchDog) configureLabels(l map[string]string) error {
+	lbls := make(map[string]string, len(w.DefaultLabels)+len(l))
+	for k, v := range w.DefaultLabels {
+		lbls[k] = v
+	}
+	for k, v := range l {
+		lbls[k] = v
+	}
+	if err := w.Client.AddNodeLabels(w.NodeName, lbls); err != nil {
 		return errors.Wrap(err, "could not label node")
 	}
-	log.Printf("Added default node labels: %v", w.DefaultLabels)
-
-	if len(labels) == 0 {
-		log.Println("Custom labels are empty, skipping")
-		return nil
-	}
-
-	if err := w.Client.AddNodeLabels(w.NodeName, labels); err != nil {
-		return errors.Wrap(err, "could not label node")
-	}
-	log.Printf("Added custom node labels: %v", labels)
-
+	log.Printf("Added node labels: %v", lbls)
 	return nil
 }
 
@@ -126,7 +118,7 @@ func (w *WatchDog) configureResources(resources map[string]int) error {
 	if err := w.Client.AddNodeResources(w.NodeName, resources); err != nil {
 		return errors.Wrap(err, "could not add node resources")
 	}
-	log.Printf("Added custom node resources: %v", resources)
+	log.Printf("Added node resources: %v", resources)
 
 	return nil
 }
