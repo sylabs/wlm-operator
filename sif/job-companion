@@ -1,0 +1,26 @@
+Bootstrap: docker
+From: golang:alpine
+Stage: builder
+
+%files
+    . /usr/local/go/src/github.com/sylabs/slurm-operator
+
+$post
+    apk update
+    apk add git && apk add ca-certificates
+    adduser -D -g '' appuser
+    cd /usr/local/go/src/github.com/sylabs/slurm-operator
+    CGO_ENABLED=0 go build -o main cmd/job-companion/main.go
+
+Bootstrap: scratch
+Stage: two
+
+%files from builder
+    /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+    /etc/passwd /etc/passwd
+    /usr/local/go/src/github.com/sylabs/slurm-operator/main /app/
+
+%runscript
+    cd /app
+    su - appuser
+    main
