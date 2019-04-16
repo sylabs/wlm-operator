@@ -27,9 +27,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestServer(t *testing.T) (*httptest.Server, func()) {
-	slurmClient, err := local.NewClient()
-	require.NoError(t, err, "could not create local slurm client")
+func newTestServer(_ *testing.T) (*httptest.Server, func()) {
+	slurmClient := &local.Client{}
 
 	router := NewSlurmRouter(slurmClient)
 	srv := httptest.NewServer(router)
