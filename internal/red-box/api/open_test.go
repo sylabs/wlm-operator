@@ -22,14 +22,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm/local"
-
 	"github.com/stretchr/testify/require"
+	"github.com/sylabs/slurm-operator/pkg/slurm/local"
 )
 
-func newTestServer(t *testing.T) (*httptest.Server, func()) {
-	slurmClient, err := local.NewClient()
-	require.NoError(t, err, "could not create local slurm client")
+func newTestServer(_ *testing.T) (*httptest.Server, func()) {
+	slurmClient := &local.Client{}
 
 	router := NewSlurmRouter(slurmClient)
 	srv := httptest.NewServer(router)
