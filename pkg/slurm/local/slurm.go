@@ -41,6 +41,12 @@ type Client struct{}
 
 // NewClient returns new local client.
 func NewClient() (*Client, error) {
+	for _, bin := range []string{sacctBinaryName, sbatchBinaryName, scancelBinaryName, srunBinaryName} {
+		_, err := exec.LookPath(bin)
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not check %s existence", bin)
+		}
+	}
 	return &Client{}, nil
 }
 
