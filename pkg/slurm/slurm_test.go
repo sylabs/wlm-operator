@@ -15,112 +15,143 @@
 package slurm
 
 import (
+	"reflect"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/require"
 )
 
-func TestParseSacctResponse(t *testing.T) {
-	tt := []struct {
-		name        string
-		in          string
-		expect      []*JobInfo
-		expectError string
+const (
+	testScontrolResponse = `JobId=53 JobName=sbatch
+   UserId=vagrant(1000) GroupId=vagrant(1000) MCS_label=N/A
+   Priority=4294901743 Nice=0 Account=(null) QOS=(null)
+   JobState=RUNNING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=00:00:30 TimeLimit=01:00:00 TimeMin=N/A
+   SubmitTime=2019-04-16T11:49:19 EligibleTime=2019-04-16T11:49:19
+   StartTime=2019-04-16T11:49:20 EndTime=2019-04-16T12:49:20 Deadline=N/A
+   PreemptTime=None SuspendTime=None SecsPreSuspend=0
+   LastSchedEval=2019-04-16T11:49:20
+   Partition=debug AllocNode:Sid=vagrant:23733
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=vagrant
+   BatchHost=vagrant
+   NumNodes=1 NumCPUs=2 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   TRES=cpu=2,node=1,billing=2
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   Gres=(null) Reservation=(null)
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=(null)
+   WorkDir=/home/vagrant
+   StdErr=/home/vagrant/slurm-53.out
+   StdIn=/dev/null
+   StdOut=/home/vagrant/slurm-53.out
+   Power=`
+
+	testPendingScontrolRsponse = `JobId=52 JobName=sbatch
+   UserId=vagrant(1000) GroupId=vagrant(1000) MCS_label=N/A
+   Priority=4294901744 Nice=0 Account=(null) QOS=(null)
+   JobState=PENDING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=00:00:00 TimeLimit=UNLIMITED TimeMin=N/A
+   SubmitTime=2019-04-16T11:49:19 EligibleTime=2019-04-16T11:48:02
+   StartTime=Unknown EndTime=Unknown Deadline=N/A
+   PreemptTime=None SuspendTime=None SecsPreSuspend=0
+   LastSchedEval=2019-04-16T11:48:02
+   Partition=debug AllocNode:Sid=vagrant:23733
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=(null)
+   NumNodes=1 NumCPUs=1 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   TRES=cpu=1,node=1
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   Gres=(null) Reservation=(null)
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=(null)
+   WorkDir=/home/vagrant
+   StdErr=/home/vagrant/slurm-52.out
+   StdIn=/dev/null
+   StdOut=/home/vagrant/slurm-52.out
+   Power=`
+)
+
+var (
+	testSubmitTime  = time.Time{}.AddDate(2018, 03, 15).Add(11 * time.Hour).Add(49 * time.Minute).Add(19 * time.Second)
+	testStartTime   = time.Time{}.AddDate(2018, 03, 15).Add(11 * time.Hour).Add(49 * time.Minute).Add(20 * time.Second)
+	testRunTime     = 30 * time.Second
+	testLimitTime   = 1 * time.Hour
+	testZeroRunTime = 0 * time.Second
+)
+
+func TestJobInfoFromScontrolResponse(t *testing.T) {
+	type args struct {
+		r string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *JobInfo
+		wantErr bool
 	}{
 		{
-			name: "single line",
-			in:   "2019-02-20T11:16:55|2019-02-20T11:16:55|2:0|COMPLETED|comm|35|test|",
-			expect: []*JobInfo{
-				{
-					ID:         "35",
-					Name:       "test",
-					StartedAt:  time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC),
-					FinishedAt: time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC),
-					ExitCode:   2,
-					State:      "COMPLETED",
-					Comment:    "comm",
-				},
+			name: "t1",
+			args: args{r: testScontrolResponse},
+			want: &JobInfo{
+				ID:         "53",
+				UserID:     "vagrant(1000)",
+				Name:       "sbatch",
+				ExitCode:   "0:0",
+				State:      "RUNNING",
+				SubmitTime: &testSubmitTime,
+				StartTime:  &testStartTime,
+				RunTime:    &testRunTime,
+				TimeLimit:  &testLimitTime,
+				WorkDir:    "/home/vagrant",
+				StdOut:     "/home/vagrant/slurm-53.out",
+				StdErr:     "/home/vagrant/slurm-53.out",
+				Partition:  "debug",
+				NodeList:   "vagrant",
+				BatchHost:  "vagrant",
+				NumNodes:   "1",
 			},
+			wantErr: false,
 		},
 		{
-			name: "multi line",
-			in: `2019-02-20T11:16:55|2019-02-20T11:16:55|0:0|COMPLETED|c|35|test|
-2019-02-20T11:16:55|2019-02-20T11:16:55|0:0|COMPLETED|c|35.0|sleep|
-2019-02-20T11:16:55|unknown|0:0|COMPLETED|some comment|35.1|echo 'lala'|`,
-			expect: []*JobInfo{
-				{
-					ID:         "35",
-					Name:       "test",
-					StartedAt:  time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC),
-					FinishedAt: time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC),
-					ExitCode:   0,
-					State:      "COMPLETED",
-					Comment:    "c",
-				},
-				{
-					ID:         "35.0",
-					Name:       "sleep",
-					StartedAt:  time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC),
-					FinishedAt: time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC),
-					ExitCode:   0,
-					State:      "COMPLETED",
-					Comment:    "c",
-				},
-				{
-					ID:         "35.1",
-					Name:       "echo 'lala'",
-					StartedAt:  time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC),
-					FinishedAt: time.Time{},
-					ExitCode:   0,
-					State:      "COMPLETED",
-					Comment:    "some comment",
-				},
+			name: "t2",
+			args: args{r: testPendingScontrolRsponse},
+			want: &JobInfo{
+				ID:         "52",
+				UserID:     "vagrant(1000)",
+				Name:       "sbatch",
+				ExitCode:   "0:0",
+				State:      "PENDING",
+				SubmitTime: &testSubmitTime,
+				StartTime:  nil,
+				RunTime:    &testZeroRunTime,
+				TimeLimit:  nil,
+				WorkDir:    "/home/vagrant",
+				StdOut:     "/home/vagrant/slurm-52.out",
+				StdErr:     "/home/vagrant/slurm-52.out",
+				Partition:  "debug",
+				NodeList:   "(null)",
+				BatchHost:  "",
+				NumNodes:   "1",
 			},
-		},
-		{
-			name:        "invalid start time",
-			in:          "20 Feb 20109 11:16:55|2019-02-20T11:16:55|2:0|COMPLETED|comm|35|test|",
-			expect:      nil,
-			expectError: "parsing time \"20 Feb 20109 11:16:55\" as \"2006-01-02T15:04:05\": cannot parse \"eb 20109 11:16:55\" as \"2006\"",
-		},
-		{
-			name:        "invalid end time",
-			in:          "2019-02-20T11:16:55|20 Feb 20109 11:16:55|2:0|COMPLETED|comm|35|test|",
-			expect:      nil,
-			expectError: "parsing time \"20 Feb 20109 11:16:55\" as \"2006-01-02T15:04:05\": cannot parse \"eb 20109 11:16:55\" as \"2006\"",
-		},
-		{
-			name:        "invalid exit code",
-			in:          "2019-02-20T11:16:55|2019-02-20T11:16:55|2:5:0|COMPLETED|comm|35|test|",
-			expect:      nil,
-			expectError: "exit code must contain 2 sections",
-		},
-		{
-			name:        "string exit code",
-			in:          "2019-02-20T11:16:55|2019-02-20T11:16:55|F:0|COMPLETED|comm|35|test|",
-			expect:      nil,
-			expectError: "strconv.Atoi: parsing \"F\": invalid syntax",
-		},
-		{
-			name: "invalid format",
-			in: `sacct: error: slurmdb_ave_tres_usage: couldn't make tres_list from '0=0,1=942080,6=210386944,7=0'
-2019-04-09T06:32:06|2019-04-09T06:32:08|0:0|COMPLETED||6|sbatch|
-`,
-			expect:      nil,
-			expectError: "output must contain 7 sections",
+			wantErr: false,
 		},
 	}
-
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			actual, err := ParseSacctResponse(tc.in)
-			if tc.expectError == "" {
-				require.NoError(t, err)
-			} else {
-				require.EqualError(t, err, tc.expectError)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := JobInfoFromScontrolResponse(tt.args.r)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("JobInfoFromScontrolResponse() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			require.Equal(t, tc.expect, actual)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("JobInfoFromScontrolResponse() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

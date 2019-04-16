@@ -16,7 +16,6 @@ package rest
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,10 +30,10 @@ import (
 )
 
 const (
-	slurmRunEndpointT     = "%s/srun"
 	slurmBatchEndpointT   = "%s/sbatch"
 	slurmSacctEndpointT   = "%s/sacct/%d"
 	slurmScancelEndpointT = "%s/scancel/%d"
+	slurmSJobInfo         = "%s/sjobinfo/%d"
 	slurmOpenEndpointT    = "%s/open?path=%s"
 )
 
@@ -134,37 +133,6 @@ func (c *Client) SCancel(id int64) error {
 	}
 
 	return nil
-}
-
-// SRun runs passed command with args in Slurm cluster using context.
-// Srun output is returned uninterpreted as a byte slice.
-func (c *Client) SRun(ctx context.Context, command string, args ...string) ([]byte, error) {
-	req := struct {
-		Command string   `json:"command"`
-		Args    []string `json:"args"`
-	}{Command: command, Args: args}
-
-	var body bytes.Buffer
-	if err := json.NewEncoder(&body).Encode(req); err != nil {
-		return nil, errors.Wrap(err, "could not encode request")
-	}
-
-	resp, err := c.cl.Post(fmt.Sprintf(slurmRunEndpointT, c.conf.ControllerAddress), "application/json", &body)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not send srun request")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(ErrNot200, resp.Status)
-	}
-
-	logs, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not read response body")
-	}
-
-	return logs, nil
 }
 
 // Open opens arbitrary file in a read-only mode on
