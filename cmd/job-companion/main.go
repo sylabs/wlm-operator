@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	rd "github.com/sylabs/slurm-operator/internal/resource-daemon"
+	"github.com/sylabs/slurm-operator/internal/k8s"
 	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/slurm/rest"
 	"gopkg.in/yaml.v2"
@@ -66,7 +66,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var cfg rd.NodeConfig
+	var cfg k8s.NodeConfig
 	err = yaml.NewDecoder(f).Decode(&cfg)
 	_ = f.Close()
 	if err != nil {
