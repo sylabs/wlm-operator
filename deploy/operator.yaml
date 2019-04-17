@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: slurm-job-operator
+  name: slurm-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: slurm-job-operator
+      name: slurm-operator
   template:
     metadata:
       labels:
-        name: slurm-job-operator
+        name: slurm-operator
     spec:
-      serviceAccountName: slurm-job-operator
+      serviceAccountName: slurm-operator
       containers:
-        - name: slurm-job-operator
+        - name: slurm-operator
           image: sylabsio/slurm:operator
           imagePullPolicy: Always
           env:
@@ -27,4 +27,4 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "slurm-job-operator"
+              value: "slurm-operator"
