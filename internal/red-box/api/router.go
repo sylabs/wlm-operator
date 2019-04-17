@@ -29,9 +29,9 @@ func NewSlurmRouter(sClient slurm.Slurm) *mux.Router {
 	a := &api{slurm: sClient}
 
 	r := mux.NewRouter()
-	r.HandleFunc("/srun", a.SRun).Methods("POST")
 	r.HandleFunc("/sbatch", a.SBatch).Methods("POST")
-	r.HandleFunc("/sacct/{id}", a.SAcct).Methods("GET")
+	r.HandleFunc("/sjob/steps/{id}", a.SJobSteps).Methods("GET")
+	r.HandleFunc("/sjob/{id}", a.SJobInfo).Methods("GET")
 	r.HandleFunc("/scancel/{id}", a.SCancel).Methods("GET")
 	r.HandleFunc("/open", a.Open).Methods("GET")
 
