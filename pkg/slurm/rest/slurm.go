@@ -30,11 +30,11 @@ import (
 )
 
 const (
-	slurmBatchEndpointT   = "%s/sbatch"
-	slurmScancelEndpointT = "%s/scancel/%d"
-	slurmSJobInfo         = "%s/sjob/%d"
-	slumrSJobSteps        = "%s/sjob/steps/%d"
-	slurmOpenEndpointT    = "%s/open?path=%s"
+	slurmBatchEndpointT     = "%s/sbatch"
+	slurmScancelEndpointT   = "%s/scancel/%d"
+	slurmSJobInfoEndpointT  = "%s/sjob/%d"
+	slumrSJobStepsEndpointT = "%s/sjob/steps/%d"
+	slurmOpenEndpointT      = "%s/open?path=%s"
 )
 
 var (
@@ -138,7 +138,7 @@ func (c *Client) Open(path string) (io.ReadCloser, error) {
 
 // SJobSteps returns information about steps in a submitted batch job.
 func (c *Client) SJobSteps(id int64) ([]*slurm.JobStepInfo, error) {
-	resp, err := c.cl.Get(fmt.Sprintf(slumrSJobSteps, c.conf.ControllerAddress, id))
+	resp, err := c.cl.Get(fmt.Sprintf(slumrSJobStepsEndpointT, c.conf.ControllerAddress, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not send sacct request")
 	}
@@ -158,7 +158,7 @@ func (c *Client) SJobSteps(id int64) ([]*slurm.JobStepInfo, error) {
 
 // SJobInfo returns information about a submitted batch job.
 func (c *Client) SJobInfo(id int64) (*slurm.JobInfo, error) {
-	resp, err := c.cl.Get(fmt.Sprintf(slurmSJobInfo, c.conf.ControllerAddress, id))
+	resp, err := c.cl.Get(fmt.Sprintf(slurmSJobInfoEndpointT, c.conf.ControllerAddress, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not send sacct request")
 	}
