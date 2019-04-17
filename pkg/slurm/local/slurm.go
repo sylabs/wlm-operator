@@ -31,6 +31,7 @@ const (
 	sbatchBinaryName   = "sbatch"
 	scancelBinaryName  = "scancel"
 	scontrolBinaryName = "scontrol"
+	sacctBinaryName    = "sacct"
 )
 
 // Client implements Slurm interface for communicating with
@@ -97,4 +98,31 @@ func (*Client) SJobInfo(jobID int64) (*slurm.JobInfo, error) {
 	}
 
 	return ji, nil
+}
+
+// SJobSteps returns information about a submitted batch job.
+func (*Client) SJobSteps(jobID int64) ([]*slurm.JobStepInfo, error) {
+	cmd := exec.Command(sacctBinaryName,
+		"-p",
+		"-n",
+		"-j",
+		strconv.FormatInt(jobID, 10),
+		"-o start,end,exitcode,state,jobid,jobname",
+	)
+
+	out, err := cmd.Output()
+	if err != nil {
+		ee, ok := err.(*exec.ExitError)
+		if ok {
+			return nil, errors.Wrapf(err, "failed to execute sacct: %s", ee.Stderr)
+		}
+		return nil, errors.Wrap(err, "failed to execute sacct")
+	}
+
+	jInfo, err := slurm.ParseSacctResponse(string(out))
+	if err != nil {
+		return nil, errors.Wrap(err, slurm.ErrInvalidSacctResponse.Error())
+	}
+
+	return jInfo, nil
 }

@@ -117,7 +117,7 @@ func runBatch(c slurm.Slurm, batch string, cOps *collectOptions) error {
 	for {
 		select {
 		case <-ticker.C:
-			sInfo, err := c.SAcct(id)
+			sInfo, err := c.SJobSteps(id)
 			if err != nil {
 				return err
 			}
@@ -176,7 +176,7 @@ func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
 	return nil
 }
 
-func printSInfo(infos []*slurm.JobInfo) {
+func printSInfo(infos []*slurm.JobStepInfo) {
 	for _, i := range infos {
 		log.Printf("JobID:%s State:%s ExitCode:%d Name:%s", i.ID, i.State, i.ExitCode, i.Name)
 	}

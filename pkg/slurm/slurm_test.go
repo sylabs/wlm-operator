@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -78,11 +80,12 @@ const (
 )
 
 var (
-	testSubmitTime  = time.Time{}.AddDate(2018, 03, 15).Add(11 * time.Hour).Add(49 * time.Minute).Add(19 * time.Second)
-	testStartTime   = time.Time{}.AddDate(2018, 03, 15).Add(11 * time.Hour).Add(49 * time.Minute).Add(20 * time.Second)
+	testSubmitTime  = time.Date(2019, 04, 16, 11, 49, 19, 0, time.UTC)
+	testStartTime   = time.Date(2019, 04, 16, 11, 49, 20, 0, time.UTC)
+	testSacctTime   = time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC)
 	testRunTime     = 30 * time.Second
 	testLimitTime   = 1 * time.Hour
-	testZeroRunTime = 0 * time.Second
+	testZeroRunTime = time.Duration(0)
 )
 
 func TestJobInfoFromScontrolResponse(t *testing.T) {
@@ -152,6 +155,106 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("JobInfoFromScontrolResponse() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestParseSacctResponse(t *testing.T) {
+	tt := []struct {
+		name        string
+		in          string
+		expect      []*JobStepInfo
+		expectError string
+	}{
+		{
+			name: "single line",
+			in:   "2019-02-20T11:16:55|2019-02-20T11:16:55|2:0|COMPLETED|35|test|",
+			expect: []*JobStepInfo{
+				{
+					ID:         "35",
+					Name:       "test",
+					StartedAt:  &testSacctTime,
+					FinishedAt: &testSacctTime,
+					ExitCode:   2,
+					State:      "COMPLETED",
+				},
+			},
+		},
+		{
+			name: "multi line",
+			in: `2019-02-20T11:16:55|2019-02-20T11:16:55|0:0|COMPLETED|35|test|
+2019-02-20T11:16:55|2019-02-20T11:16:55|0:0|COMPLETED|35.0|sleep|
+2019-02-20T11:16:55|unknown|0:0|COMPLETED|35.1|echo 'lala'|`,
+			expect: []*JobStepInfo{
+				{
+					ID:         "35",
+					Name:       "test",
+					StartedAt:  &testSacctTime,
+					FinishedAt: &testSacctTime,
+					ExitCode:   0,
+					State:      "COMPLETED",
+				},
+				{
+					ID:         "35.0",
+					Name:       "sleep",
+					StartedAt:  &testSacctTime,
+					FinishedAt: &testSacctTime,
+					ExitCode:   0,
+					State:      "COMPLETED",
+				},
+				{
+					ID:         "35.1",
+					Name:       "echo 'lala'",
+					StartedAt:  &testSacctTime,
+					FinishedAt: nil,
+					ExitCode:   0,
+					State:      "COMPLETED",
+				},
+			},
+		},
+		{
+			name:        "invalid start time",
+			in:          "20 Feb 20109 11:16:55|2019-02-20T11:16:55|2:0|COMPLETED|35|test|",
+			expect:      nil,
+			expectError: "parsing time \"20 Feb 20109 11:16:55\" as \"2006-01-02T15:04:05\": cannot parse \"eb 20109 11:16:55\" as \"2006\"",
+		},
+		{
+			name:        "invalid end time",
+			in:          "2019-02-20T11:16:55|20 Feb 20109 11:16:55|2:0|COMPLETED|35|test|",
+			expect:      nil,
+			expectError: "parsing time \"20 Feb 20109 11:16:55\" as \"2006-01-02T15:04:05\": cannot parse \"eb 20109 11:16:55\" as \"2006\"",
+		},
+		{
+			name:        "invalid exit code",
+			in:          "2019-02-20T11:16:55|2019-02-20T11:16:55|2:5:0|COMPLETED|35|test|",
+			expect:      nil,
+			expectError: "exit code must contain 2 sections",
+		},
+		{
+			name:        "string exit code",
+			in:          "2019-02-20T11:16:55|2019-02-20T11:16:55|F:0|COMPLETED|35|test|",
+			expect:      nil,
+			expectError: "strconv.Atoi: parsing \"F\": invalid syntax",
+		},
+		{
+			name: "invalid format",
+			in: `sacct: error: slurmdb_ave_tres_usage: couldn't make tres_list from '0=0,1=942080,6=210386944,7=0'
+2019-04-09T06:32:06|2019-04-09T06:32:08|0:0|COMPLETED|6|sbatch|
+`,
+			expect:      nil,
+			expectError: "output must contain 6 sections",
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			actual, err := ParseSacctResponse(tc.in)
+			if tc.expectError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.expectError)
+			}
+			require.Equal(t, tc.expect, actual)
 		})
 	}
 }

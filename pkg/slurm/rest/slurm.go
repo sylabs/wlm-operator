@@ -31,9 +31,9 @@ import (
 
 const (
 	slurmBatchEndpointT   = "%s/sbatch"
-	slurmSacctEndpointT   = "%s/sacct/%d"
 	slurmScancelEndpointT = "%s/scancel/%d"
-	slurmSJobInfo         = "%s/sjobinfo/%d"
+	slurmSJobInfo         = "%s/sjob/%d"
+	slumrSJobSteps        = "%s/sjob/steps/%d"
 	slurmOpenEndpointT    = "%s/open?path=%s"
 )
 
@@ -68,26 +68,6 @@ func NewClient(c Config) (*Client, error) {
 		},
 		conf: c,
 	}, nil
-}
-
-// SAcct returns information about a submitted batch job.
-func (c *Client) SAcct(id int64) ([]*slurm.JobInfo, error) {
-	resp, err := c.cl.Get(fmt.Sprintf(slurmSacctEndpointT, c.conf.ControllerAddress, id))
-	if err != nil {
-		return nil, errors.Wrap(err, "could not send sacct request")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(ErrNot200, resp.Status)
-	}
-
-	var infos []*slurm.JobInfo
-	if err := json.NewDecoder(resp.Body).Decode(&infos); err != nil {
-		return nil, errors.Wrap(err, "could not decode sacct response")
-	}
-
-	return infos, nil
 }
 
 // SBatch submits batch job and returns job id if succeeded.
@@ -154,4 +134,44 @@ func (c *Client) Open(path string) (io.ReadCloser, error) {
 	}
 
 	return resp.Body, nil
+}
+
+// SJobSteps returns information about steps in a submitted batch job.
+func (c *Client) SJobSteps(id int64) ([]*slurm.JobStepInfo, error) {
+	resp, err := c.cl.Get(fmt.Sprintf(slumrSJobSteps, c.conf.ControllerAddress, id))
+	if err != nil {
+		return nil, errors.Wrap(err, "could not send sacct request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Wrap(ErrNot200, resp.Status)
+	}
+
+	var infos []*slurm.JobStepInfo
+	if err := json.NewDecoder(resp.Body).Decode(&infos); err != nil {
+		return nil, errors.Wrap(err, "could not decode sacct response")
+	}
+
+	return infos, nil
+}
+
+// SJobInfo returns information about a submitted batch job.
+func (c *Client) SJobInfo(id int64) (*slurm.JobInfo, error) {
+	resp, err := c.cl.Get(fmt.Sprintf(slurmSJobInfo, c.conf.ControllerAddress, id))
+	if err != nil {
+		return nil, errors.Wrap(err, "could not send sacct request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Wrap(ErrNot200, resp.Status)
+	}
+
+	var info *slurm.JobInfo
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return nil, errors.Wrap(err, "could not decode sacct response")
+	}
+
+	return info, nil
 }
