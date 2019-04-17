@@ -15,6 +15,7 @@
 package slurm
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 	"strconv"
@@ -22,8 +23,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"fmt"
 )
 
 const (
@@ -82,18 +81,10 @@ type Slurm interface {
 	SBatch(command string) (int64, error)
 	// SCancel cancels batch job.
 	SCancel(jobID int64) error
-	// Open opens arbitrary file in a read-only mode on
-	// Slurm cluster, e.g. for collecting job results.
-	// It is a caller's responsibility to call Close on the returned
-	// file to free any allocated resources. Is a file is not found
-	// Open will return ErrFileNotFound.
-
 	// SJobInfo returns information about a submitted batch job.
 	SJobInfo(jobID int64) (*JobInfo, error)
-
 	// SJobSteps returns information about each step in a submitted batch job
 	SJobSteps(jobID int64) ([]*JobStepInfo, error)
-
 	// Open opens arbitrary file in a read-only mode on
 	// Slurm cluster, e.g. for collecting job results.
 	// It is a caller's responsibility to call Close on the returned
