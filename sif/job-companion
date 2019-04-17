@@ -25,13 +25,14 @@ Stage: two
 %setup
 	mkdir -p ${SINGULARITY_ROOTFS}/etc/ssl/certs
 	mkdir -p ${SINGULARITY_ROOTFS}/app
+	mv ${SINGULARITY_ROOTFS}/ca-certificates.crt ${SINGULARITY_ROOTFS}/etc/ssl/certs/
+	mv ${SINGULARITY_ROOTFS}/passwd ${SINGULARITY_ROOTFS}/etc/
+
 
 %files from builder
-    /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-    /etc/passwd /etc/passwd
-    /usr/local/go/src/github.com/sylabs/slurm-operator/main /app/
+    /etc/ssl/certs/ca-certificates.crt /
+    /etc/passwd /
+    /usr/local/go/src/github.com/sylabs/slurm-operator/main /
 
 %runscript
-    cd /app
-    su - appuser
     main
