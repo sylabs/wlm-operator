@@ -30,7 +30,7 @@ import (
 )
 
 func main() {
-	sock := flag.String("socket", "red-box.sock", "unix socket to serve slurm API")
+	sock := flag.String("socket", "/var/run/syslurm/red-box.sock", "unix socket to serve slurm API")
 	flag.Parse()
 
 	slurmClient, err := local.NewClient()

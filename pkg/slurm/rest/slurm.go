@@ -22,6 +22,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -31,11 +32,13 @@ import (
 )
 
 const (
-	slurmRunEndpointT     = "%s/srun"
-	slurmBatchEndpointT   = "%s/sbatch"
-	slurmSacctEndpointT   = "%s/sacct/%d"
-	slurmScancelEndpointT = "%s/scancel/%d"
-	slurmOpenEndpointT    = "%s/open?path=%s"
+	// those are stubs to pass in http package, while correct socket
+	// is specified in the custom http Transport
+	slurmRunEndpoint      = "http://red-box/srun"
+	slurmBatchEndpoint    = "http://red-box/sbatch"
+	slurmSacctEndpointT   = "http://red-box/sacct/%d"
+	slurmScancelEndpointT = "http://red-box/scancel/%d"
+	slurmOpenEndpointT    = "http://red-box/open?path=%s"
 )
 
 var (
@@ -65,6 +68,11 @@ type Client struct {
 func NewClient(c Config) (*Client, error) {
 	return &Client{
 		cl: &http.Client{
+			Transport: &http.Transport{
+				DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+					return net.Dial("unix", c.ControllerAddress)
+				},
+			},
 			Timeout: time.Second * time.Duration(c.TimeOut),
 		},
 		conf: c,
@@ -73,7 +81,7 @@ func NewClient(c Config) (*Client, error) {
 
 // SAcct returns information about a submitted batch job.
 func (c *Client) SAcct(id int64) ([]*slurm.JobInfo, error) {
-	resp, err := c.cl.Get(fmt.Sprintf(slurmSacctEndpointT, c.conf.ControllerAddress, id))
+	resp, err := c.cl.Get(fmt.Sprintf(slurmSacctEndpointT, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not send sacct request")
 	}
@@ -102,7 +110,7 @@ func (c *Client) SBatch(batch string) (int64, error) {
 		return 0, errors.Wrap(err, "could not encode request")
 	}
 
-	resp, err := c.cl.Post(fmt.Sprintf(slurmBatchEndpointT, c.conf.ControllerAddress), "application/json", &body)
+	resp, err := c.cl.Post(slurmBatchEndpoint, "application/json", &body)
 	if err != nil {
 		return 0, errors.Wrap(err, "could not send sbatch request")
 	}
@@ -123,7 +131,7 @@ func (c *Client) SBatch(batch string) (int64, error) {
 
 // SCancel cancels batch job.
 func (c *Client) SCancel(id int64) error {
-	resp, err := c.cl.Get(fmt.Sprintf(slurmScancelEndpointT, c.conf.ControllerAddress, id))
+	resp, err := c.cl.Get(fmt.Sprintf(slurmScancelEndpointT, id))
 	if err != nil {
 		return errors.Wrap(err, "could not send scancel request")
 	}
@@ -137,7 +145,7 @@ func (c *Client) SCancel(id int64) error {
 }
 
 // SRun runs passed command with args in Slurm cluster using context.
-// Srun output is returned uninterpreted as a byte slice.
+// SRun output is returned uninterpreted as a byte slice.
 func (c *Client) SRun(ctx context.Context, command string, args ...string) ([]byte, error) {
 	req := struct {
 		Command string   `json:"command"`
@@ -149,7 +157,7 @@ func (c *Client) SRun(ctx context.Context, command string, args ...string) ([]by
 		return nil, errors.Wrap(err, "could not encode request")
 	}
 
-	resp, err := c.cl.Post(fmt.Sprintf(slurmRunEndpointT, c.conf.ControllerAddress), "application/json", &body)
+	resp, err := c.cl.Post(slurmRunEndpoint, "application/json", &body)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not send srun request")
 	}
@@ -173,7 +181,7 @@ func (c *Client) SRun(ctx context.Context, command string, args ...string) ([]by
 // file to free any allocated resources.
 func (c *Client) Open(path string) (io.ReadCloser, error) {
 	log.Println(path)
-	resp, err := c.cl.Get(fmt.Sprintf(slurmOpenEndpointT, c.conf.ControllerAddress, path))
+	resp, err := c.cl.Get(fmt.Sprintf(slurmOpenEndpointT, path))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not send open request")
 	}

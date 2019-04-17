@@ -25,10 +25,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/slurm-operator/internal/k8s"
 	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/slurm/rest"
-	"gopkg.in/yaml.v2"
 )
 
 const envJobName = "JOB_NAME"
@@ -36,8 +34,8 @@ const envJobName = "JOB_NAME"
 var (
 	jobName = os.Getenv(envJobName)
 
-	configPath = flag.String("config", "", "slurm config path on host machine")
-	mountPath  = flag.String("cr-mount", "",
+	sock      = flag.String("socket", "/red-box.sock", "unix socket to connect to slurm API server")
+	mountPath = flag.String("cr-mount", "",
 		"path to the volume/directory where results should be collected, empty if results should not be collected")
 	resultsPath = flag.String("file-to-collect", "",
 		"path to a specific file that should be collected as job result, if omitted - default slurm-{JobID}.out will be collected")
@@ -56,25 +54,8 @@ func main() {
 		log.Fatal("batch should be provided")
 	}
 
-	if *configPath == "" {
-		log.Fatal("config path cannot be empty")
-	}
-
-	// reading slurm config on host machine
-	f, err := os.Open(*configPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var cfg k8s.NodeConfig
-	err = yaml.NewDecoder(f).Decode(&cfg)
-	_ = f.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("Job will be executed locally by red-box at: %s", cfg.Addr)
-	client, err := getLocalClient(cfg.Addr)
+	log.Printf("Job will be executed locally by red-box at: %s", *sock)
+	client, err := getLocalClient(*sock)
 	if err != nil {
 		log.Fatal(err)
 	}
