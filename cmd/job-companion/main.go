@@ -34,7 +34,7 @@ const envJobName = "JOB_NAME"
 var (
 	jobName = os.Getenv(envJobName)
 
-	sock      = flag.String("socket", "/red-box.sock", "unix socket to connect to slurm API server")
+	sock      = flag.String("socket", "/red-box.sock", "unix socket to connect to red-box")
 	mountPath = flag.String("cr-mount", "",
 		"path to the volume/directory where results should be collected, empty if results should not be collected")
 	resultsPath = flag.String("file-to-collect", "",
