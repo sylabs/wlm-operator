@@ -168,29 +168,35 @@ func ParseSacctResponse(raw string) ([]*JobStepInfo, error) {
 func (ji *JobInfo) fillFromSlurmFields(fields map[string]string) error {
 	t := reflect.TypeOf(*ji)
 	for i := 0; i < t.NumField(); i++ {
-		if tagV, ok := t.Field(i).Tag.Lookup("slurm"); ok {
-			if sField, ok := fields[tagV]; ok {
-				var val reflect.Value
-				switch tagV {
-				case "SubmitTime", "StartTime":
-					t, err := parseTime(sField)
-					if err != nil {
-						return errors.Wrapf(err, "can't parse time: %s", sField)
-					}
-					val = reflect.ValueOf(t)
-				case "RunTime", "TimeLimit":
-					d, err := parseDuration(sField)
-					if err != nil {
-						return errors.Wrapf(err, "can't parse duration: %s", sField)
-					}
-					val = reflect.ValueOf(d)
-				default:
-					val = reflect.ValueOf(sField)
-				}
-
-				reflect.ValueOf(ji).Elem().Field(i).Set(val)
-			}
+		tagV, ok := t.Field(i).Tag.Lookup("slurm")
+		if !ok {
+			continue
 		}
+
+		sField, ok := fields[tagV]
+		if !ok {
+			continue
+		}
+
+		var val reflect.Value
+		switch tagV {
+		case "SubmitTime", "StartTime":
+			t, err := parseTime(sField)
+			if err != nil {
+				return errors.Wrapf(err, "can't parse time: %s", sField)
+			}
+			val = reflect.ValueOf(t)
+		case "RunTime", "TimeLimit":
+			d, err := parseDuration(sField)
+			if err != nil {
+				return errors.Wrapf(err, "can't parse duration: %s", sField)
+			}
+			val = reflect.ValueOf(d)
+		default:
+			val = reflect.ValueOf(sField)
+		}
+
+		reflect.ValueOf(ji).Elem().Field(i).Set(val)
 	}
 
 	return nil
