@@ -168,8 +168,7 @@ func ParseSacctResponse(raw string) ([]*JobStepInfo, error) {
 func (ji *JobInfo) fillFromSlurmFields(fields map[string]string) error {
 	t := reflect.TypeOf(*ji)
 	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		if tagV, ok := f.Tag.Lookup("slurm"); ok {
+		if tagV, ok := t.Field(i).Tag.Lookup("slurm"); ok {
 			if sField, ok := fields[tagV]; ok {
 				var val reflect.Value
 				switch tagV {
