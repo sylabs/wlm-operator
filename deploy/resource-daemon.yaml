@@ -58,6 +58,8 @@ spec:
         volumeMounts:
           - name: slurm-cfg
             mountPath: /syslurm
+          - name: kubelet-dp
+            mountPath: /var/lib/kubelet/device-plugins
           - name: slurm-cfg-map-vol
             mountPath: /etc/config
       volumes:
@@ -65,10 +67,12 @@ spec:
           hostPath:
             path: /var/lib/syslurm
             type: DirectoryOrCreate
+        - name: kubelet-dp
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
         - name: slurm-cfg-map-vol
           configMap:
             name: slurm-config
             items:
               - key: config
                 path: slurm
-      hostNetwork: true
