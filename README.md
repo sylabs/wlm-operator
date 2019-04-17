@@ -43,8 +43,8 @@ The most simple way to run the red-box:
 ./bin/red-box
 ```
 
-This will create `/var/run/red-box.sock` socket and start red-box there. 
-NOTE: `/var/run/red-box.sock` location cannot not be changed at the moment. 
+This will create `/var/run/syslurm/red-box.sock` socket and start red-box there. 
+NOTE: `/var/run/syslurm/red-box.sock` location cannot not be changed at the moment. 
 
 ### Setting up slurm resource daemon
 
@@ -68,13 +68,11 @@ After nodes to configure are determined a configuration should be set up. Genera
 scheme is the following:
 
 	<node1_name>:
-	  red_box_addr: <path to slurm red-box socket>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
 	    <label name>: <label value>
 	<node2_name>:
-	  red_box_addr: <path to slurm red-box socket>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
@@ -98,7 +96,6 @@ metadata:
 data:
   config: |
     minikube:
-      red_box_addr: /home/vagrant/red-box.sock
       resources:
         cpu: 2
       labels:
