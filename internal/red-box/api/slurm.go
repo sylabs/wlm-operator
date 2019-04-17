@@ -78,7 +78,7 @@ func (a *api) SBatch(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(strconv.FormatInt(jid, 10)))
 }
 
-// SJobSteps returns information about steps in a submitted batch job.
+// SJobSteps returns information about a submitted batch job.
 func (a *api) SJobInfo(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
