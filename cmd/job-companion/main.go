@@ -98,18 +98,21 @@ func runBatch(c slurm.Slurm, batch string, cOps *collectOptions) error {
 	for {
 		select {
 		case <-ticker.C:
-			sInfo, err := c.SJobSteps(id)
+			sInfo, err := c.SJobInfo(id)
 			if err != nil {
 				return err
 			}
-			if len(sInfo) == 0 {
-				return errors.New("unexpected response from sacct")
-			}
-			state := sInfo[0].State // job info contains several steps. First step shows if job execution succeeded
+			state := sInfo.State // job info contains several steps. First step shows if job execution succeeded
 			if state == slurm.JobStatusCompleted ||
 				state == slurm.JobStatusFailed ||
 				state == slurm.JobStatusCanceled {
-				printSInfo(sInfo)
+
+				log.Printf("JobID:%s State:%s ExitCode:%s Name:%s",
+					sInfo.ID,
+					sInfo.State,
+					sInfo.ExitCode,
+					sInfo.Name,
+				)
 
 				switch state {
 				case slurm.JobStatusFailed:
@@ -155,10 +158,4 @@ func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
 	}
 
 	return nil
-}
-
-func printSInfo(infos []*slurm.JobStepInfo) {
-	for _, i := range infos {
-		log.Printf("JobID:%s State:%s ExitCode:%d Name:%s", i.ID, i.State, i.ExitCode, i.Name)
-	}
 }
