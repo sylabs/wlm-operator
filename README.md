@@ -19,7 +19,7 @@ suitable for the chosen connection mode. There are a couple steps needed to set 
 
 ### Setting up red-box
 
-Red-box is a REST HTTP server that acts as a proxy between `job-companion` and
+Red-box is a REST HTTP server over unix sockets that acts as a proxy between `job-companion` and
 Slurm itself. Under the hood it runs Slurm binaries and returns Slurm response in a convenient form
 so that `job-companion` understands it.
 
@@ -43,8 +43,8 @@ The most simple way to run the red-box:
 ./bin/red-box
 ```
 
-For production purposes you may want to set up red-box as a service, but that topic
-will not be covered here.
+This will create `/var/run/syslurm/red-box.sock` socket and start red-box there. 
+NOTE: `/var/run/syslurm/red-box.sock` location cannot not be changed at the moment. 
 
 ### Setting up slurm resource daemon
 
@@ -68,13 +68,11 @@ After nodes to configure are determined a configuration should be set up. Genera
 scheme is the following:
 
 	<node1_name>:
-	  red_box_addr: <address of slurm red-box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
 	    <label name>: <label value>
 	<node2_name>:
-	  red_box_addr: <address of slurm red-box>
 	  resources:
 	    <resource name>: <quantity>
 	  labels:
@@ -98,7 +96,6 @@ metadata:
 data:
   config: |
     minikube:
-      red_box_addr: http://localhost:8080
       resources:
         cpu: 2
       labels:
@@ -128,7 +125,7 @@ Data
 config:
 ----
 minikube:
-  red_box_addr: http://localhost:8080
+  red_box_addr: /home/vagrant/red-box.sock
   resources:
     cpu: 2
   labels:
@@ -296,9 +293,9 @@ Slurm operator supports result collection to a provided [k8s volume](https://kub
 so that a user won't need to have access to a Slurm cluster to analyze job results.
 
 However, some configuration is required for this feature to work. More specifically, job-companion can collect results
-located on submit server only (i.e. k8s node in case of local mode), while slurm job can be scheduled on arbitrary slurm worker node. It means that some kind of a shared
-storage among slurm nodes should be configured so that despite of slurm worker node chosen to run a job, results will
-appear on submit server as well. 
+located on submit server only (i.e. k8s node in case of local mode), while slurm job can be scheduled on arbitrary
+slurm worker node. It means that some kind of a shared storage among slurm nodes should be configured so that despite
+of slurm worker node chosen to run a job, results will appear on submit server as well. 
 
 Let's walk through basic configuration steps for each mode. Further assumed that default results file
 is collected (_slurm-<jobID>.out_). This file can be found on Slurm worker node that is executing a job in a folder,

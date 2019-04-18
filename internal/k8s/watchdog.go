@@ -19,19 +19,10 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 )
-
-// NodeConfig contains SLURM cluster local address.
-// NodeConfig is written into a config file created by resource-daemon creates on each k8s node.
-// Job-companion uses addresses from the file for communicating with SLURM cluster.
-type NodeConfig struct {
-	Addr string `yaml:"addr"`
-}
 
 // Patch represents changes that need to be applied to the node.
 type Patch struct {
-	RedBoxAddress string            `yaml:"red_box_addr"`
 	NodeLabels    map[string]string `yaml:"labels"`
 	NodeResources map[string]int    `yaml:"resources"`
 }
@@ -50,9 +41,6 @@ type WatchDog struct {
 // with. PatchNode cleans up any patch applied before.
 func (w *WatchDog) PatchNode(patch *Patch) error {
 	w.latestPatch = patch
-	if err := writeNodeConfig(w.NodeConfigPath, patch.RedBoxAddress); err != nil {
-		return errors.Wrap(err, "could not write remote cluster config")
-	}
 	if err := w.configureLabels(patch.NodeLabels); err != nil {
 		return errors.Wrap(err, "could not configure node labels")
 	}
@@ -120,21 +108,5 @@ func (w *WatchDog) configureResources(resources map[string]int) error {
 	}
 	log.Printf("Added node resources: %v", resources)
 
-	return nil
-}
-
-func writeNodeConfig(path, redBoxAddr string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return errors.Wrap(err, "could not create slurm config file")
-	}
-	defer f.Close()
-
-	var nodeConfig = NodeConfig{
-		Addr: redBoxAddr,
-	}
-	if err = yaml.NewEncoder(f).Encode(nodeConfig); err != nil {
-		return errors.Wrap(err, "could not encode node config")
-	}
 	return nil
 }
