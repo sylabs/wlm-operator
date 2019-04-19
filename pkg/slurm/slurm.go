@@ -26,6 +26,8 @@ import (
 )
 
 const (
+	// JobStatusRunning mean Slurm job is running.
+	JobStatusRunning = "RUNNING"
 	// JobStatusCompleted means Slurm job is finished successfully.
 	JobStatusCompleted = "COMPLETED"
 	// JobStatusCanceled means Slurm job was cancelled.
@@ -91,6 +93,8 @@ type Slurm interface {
 	// file to free any allocated resources. Is a file is not found
 	// Open will return ErrFileNotFound.
 	Open(path string) (io.ReadCloser, error)
+	// Tail follows file until close invoked
+	Tail(path string) (io.ReadCloser, error)
 }
 
 func JobInfoFromScontrolResponse(r string) (*JobInfo, error) {

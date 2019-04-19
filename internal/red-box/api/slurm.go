@@ -166,3 +166,29 @@ func (a *api) Open(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	path := query.Get("path")
+	if path == "" {
+		http.Error(w, "no path query parameter is found", http.StatusBadRequest)
+		return
+	}
+
+	file, err := a.slurm.Tail(path)
+	if err == slurm.ErrFileNotFound {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}

@@ -94,6 +94,19 @@ func (*Client) Open(path string) (io.ReadCloser, error) {
 	return file, errors.Wrapf(err, "could not open %s", path)
 }
 
+func (*Client) Tail(path string) (io.ReadCloser, error) {
+	tr, err := NewTailReader(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, slurm.ErrFileNotFound
+		}
+
+		return nil, errors.Wrap(err, "could not create tail reader")
+	}
+
+	return tr, nil
+}
+
 func (*Client) SJobInfo(jobID int64) (*slurm.JobInfo, error) {
 	cmd := exec.Command(scontrolBinaryName, "show", "jobid", strconv.FormatInt(jobID, 10))
 

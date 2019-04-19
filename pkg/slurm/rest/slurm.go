@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -39,6 +38,7 @@ const (
 	slumrSJobStepsEndpointT = "http://red-box/sjob/steps/%d"
 	slurmScancelEndpointT   = "http://red-box/scancel/%d"
 	slurmOpenEndpointT      = "http://red-box/open?path=%s"
+	slurmTailEndpointT      = "http://red-box/tail?path=%s"
 )
 
 var (
@@ -129,7 +129,6 @@ func (c *Client) SCancel(id int64) error {
 // It is a caller's responsibility to call Close on the returned
 // file to free any allocated resources.
 func (c *Client) Open(path string) (io.ReadCloser, error) {
-	log.Println(path)
 	resp, err := c.cl.Get(fmt.Sprintf(slurmOpenEndpointT, path))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not send open request")
@@ -138,6 +137,23 @@ func (c *Client) Open(path string) (io.ReadCloser, error) {
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, slurm.ErrFileNotFound
 	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Wrap(ErrNot200, resp.Status)
+	}
+
+	return resp.Body, nil
+}
+
+func (c *Client) Tail(path string) (io.ReadCloser, error) {
+	resp, err := c.cl.Get(fmt.Sprintf(slurmTailEndpointT, path))
+	if err != nil {
+		return nil, errors.Wrap(err, "could not send tail request")
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, slurm.ErrFileNotFound
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Wrap(ErrNot200, resp.Status)
 	}

@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -93,15 +94,20 @@ func runBatch(c slurm.Slurm, batch string, cOps *collectOptions) error {
 	if err != nil {
 		return err
 	}
+	sInfo, err := c.SJobInfo(id)
+	if err != nil {
+		return err
+	}
 
 	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			sInfo, err := c.SJobInfo(id)
+			sInfo, err = c.SJobInfo(id)
 			if err != nil {
 				return err
 			}
+
 			state := sInfo.State // job info contains several steps. First step shows if job execution succeeded
 			if state == slurm.JobStatusCompleted ||
 				state == slurm.JobStatusFailed ||
@@ -116,6 +122,9 @@ func runBatch(c slurm.Slurm, batch string, cOps *collectOptions) error {
 
 				switch state {
 				case slurm.JobStatusFailed:
+					if err := logErrOutput(c, sInfo.StdErr); err != nil {
+						log.Printf("Can't print error logs err: %s", err)
+					}
 					return errors.New("job failed")
 				case slurm.JobStatusCanceled:
 					return errors.New("job canceled")
@@ -128,6 +137,22 @@ func runBatch(c slurm.Slurm, batch string, cOps *collectOptions) error {
 			}
 		}
 	}
+}
+
+func logErrOutput(c slurm.Slurm, path string) error {
+	f, err := c.Open(path)
+	if err != nil {
+		return err
+	}
+
+	logs, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Logs from: %s", path)
+	log.Println(logs)
+	return nil
 }
 
 func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
