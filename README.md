@@ -10,8 +10,8 @@ will spawn a `job-companion` container that will talk to slurm.
 
 ## Installation
 
-It is assumed you already have Kubernetes and Slurm clusters running in a topology
-suitable for the chosen connection mode. There are a couple steps needed to set up slurm operator:
+It is assumed you already have Kubernetes and Slurm clusters running in a suitable topology.
+There are a couple steps needed to set up slurm operator:
 
 1. set up red-box
 2. set up slurm resource daemon on kubernetes cluster 
@@ -293,17 +293,23 @@ Slurm operator supports result collection to a provided [k8s volume](https://kub
 so that a user won't need to have access to a Slurm cluster to analyze job results.
 
 However, some configuration is required for this feature to work. More specifically, job-companion can collect results
-located on submit server only (i.e. k8s node in case of local mode), while slurm job can be scheduled on arbitrary
+located on submit server only (i.e. where `red-box` is running), while slurm job can be scheduled on arbitrary
 slurm worker node. It means that some kind of a shared storage among slurm nodes should be configured so that despite
 of slurm worker node chosen to run a job, results will appear on submit server as well. 
 
-Let's walk through basic configuration steps for each mode. Further assumed that default results file
+Let's walk through basic configuration steps. Further assumed that default results file
 is collected (_slurm-<jobID>.out_). This file can be found on Slurm worker node that is executing a job in a folder,
-from which job was submitted. Configuration for custom results file will differ in shared paths only.
-
-
-_**Local mode**_
+from which job was submitted. Configuration for custom results file will differ in shared paths only:
 
 	$RESULTS_DIR = red-box's working directory
 
 Share $RESULTS_DIR among all Slurm nodes, e.g set up nfs share for $RESULTS_DIR.
+
+
+## Developers
+
+Before submitting any pull requests make sure you have done the following:
+1. Updated dependencies in vendor if needed (`make dep`)
+2. Checked code is buildable
+3. Ran tests and linters (`make test && make lint`)
+4. Updated generated files (`make gen`) 
