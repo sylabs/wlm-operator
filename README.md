@@ -134,8 +134,6 @@ minikube:
 Events:  <none>
 ```
 
-By default resource daemon will be run with uid 1000, so you should make sure it has write access to
-`/var/lib/syslurm` directory where configuration for `job-companion` will be stored.
 
 Start resource daemon:
 ```bash
@@ -172,8 +170,6 @@ Capacity:
  slurm.sylabs.io/cpu:  2
 ...
 ```
-
-Also on node you should see `slurm-cfg.yaml` file created in `/var/lib/syslurm`.
 
 ### Setting up slurm operator
 
@@ -238,9 +234,8 @@ In the example above we will run lolcow Singularity container in Slurm and colle
 to `/home/vagrant/job-results` located on node. Generally job results can be collected to any
 supported [k8s volume](https://kubernetes.io/docs/concepts/storage/volumes/).
 
-By default `job-companion` will be run with uid 1000, so you should make sure it has a read access to 
-`/var/lib/syslurm` to read Slurm cluster address and a write access to a volume where you want to store the
-results (host directory `/home/vagrant/job-results` in the example above).
+By default `job-companion` will be run with uid 1000, so you should make sure it has a write access to 
+a volume where you want to store the results (host directory `/home/vagrant/job-results` in the example above).
 
 After that you can submit cow job:
 
