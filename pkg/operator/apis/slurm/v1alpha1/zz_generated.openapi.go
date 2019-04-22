@@ -146,12 +146,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 							},
 						},
 					},
-					"podSecurityContext": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PodSecurityContext holds pod-level security attributes and common container settings. More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.14/#podsecuritycontext-v1-core",
-							Ref:         ref("k8s.io/api/core/v1.PodSecurityContext"),
-						},
-					},
 					"results": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Results may be specified for an optional results collection step. When specified, after job is completed all results will be downloaded from Slurm cluster with respect to this configuration.",
@@ -163,7 +157,7 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobResults", "k8s.io/api/core/v1.PodSecurityContext"},
+			"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1.SlurmJobResults"},
 	}
 }
 
