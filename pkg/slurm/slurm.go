@@ -202,6 +202,22 @@ func parseDuration(durationStr string) (*time.Duration, error) {
 		// we can skip since data is invalid or not available for that field
 		return nil, nil
 	}
+
+	if strings.Contains(sp[0], "-") {
+		spl := strings.Split(sp[0], "-")
+		days, err := strconv.ParseInt(spl[0], 10, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		hours, err := strconv.ParseInt(spl[1], 10, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		sp[0] = strconv.FormatInt(days*24+hours, 10)
+	}
+
 	d, err := time.ParseDuration(fmt.Sprintf("%sh%sm%ss", sp[0], sp[1], sp[2]))
 	return &d, err
 }
