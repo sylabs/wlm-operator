@@ -37,7 +37,6 @@ import (
 
 const (
 	jobCompanionImage = "sylabsio/slurm:job-companion"
-	slurmCfgPath      = "/syslurm/slurm-cfg.yaml"
 )
 
 // Add creates a new SlurmJob Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -169,7 +168,6 @@ func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	}
 	args := []string{
 		fmt.Sprintf("--batch=%s", sj.Spec.Batch),
-		fmt.Sprintf("--config=%s", slurmCfgPath),
 	}
 
 	if sj.Spec.Results != nil {
@@ -220,14 +218,25 @@ func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 func getVolumes(cr *slurmv1alpha1.SlurmJob) []corev1.Volume {
 	var volumes []corev1.Volume
 
-	hostPathType := corev1.HostPathDirectoryOrCreate // var since we need to have a ref on it
-	volumes = append(volumes, corev1.Volume{
-		Name: "slurm-cfg",
-		VolumeSource: corev1.VolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{
-				Path: "/var/lib/syslurm",
-				Type: &hostPathType,
-			}}})
+	volumes = append(volumes,
+		corev1.Volume{
+			Name: "slurm-cfg",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/var/lib/syslurm",
+					Type: &[]corev1.HostPathType{corev1.HostPathDirectoryOrCreate}[0],
+				},
+			},
+		}, corev1.Volume{
+			Name: "red-box-sock",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/var/run/syslurm/red-box.sock",
+					Type: &[]corev1.HostPathType{corev1.HostPathSocket}[0],
+				},
+			},
+		},
+	)
 
 	if cr.Spec.Results != nil {
 		volumes = append(volumes, cr.Spec.Results.Mount)
@@ -239,11 +248,16 @@ func getVolumes(cr *slurmv1alpha1.SlurmJob) []corev1.Volume {
 func getVolumesMount(cr *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
 	var vms []corev1.VolumeMount
 	// default SLRUM config which have to exist on every k8s node. The config is managed and created by RD
-	vms = append(vms, corev1.VolumeMount{
-		Name:      "slurm-cfg",
-		ReadOnly:  true,
-		MountPath: "/syslurm",
-	})
+	vms = append(vms,
+		corev1.VolumeMount{
+			Name:      "slurm-cfg",
+			ReadOnly:  true,
+			MountPath: "/syslurm",
+		}, corev1.VolumeMount{
+			Name:      "red-box-sock",
+			MountPath: "/red-box.sock",
+		},
+	)
 
 	if cr.Spec.Results != nil {
 		vms = append(vms, corev1.VolumeMount{

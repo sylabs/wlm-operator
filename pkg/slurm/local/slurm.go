@@ -16,7 +16,6 @@ package local
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"log"
 	"os"
@@ -29,10 +28,10 @@ import (
 )
 
 const (
-	sacctBinaryName   = "sacct"
-	sbatchBinaryName  = "sbatch"
-	scancelBinaryName = "scancel"
-	srunBinaryName    = "srun"
+	sbatchBinaryName   = "sbatch"
+	scancelBinaryName  = "scancel"
+	scontrolBinaryName = "scontrol"
+	sacctBinaryName    = "sacct"
 )
 
 // Client implements Slurm interface for communicating with
@@ -42,7 +41,7 @@ type Client struct{}
 // NewClient returns new local client.
 func NewClient() (*Client, error) {
 	var missing []string
-	for _, bin := range []string{sacctBinaryName, sbatchBinaryName, scancelBinaryName, srunBinaryName} {
+	for _, bin := range []string{sacctBinaryName, sbatchBinaryName, scancelBinaryName, scontrolBinaryName} {
 		_, err := exec.LookPath(bin)
 		if err != nil {
 			missing = append(missing, bin)
@@ -52,33 +51,6 @@ func NewClient() (*Client, error) {
 		return nil, errors.Errorf("no slurm binaries found: %s", strings.Join(missing, ", "))
 	}
 	return &Client{}, nil
-}
-
-// SAcct returns information about a submitted batch job.
-func (*Client) SAcct(jobID int64) ([]*slurm.JobInfo, error) {
-	cmd := exec.Command(sacctBinaryName,
-		"-p",
-		"-n",
-		"-j",
-		strconv.FormatInt(jobID, 10),
-		"-o start,end,exitcode,state,comment,jobid,jobname",
-	)
-
-	out, err := cmd.Output()
-	if err != nil {
-		ee, ok := err.(*exec.ExitError)
-		if ok {
-			return nil, errors.Wrapf(err, "failed to execute sacct: %s", ee.Stderr)
-		}
-		return nil, errors.Wrap(err, "failed to execute sacct")
-	}
-
-	jInfo, err := slurm.ParseSacctResponse(string(out))
-	if err != nil {
-		return nil, errors.Wrap(err, slurm.ErrInvalidSacctResponse.Error())
-	}
-
-	return jInfo, nil
 }
 
 // SBatch submits batch job and returns job id if succeeded.
@@ -113,17 +85,6 @@ func (*Client) SCancel(jobID int64) error {
 	return errors.Wrap(err, "failed to execute scancel")
 }
 
-// SRun runs passed command with args in Slurm cluster using context.
-// Srun output is returned uninterpreted as a byte slice.
-func (*Client) SRun(ctx context.Context, command string, args ...string) ([]byte, error) {
-	commandWithParams := []string{command}
-	commandWithParams = append(commandWithParams, args...)
-
-	cmd := exec.CommandContext(ctx, srunBinaryName, commandWithParams...)
-	out, err := cmd.CombinedOutput()
-	return out, errors.Wrap(err, "failed to execute srun")
-}
-
 // Open opens arbitrary file at path in a read-only mode.
 func (*Client) Open(path string) (io.ReadCloser, error) {
 	file, err := os.Open(path)
@@ -131,4 +92,47 @@ func (*Client) Open(path string) (io.ReadCloser, error) {
 		return nil, slurm.ErrFileNotFound
 	}
 	return file, errors.Wrapf(err, "could not open %s", path)
+}
+
+func (*Client) SJobInfo(jobID int64) (*slurm.JobInfo, error) {
+	cmd := exec.Command(scontrolBinaryName, "show", "jobid", strconv.FormatInt(jobID, 10))
+
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get info for jobid: %d", jobID)
+	}
+
+	ji, err := slurm.JobInfoFromScontrolResponse(string(out))
+	if err != nil {
+		return nil, errors.Wrap(err, "can't parse scontrol response")
+	}
+
+	return ji, nil
+}
+
+// SJobSteps returns information about a submitted batch job.
+func (*Client) SJobSteps(jobID int64) ([]*slurm.JobStepInfo, error) {
+	cmd := exec.Command(sacctBinaryName,
+		"-p",
+		"-n",
+		"-j",
+		strconv.FormatInt(jobID, 10),
+		"-o start,end,exitcode,state,jobid,jobname",
+	)
+
+	out, err := cmd.Output()
+	if err != nil {
+		ee, ok := err.(*exec.ExitError)
+		if ok {
+			return nil, errors.Wrapf(err, "failed to execute sacct: %s", ee.Stderr)
+		}
+		return nil, errors.Wrap(err, "failed to execute sacct")
+	}
+
+	jInfo, err := slurm.ParseSacctResponse(string(out))
+	if err != nil {
+		return nil, errors.Wrap(err, slurm.ErrInvalidSacctResponse.Error())
+	}
+
+	return jInfo, nil
 }

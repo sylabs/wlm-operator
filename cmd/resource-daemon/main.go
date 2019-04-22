@@ -47,14 +47,10 @@ var (
 
 func main() {
 	slurmConfigMapPath := flag.String("slurm-config-map", "", "path to attached config map volume with slurm config")
-	nodeConfigPath := flag.String("node-config", "", "slurm config path on host machine")
 	flag.Parse()
 
 	if *slurmConfigMapPath == "" {
 		log.Fatal("slurm config-map path cannot be empty")
-	}
-	if *nodeConfigPath == "" {
-		log.Fatal("node config path cannot be empty")
 	}
 
 	nodeName := os.Getenv(envMyNodeName)
@@ -69,10 +65,9 @@ func main() {
 	}
 
 	wd := &k8s.WatchDog{
-		NodeName:       nodeName,
-		NodeConfigPath: *nodeConfigPath,
-		Client:         k8sClient,
-		DefaultLabels:  defaultNodeLabels,
+		NodeName:      nodeName,
+		Client:        k8sClient,
+		DefaultLabels: defaultNodeLabels,
 	}
 
 	if err := watchAndUpdate(wd, *slurmConfigMapPath); err != nil {
@@ -95,9 +90,6 @@ func loadPatch(nodeName, path string) (*k8s.Patch, error) {
 	nodeConfig, ok := cfg[nodeName]
 	if !ok {
 		return nil, errNotConfigured
-	}
-	if nodeConfig.RedBoxAddress == "" {
-		return nil, errors.New("Red box address have to be specified in config map")
 	}
 	return nodeConfig, nil
 }
