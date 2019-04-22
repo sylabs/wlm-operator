@@ -20,6 +20,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sylabs/slurm-operator/pkg/slurm"
@@ -186,9 +187,44 @@ func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	_, err = io.Copy(w, file)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.NotFound(w, r)
 		return
+	}
+
+	flusher.Flush()
+
+	throttle := time.Tick(200 * time.Millisecond)
+
+	for {
+		select {
+		case <-r.Context().Done():
+			_ = file.Close()
+			log.Println("Client closed connections")
+			return
+		case <-throttle:
+			buff := make([]byte, 128)
+			n, err := file.Read(buff)
+			if err != nil {
+				if err == io.EOF || err == io.ErrUnexpectedEOF {
+					return
+				}
+
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if n == 0 { // just wait till data appear
+				continue
+			}
+
+			if _, err := w.Write(buff[:n]); err != nil {
+				log.Println(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			flusher.Flush()
+		}
 	}
 }

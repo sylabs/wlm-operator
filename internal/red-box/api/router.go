@@ -34,6 +34,7 @@ func NewSlurmRouter(sClient slurm.Slurm) *mux.Router {
 	r.HandleFunc("/sjob/{id}", a.SJobInfo).Methods("GET")
 	r.HandleFunc("/scancel/{id}", a.SCancel).Methods("GET")
 	r.HandleFunc("/open", a.Open).Methods("GET")
+	r.HandleFunc("/tail", a.Tail).Methods("GET")
 
 	return r
 }

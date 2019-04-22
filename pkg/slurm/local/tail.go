@@ -18,6 +18,9 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"os"
+
+	"github.com/sylabs/slurm-operator/pkg/slurm"
 
 	"github.com/hpcloud/tail"
 )
@@ -33,6 +36,10 @@ type TailReader struct {
 func NewTailReader(path string) (*TailReader, error) {
 	t, err := tail.TailFile(path, tail.Config{Follow: true, MustExist: true})
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, slurm.ErrFileNotFound
+		}
+
 		return nil, err
 	}
 

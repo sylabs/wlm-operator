@@ -40,7 +40,6 @@ var (
 	// ErrInvalidSacctResponse is returned when trying to parse sacct
 	// response that is invalid.
 	ErrInvalidSacctResponse = errors.New("unable to parse sacct response")
-
 	// ErrFileNotFound is returned when Open fails to find a file.
 	ErrFileNotFound = errors.New("file is not found")
 )
