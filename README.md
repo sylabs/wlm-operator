@@ -10,8 +10,8 @@ will spawn a `job-companion` container that will talk to slurm.
 
 ## Installation
 
-It is assumed you already have Kubernetes and Slurm clusters running in a topology
-suitable for the chosen connection mode. There are a couple steps needed to set up slurm operator:
+It is assumed you already have Kubernetes and Slurm clusters running in a suitable topology.
+There are a couple steps needed to set up slurm operator:
 
 1. set up red-box
 2. set up slurm resource daemon on kubernetes cluster 
@@ -134,8 +134,6 @@ minikube:
 Events:  <none>
 ```
 
-By default resource daemon will be run with uid 1000, so you should make sure it has write access to
-`/var/lib/syslurm` directory where configuration for `job-companion` will be stored.
 
 Start resource daemon:
 ```bash
@@ -172,8 +170,6 @@ Capacity:
  slurm.sylabs.io/cpu:  2
 ...
 ```
-
-Also on node you should see `slurm-cfg.yaml` file created in `/var/lib/syslurm`.
 
 ### Setting up slurm operator
 
@@ -238,9 +234,8 @@ In the example above we will run lolcow Singularity container in Slurm and colle
 to `/home/vagrant/job-results` located on node. Generally job results can be collected to any
 supported [k8s volume](https://kubernetes.io/docs/concepts/storage/volumes/).
 
-By default `job-companion` will be run with uid 1000, so you should make sure it has a read access to 
-`/var/lib/syslurm` to read Slurm cluster address and a write access to a volume where you want to store the
-results (host directory `/home/vagrant/job-results` in the example above).
+By default `job-companion` will be run with uid 1000, so you should make sure it has a write access to 
+a volume where you want to store the results (host directory `/home/vagrant/job-results` in the example above).
 
 After that you can submit cow job:
 
@@ -293,17 +288,23 @@ Slurm operator supports result collection to a provided [k8s volume](https://kub
 so that a user won't need to have access to a Slurm cluster to analyze job results.
 
 However, some configuration is required for this feature to work. More specifically, job-companion can collect results
-located on submit server only (i.e. k8s node in case of local mode), while slurm job can be scheduled on arbitrary
+located on submit server only (i.e. where `red-box` is running), while slurm job can be scheduled on arbitrary
 slurm worker node. It means that some kind of a shared storage among slurm nodes should be configured so that despite
 of slurm worker node chosen to run a job, results will appear on submit server as well. 
 
-Let's walk through basic configuration steps for each mode. Further assumed that default results file
+Let's walk through basic configuration steps. Further assumed that default results file
 is collected (_slurm-<jobID>.out_). This file can be found on Slurm worker node that is executing a job in a folder,
-from which job was submitted. Configuration for custom results file will differ in shared paths only.
-
-
-_**Local mode**_
+from which job was submitted. Configuration for custom results file will differ in shared paths only:
 
 	$RESULTS_DIR = red-box's working directory
 
 Share $RESULTS_DIR among all Slurm nodes, e.g set up nfs share for $RESULTS_DIR.
+
+
+## Developers
+
+Before submitting any pull requests make sure you have done the following:
+1. Updated dependencies in vendor if needed (`make dep`)
+2. Checked code is buildable
+3. Ran tests and linters (`make test && make lint`)
+4. Updated generated files (`make gen`) 
