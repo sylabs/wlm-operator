@@ -123,6 +123,11 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	key := types.NamespacedName{Name: sjPod.Name, Namespace: sjPod.Namespace}
 	err = r.client.Get(context.Background(), key, sjCurrentPod)
 	if err != nil && errors.IsNotFound(err) {
+		if sj.Status.Status != "" {
+			glog.Info("Pod will not be created, it was already created once")
+			return reconcile.Result{}, nil
+		}
+
 		glog.Infof("Creating new pod %q for slurm job %q", sjPod.Name, sj.Name)
 		err = r.client.Create(context.Background(), sjPod)
 		if err != nil {
