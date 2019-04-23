@@ -168,6 +168,7 @@ func (a *api) Open(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Tail follows and streams file content till client close the connection.
 func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	path := query.Get("path")
@@ -185,7 +186,7 @@ func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		http.NotFound(w, r)
+		http.Error(w, "response writer doesn't implement flusher", http.StatusInternalServerError)
 		return
 	}
 
@@ -197,13 +198,12 @@ func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-r.Context().Done():
-			_ = file.Close()
 			log.Println("Client closed connection")
 			return
 		case <-throttle:
 			n, err := file.Read(buff)
 			if err != nil {
-				if err != io.EOF && err != io.ErrUnexpectedEOF {
+				if err != io.EOF {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 

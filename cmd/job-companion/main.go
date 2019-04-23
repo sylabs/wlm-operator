@@ -162,7 +162,7 @@ func logErrOutput(c slurm.Slurm, path string) error {
 		return err
 	}
 
-	log.Printf("Err logs from: %s", path)
+	log.Printf("Stderr output from %s", path)
 	log.Println(string(logs))
 	return nil
 }
@@ -196,8 +196,8 @@ func tailLogs(ctx context.Context, c slurm.Slurm, logFile string) chan struct{} 
 
 		// since reading from f is blocking we need to do it in a separate gorutine
 		go func() {
-			buff := make([]byte, 128)
 			for {
+				buff := make([]byte, 128)
 				n, err := f.Read(buff)
 				if err != nil {
 					return

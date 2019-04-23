@@ -90,7 +90,7 @@ type Slurm interface {
 	// file to free any allocated resources. Is a file is not found
 	// Open will return ErrFileNotFound.
 	Open(path string) (io.ReadCloser, error)
-	// Tail follows file until close invoked
+	// Tail follows file until close invoked.
 	Tail(path string) (io.ReadCloser, error)
 }
 

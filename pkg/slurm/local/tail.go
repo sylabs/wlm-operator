@@ -18,27 +18,31 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"sync"
 
 	"github.com/hpcloud/tail"
 )
 
-type TailReader struct {
+type tailReader struct {
 	t *tail.Tail
 
 	buff *bytes.Buffer
 
 	isClosed bool
+
+	lock sync.Mutex
 }
 
-func NewTailReader(path string) (*TailReader, error) {
+func newTailReader(path string) (*tailReader, error) {
 	t, err := tail.TailFile(path, tail.Config{Follow: true, ReOpen: true})
 	if err != nil {
 		return nil, err
 	}
 
-	tr := &TailReader{
+	tr := &tailReader{
 		t:    t,
 		buff: &bytes.Buffer{},
+		lock: sync.Mutex{},
 	}
 
 	go tr.readTail()
@@ -47,22 +51,24 @@ func NewTailReader(path string) (*TailReader, error) {
 }
 
 // Read returns EOF error only after invoking Close.
-// Before close in case of EOF errors it will be returning nil
-func (tr *TailReader) Read(p []byte) (int, error) {
+// Before close in case of EOF errors it will be returning nil.
+func (tr *tailReader) Read(p []byte) (int, error) {
+	tr.lock.Lock()
 	n, err := io.ReadFull(tr.buff, p)
-	if err == io.EOF || err == io.ErrUnexpectedEOF && !tr.isClosed {
-		err = nil
+	tr.lock.Unlock()
+	if (err == io.EOF || err == io.ErrUnexpectedEOF) && !tr.isClosed {
+		return n, nil
 	}
 
 	return n, err
 }
 
-func (tr *TailReader) Close() error {
+func (tr *tailReader) Close() error {
 	_ = tr.t.StopAtEOF() // it returns stop reason instead of err
 	return nil
 }
 
-func (tr *TailReader) readTail() {
+func (tr *tailReader) readTail() {
 	defer func() {
 		log.Println("Read tail finished")
 		tr.isClosed = true
@@ -79,7 +85,9 @@ func (tr *TailReader) readTail() {
 			return
 		}
 
-		_, err := tr.buff.Write([]byte(l.Text + "\n"))
+		tr.lock.Lock()
+		_, err := tr.buff.WriteString(l.Text + "\n")
+		tr.lock.Unlock()
 		if err != nil {
 			log.Printf("Could not write to buffer err: %s", err)
 			return

@@ -95,12 +95,8 @@ func (*Client) Open(path string) (io.ReadCloser, error) {
 }
 
 func (*Client) Tail(path string) (io.ReadCloser, error) {
-	tr, err := NewTailReader(path)
+	tr, err := newTailReader(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, slurm.ErrFileNotFound
-		}
-
 		return nil, errors.Wrap(err, "could not create tail reader")
 	}
 
