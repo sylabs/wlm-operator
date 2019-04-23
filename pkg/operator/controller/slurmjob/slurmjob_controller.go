@@ -36,22 +36,33 @@ import (
 )
 
 const (
-	jobCompanionImage = "cali4888/jc:0.1.2-debug"
+	jobCompanionImage = "cloud.sylabs.io/sashayakovtseva/slurm:job-companion"
 )
 
-// Add creates a new SlurmJob Controller and adds it to the Manager. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
+// Reconciler reconciles a SlurmJob object
+type Reconciler struct {
+	// This client, initialized using mgr.Client() above, is a split client
+	// that reads objects from the cache and writes to the apiserver
+	client client.Client
+	scheme *runtime.Scheme
+
+	jcUID int64
+	jcGID int64
 }
 
-// newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileSlurmJob{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+// NewReconciler returns a new SlurmJob controller.
+func NewReconciler(mgr manager.Manager, jcUID, jcGID int64) *Reconciler {
+	return &Reconciler{
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		jcUID:  jcUID,
+		jcGID:  jcGID,
+	}
 }
 
-// add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
+// AddToManager adds SlurmJob Reconciler to the given Manager.
+// The Manager will set fields on the Reconciler and Start it when the Manager is Started.
+func (r *Reconciler) AddToManager(mgr manager.Manager) error {
 	// Create a new controller
 	c, err := controller.New("slurmjob-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -77,19 +88,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileSlurmJob{}
-
-// ReconcileSlurmJob reconciles a SlurmJob object
-type ReconcileSlurmJob struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
-}
-
 // Reconcile reads that state of the cluster for a SlurmJob object and makes changes
 // based on the state read and what is in the SlurmJob.Spec.
-func (r *ReconcileSlurmJob) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	glog.Infof("Received reconcile request: %v", req)
 
 	// Fetch the SlurmJob instance
@@ -108,7 +109,7 @@ func (r *ReconcileSlurmJob) Reconcile(req reconcile.Request) (reconcile.Result, 
 	}
 
 	// Translate SlurmJob to Pod
-	sjPod := newPodForSJ(sj)
+	sjPod := r.newPodForSJ(sj)
 
 	// Set SlurmJob instance as the owner and controller
 	err = controllerutil.SetControllerReference(sj, sjPod, r.scheme)
@@ -143,7 +144,7 @@ func (r *ReconcileSlurmJob) Reconcile(req reconcile.Request) (reconcile.Result, 
 }
 
 // newPodForSJ returns a job-companion pod for the slurm job.
-func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
+func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	labels := map[string]string{
 		"app": sj.Name,
 	}
@@ -184,12 +185,15 @@ func newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
-			SecurityContext: sj.Spec.PodSecurityContext,
+			SecurityContext: &corev1.PodSecurityContext{
+				RunAsUser:  &r.jcUID,
+				RunAsGroup: &r.jcGID,
+			},
 			Containers: []corev1.Container{
 				{
 					Name:            "jt1",
 					Image:           jobCompanionImage,
-					ImagePullPolicy: corev1.PullAlways,
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Args:            args,
 					Resources: corev1.ResourceRequirements{
 						Requests: resourceRequest,
@@ -220,14 +224,6 @@ func getVolumes(cr *slurmv1alpha1.SlurmJob) []corev1.Volume {
 
 	volumes = append(volumes,
 		corev1.Volume{
-			Name: "slurm-cfg",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/var/lib/syslurm",
-					Type: &[]corev1.HostPathType{corev1.HostPathDirectoryOrCreate}[0],
-				},
-			},
-		}, corev1.Volume{
 			Name: "red-box-sock",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
@@ -250,10 +246,6 @@ func getVolumesMount(cr *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
 	// default SLRUM config which have to exist on every k8s node. The config is managed and created by RD
 	vms = append(vms,
 		corev1.VolumeMount{
-			Name:      "slurm-cfg",
-			ReadOnly:  true,
-			MountPath: "/syslurm",
-		}, corev1.VolumeMount{
 			Name:      "red-box-sock",
 			MountPath: "/red-box.sock",
 		},

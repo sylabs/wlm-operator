@@ -26,7 +26,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/sylabs/slurm-operator/pkg/operator/apis"
-	"github.com/sylabs/slurm-operator/pkg/operator/controller"
+	"github.com/sylabs/slurm-operator/pkg/operator/controller/slurmjob"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -48,6 +48,8 @@ func printVersion() {
 func main() {
 	// hack to disable logging to file
 	_ = flag.Set("logtostderr", "true")
+	jcUID := flag.Int64("jc-uid", 1000, "uid to be used for running job-companion containers")
+	jcGID := flag.Int64("jc-gid", 1000, "gid to be used for running job-companion containers")
 	flag.Parse()
 	defer glog.Flush()
 
@@ -88,8 +90,9 @@ func main() {
 		glog.Fatalf("Failed to add manager to apis scheme: %v", err)
 	}
 
-	// Setup all Controllers
-	if err := controller.AddToManager(mgr); err != nil {
+	// Setup SlurmJob controller
+	sj := slurmjob.NewReconciler(mgr, *jcUID, *jcGID)
+	if err := sj.AddToManager(mgr); err != nil {
 		glog.Fatalf("Failed to add controller to manager: %v", err)
 	}
 

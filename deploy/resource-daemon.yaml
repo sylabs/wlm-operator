@@ -42,9 +42,9 @@ spec:
       serviceAccountName: slurm-resource-daemon
       containers:
       - name: slurm-rd
-        image: sylabsio/slurm:resource-daemon
+        image: cloud.sylabs.io/sashayakovtseva/slurm:resource-daemon
         imagePullPolicy: Always
-        args: ["--slurm-config-map", "/etc/config/slurm"]
+        args: ["-slurm-config-map", "/etc/config/slurm"]
         env:
         - name: MY_NODE_NAME
           valueFrom:
@@ -56,17 +56,14 @@ spec:
              name: slurm-config
              key: config
         volumeMounts:
-          - name: slurm-cfg
-            mountPath: /syslurm
           - name: kubelet-dp
             mountPath: /var/lib/kubelet/device-plugins
           - name: slurm-cfg-map-vol
             mountPath: /etc/config
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
       volumes:
-        - name: slurm-cfg
-          hostPath:
-            path: /var/lib/syslurm
-            type: DirectoryOrCreate
         - name: kubelet-dp
           hostPath:
             path: /var/lib/kubelet/device-plugins
