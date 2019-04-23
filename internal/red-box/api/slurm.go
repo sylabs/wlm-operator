@@ -203,7 +203,7 @@ func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 		case <-throttle:
 			n, err := file.Read(buff)
 			if err != nil {
-				if err != io.EOF {
+				if err != io.EOF || err != io.ErrUnexpectedEOF {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 
