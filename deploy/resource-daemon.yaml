@@ -42,7 +42,7 @@ spec:
       serviceAccountName: slurm-resource-daemon
       containers:
       - name: slurm-rd
-        image: cloud.sylabs.io/sashayakovtseva/slurm:resource-daemon
+        image: cloud.sylabs.io/sashayakovtseva/default/slurm:resource-daemon
         imagePullPolicy: Always
         args: ["-slurm-config-map", "/etc/config/slurm"]
         env:

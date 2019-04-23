@@ -38,7 +38,8 @@ push:
 	$(V)for f in `ls sif` ; do \
 		echo " PUSH" $${f} ; \
 		sudo singularity build sif/$${f}.sif sif/$${f} ;\
-		singularity push sif/$${f}.sif library://sashayakovtseva/slurm:$${f} ;\
+		singularity sign sif/$${f}.sif;\
+		singularity push sif/$${f}.sif library://sashayakovtseva/default/slurm:$${f} ;\
 	done
 
 .PHONY: dep
