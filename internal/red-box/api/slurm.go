@@ -203,11 +203,10 @@ func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 		case <-throttle:
 			n, err := file.Read(buff)
 			if err != nil {
-				if err == io.EOF || err == io.ErrUnexpectedEOF {
-					return
+				if err != io.EOF && err != io.ErrUnexpectedEOF {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
@@ -216,7 +215,6 @@ func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if _, err := w.Write(buff[:n]); err != nil {
-				log.Println(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
