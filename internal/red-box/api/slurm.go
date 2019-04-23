@@ -20,6 +20,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sylabs/slurm-operator/pkg/slurm"
@@ -164,5 +165,60 @@ func (a *api) Open(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+}
+
+// Tail follows and streams file content till client close the connection.
+func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	path := query.Get("path")
+	if path == "" {
+		http.Error(w, "no path query parameter is found", http.StatusBadRequest)
+		return
+	}
+
+	file, err := a.slurm.Tail(path)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "response writer doesn't implement flusher", http.StatusInternalServerError)
+		return
+	}
+
+	flusher.Flush() // flush to send headers
+
+	throttle := time.Tick(200 * time.Millisecond)
+
+	buff := make([]byte, 128)
+	for {
+		select {
+		case <-r.Context().Done():
+			log.Println("Client closed connection")
+			return
+		case <-throttle:
+			n, err := file.Read(buff)
+			if err != nil {
+				if err != io.EOF || err != io.ErrUnexpectedEOF {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
+
+				return
+			}
+
+			if n == 0 {
+				continue
+			}
+
+			if _, err := w.Write(buff[:n]); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			flusher.Flush()
+		}
 	}
 }

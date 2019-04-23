@@ -28,7 +28,7 @@ const (
    Priority=4294901743 Nice=0 Account=(null) QOS=(null)
    JobState=RUNNING Reason=None Dependency=(null)
    Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
-   RunTime=00:00:30 TimeLimit=01:00:00 TimeMin=N/A
+   RunTime=00:00:30 TimeLimit=1-01:00:00 TimeMin=N/A
    SubmitTime=2019-04-16T11:49:19 EligibleTime=2019-04-16T11:49:19
    StartTime=2019-04-16T11:49:20 EndTime=2019-04-16T12:49:20 Deadline=N/A
    PreemptTime=None SuspendTime=None SecsPreSuspend=0
@@ -84,7 +84,7 @@ var (
 	testStartTime   = time.Date(2019, 04, 16, 11, 49, 20, 0, time.UTC)
 	testSacctTime   = time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC)
 	testRunTime     = 30 * time.Second
-	testLimitTime   = 1 * time.Hour
+	testLimitTime   = 25 * time.Hour
 	testZeroRunTime = time.Duration(0)
 )
 

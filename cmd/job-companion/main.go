@@ -15,9 +15,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -78,7 +80,6 @@ func main() {
 func getLocalClient(addr string) (*rest.Client, error) {
 	c := rest.Config{
 		ControllerAddress: addr,
-		TimeOut:           10,
 	}
 	client, err := rest.NewClient(c)
 	if err != nil {
@@ -93,38 +94,131 @@ func runBatch(c slurm.Slurm, batch string, cOps *collectOptions) error {
 	if err != nil {
 		return err
 	}
+	sInfo, err := c.SJobInfo(id)
+	if err != nil {
+		return err
+	}
 
-	ticker := time.NewTicker(1 * time.Second)
+	log.Printf("JobID: %d", id)
+
+	ctx, cancelTailLogs := context.WithCancel(context.Background())
+	tailLogsDone := tailLogs(ctx, c, sInfo.StdOut)
+
 	for {
-		select {
-		case <-ticker.C:
-			sInfo, err := c.SJobSteps(id)
-			if err != nil {
-				return err
-			}
-			if len(sInfo) == 0 {
-				return errors.New("unexpected response from sacct")
-			}
-			state := sInfo[0].State // job info contains several steps. First step shows if job execution succeeded
-			if state == slurm.JobStatusCompleted ||
-				state == slurm.JobStatusFailed ||
-				state == slurm.JobStatusCanceled {
-				printSInfo(sInfo)
+		time.Sleep(1 * time.Second)
 
-				switch state {
-				case slurm.JobStatusFailed:
-					return errors.New("job failed")
-				case slurm.JobStatusCanceled:
-					return errors.New("job canceled")
-				case slurm.JobStatusCompleted:
-					if cOps != nil {
-						return collectResults(c, id, cOps)
+		sInfo, err = c.SJobInfo(id)
+		if err != nil {
+			cancelTailLogs()
+			return err
+		}
+
+		state := sInfo.State
+		if state == slurm.JobStatusCompleted ||
+			state == slurm.JobStatusFailed ||
+			state == slurm.JobStatusCanceled {
+
+			cancelTailLogs()
+			<-tailLogsDone // need to wail till all logs will be printed, not to ruin formatting
+
+			switch state {
+			case slurm.JobStatusFailed:
+				// in other way logs are already printed
+				if sInfo.StdOut != sInfo.StdErr {
+					if err := logErrOutput(c, sInfo.StdErr); err != nil {
+						log.Printf("Can't print error logs err: %s", err)
 					}
-					return nil
 				}
+
+				if err := logJobSteps(c, id); err != nil {
+					log.Printf("Can't print steps info err: %s", err)
+				}
+
+				return errors.New("job failed")
+			case slurm.JobStatusCanceled:
+				if err := logJobSteps(c, id); err != nil {
+					log.Printf("Can't print steps info err: %s", err)
+				}
+
+				return errors.New("job canceled")
+			case slurm.JobStatusCompleted:
+				if cOps != nil {
+					return collectResults(c, id, cOps)
+				}
+				return nil
 			}
 		}
 	}
+}
+
+func logErrOutput(c slurm.Slurm, path string) error {
+	f, err := c.Open(path)
+	if err != nil {
+		return err
+	}
+
+	logs, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Stderr output from %s", path)
+	log.Println(string(logs))
+	return nil
+}
+
+func logJobSteps(c slurm.Slurm, id int64) error {
+	steps, err := c.SJobSteps(id)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range steps {
+		log.Printf("JobID:%s State:%s ExitCode:%d Name:%s", i.ID, i.State, i.ExitCode, i.Name)
+	}
+	return nil
+}
+
+func tailLogs(ctx context.Context, c slurm.Slurm, logFile string) chan struct{} {
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+
+		f, err := c.Tail(logFile)
+		if err != nil {
+			log.Printf("Can't tail file %s err: %s", logFile, err)
+			return
+		}
+		defer f.Close()
+
+		buffCh := make(chan []byte)
+
+		// since reading from f is blocking we need to do it in a separate gorutine
+		go func() {
+			for {
+				buff := make([]byte, 128)
+				n, err := f.Read(buff)
+				if err != nil {
+					return
+				}
+
+				buffCh <- buff[:n]
+			}
+		}()
+
+		for {
+			select {
+			case <-ctx.Done():
+				log.Println("Tail logs finished from context")
+				return
+			case chunk := <-buffCh:
+				os.Stdout.Write(chunk)
+			}
+		}
+	}()
+
+	return done
 }
 
 func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
@@ -155,10 +249,4 @@ func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
 	}
 
 	return nil
-}
-
-func printSInfo(infos []*slurm.JobStepInfo) {
-	for _, i := range infos {
-		log.Printf("JobID:%s State:%s ExitCode:%d Name:%s", i.ID, i.State, i.ExitCode, i.Name)
-	}
 }
