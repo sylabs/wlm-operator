@@ -102,6 +102,10 @@ required = [
   name = "github.com/sylabs/singularity-cri"
   version = "1.0.0-beta.1"
 
+[[override]]
+  source = "https://github.com/fsnotify/fsnotify/archive/v1.4.7.tar.gz"
+  name = "gopkg.in/fsnotify.v1"
+
 [prune]
   go-tests = true
   non-go = true
