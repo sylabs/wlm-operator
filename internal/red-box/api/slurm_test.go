@@ -97,8 +97,8 @@ This is a test output from SLURM!
 func TestApi_Tail(t *testing.T) {
 	testFile, err := ioutil.TempFile("", "")
 	require.NoError(t, err)
-	defer testFile.Close()
 	defer os.Remove(testFile.Name())
+	defer testFile.Close()
 	writerCtx, wrCancel := context.WithCancel(context.Background())
 	readerCtx, rCancel := context.WithCancel(context.Background())
 	testT := time.NewTimer(10 * time.Second)
