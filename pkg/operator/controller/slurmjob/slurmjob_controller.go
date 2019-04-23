@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	jobCompanionImage = "sylabsio/slurm:job-companion"
+	jobCompanionImage = "cali4888/jc:0.1.2-debug"
 )
 
 // Add creates a new SlurmJob Controller and adds it to the Manager. The Manager will set fields on the Controller

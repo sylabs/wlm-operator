@@ -101,7 +101,7 @@ func TestApi_Tail(t *testing.T) {
 	defer os.Remove(testFile.Name())
 	writerCtx, wrCancel := context.WithCancel(context.Background())
 	readerCtx, rCancel := context.WithCancel(context.Background())
-	testT := time.NewTimer(50 * time.Second)
+	testT := time.NewTimer(10 * time.Second)
 	go func() {
 		<-testT.C
 		wrCancel()
@@ -142,7 +142,7 @@ func TestApi_Tail(t *testing.T) {
 		buff := make([]byte, 128)
 		n, err := resp.Body.Read(buff)
 		if err != nil {
-			log.Println(err)
+			require.EqualValues(t, "context canceled", err.Error())
 			break
 		}
 		b.Write(buff[:n])

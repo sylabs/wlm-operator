@@ -177,10 +177,6 @@ func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	file, err := a.slurm.Tail(path)
-	if err == slurm.ErrFileNotFound {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -193,18 +189,18 @@ func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flusher.Flush()
+	flusher.Flush() // flush to send headers
 
 	throttle := time.Tick(200 * time.Millisecond)
 
+	buff := make([]byte, 128)
 	for {
 		select {
 		case <-r.Context().Done():
 			_ = file.Close()
-			log.Println("Client closed connections")
+			log.Println("Client closed connection")
 			return
 		case <-throttle:
-			buff := make([]byte, 128)
 			n, err := file.Read(buff)
 			if err != nil {
 				if err == io.EOF || err == io.ErrUnexpectedEOF {
@@ -215,7 +211,7 @@ func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if n == 0 { // just wait till data appear
+			if n == 0 {
 				continue
 			}
 

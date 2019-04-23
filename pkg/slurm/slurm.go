@@ -26,8 +26,6 @@ import (
 )
 
 const (
-	// JobStatusRunning mean Slurm job is running.
-	JobStatusRunning = "RUNNING"
 	// JobStatusCompleted means Slurm job is finished successfully.
 	JobStatusCompleted = "COMPLETED"
 	// JobStatusCanceled means Slurm job was cancelled.
