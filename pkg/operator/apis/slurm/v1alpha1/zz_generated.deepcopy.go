@@ -19,7 +19,6 @@
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -117,11 +116,6 @@ func (in *SlurmJobSpec) DeepCopyInto(out *SlurmJobSpec) {
 		for key, val := range *in {
 			(*out)[key] = val
 		}
-	}
-	if in.PodSecurityContext != nil {
-		in, out := &in.PodSecurityContext, &out.PodSecurityContext
-		*out = new(v1.PodSecurityContext)
-		(*in).DeepCopyInto(*out)
 	}
 	if in.Results != nil {
 		in, out := &in.Results, &out.Results
