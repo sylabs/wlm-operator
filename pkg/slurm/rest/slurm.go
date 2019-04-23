@@ -150,10 +150,6 @@ func (c *Client) Tail(path string) (io.ReadCloser, error) {
 		return nil, errors.Wrap(err, "could not send tail request")
 	}
 
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, slurm.ErrFileNotFound
-	}
-
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Wrap(ErrNot200, resp.Status)
 	}
