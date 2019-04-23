@@ -83,6 +83,7 @@ jobs:
       - run:
           name: Authorize remote library
           command: |
+            touch $HOME/.singularity/remote.yaml
             echo $SYLABS_TOKEN >> token
             singularity remote login SylabsCloud --tokenfile token
       - run:
