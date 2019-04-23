@@ -35,10 +35,10 @@ lint:
 
 .PHONY: push
 push:
-	$(V)for f in `ls docker | sed  's/Dockerfile.//'` ; do \
+	$(V)for f in `ls sif` ; do \
 		echo " PUSH" $${f} ; \
-		docker build -f docker/Dockerfile.$${f} -t sylabsio/slurm:$${f} . ;\
-		docker push sylabsio/slurm:$${f} ;\
+		sudo singularity build sif/$${f}.sif sif/$${f} ;\
+		singularity push sif/$${f}.sif library://sashayakovtseva/slurm:$${f} ;\
 	done
 
 .PHONY: dep
