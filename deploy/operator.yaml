@@ -29,3 +29,6 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "slurm-operator"
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000

@@ -60,6 +60,9 @@ spec:
             mountPath: /var/lib/kubelet/device-plugins
           - name: slurm-cfg-map-vol
             mountPath: /etc/config
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
       volumes:
         - name: kubelet-dp
           hostPath:

@@ -48,8 +48,8 @@ func printVersion() {
 func main() {
 	// hack to disable logging to file
 	_ = flag.Set("logtostderr", "true")
-	jcUID := flag.Int64("jc-uid", 0, "uid to be used for running job-companion containers")
-	jcGID := flag.Int64("jc-gid", 0, "gid to be used for running job-companion containers")
+	jcUID := flag.Int64("jc-uid", 1000, "uid to be used for running job-companion containers")
+	jcGID := flag.Int64("jc-gid", 1000, "gid to be used for running job-companion containers")
 	flag.Parse()
 	defer glog.Flush()
 
