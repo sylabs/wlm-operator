@@ -3,25 +3,25 @@ From: golang:alpine
 Stage: builder
 
 %files
-    . /usr/local/go/src/github.com/sylabs/slurm-operator
+	. /usr/local/go/src/github.com/sylabs/slurm-operator
 
 %post
 	export PATH=$PATH:/usr/local/go/bin
 	export HOME=/root
 	export GOPATH=/go
 
-    apk update
-    apk add git && apk add ca-certificates
-    cd /usr/local/go/src/github.com/sylabs/slurm-operator
-    CGO_ENABLED=0 go build -o main cmd/operator/main.go
+	apk update
+	apk add git && apk add ca-certificates
+	cd /usr/local/go/src/github.com/sylabs/slurm-operator
+	CGO_ENABLED=0 go build -o main cmd/operator/main.go
 
 Bootstrap: scratch
 Stage: two
 
 %files from builder
-    /etc/ssl/certs/ca-certificates.crt
-    /etc/passwd
-    /usr/local/go/src/github.com/sylabs/slurm-operator/main /
+	/etc/ssl/certs/ca-certificates.crt
+	/etc/passwd
+	/usr/local/go/src/github.com/sylabs/slurm-operator/main /
 
 %runscript
-    main
+	main
