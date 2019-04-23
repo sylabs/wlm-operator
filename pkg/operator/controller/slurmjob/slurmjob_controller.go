@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	jobCompanionImage = "sylabsio/slurm:job-companion"
+	jobCompanionImage = "cloud.sylabs.io/sashayakovtseva/slurm:job-companion"
 )
 
 // Add creates a new SlurmJob Controller and adds it to the Manager. The Manager will set fields on the Controller

@@ -20,7 +20,7 @@ jobs:
       - attach_workspace:
           at: /go
       - run:
-          name: Build controller
+          name: Build red-box
           command: make
 
   test:
@@ -49,20 +49,47 @@ jobs:
           command: make lint
 
   publish:
-    docker:
-      - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/slurm-operator
+    machine: true
     steps:
       - attach_workspace:
-          at: /go
-      - setup_remote_docker
+          at: ~/go
       - run:
-          name: Login
-          command: docker login -u $DOCKER_USER -p $DOCKER_PASS
+          name: Setup environment
+          command: |
+            echo 'export GOPATH=$HOME/go' >> $BASH_ENV
+            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> $BASH_ENV
+            echo 'export PATH=$PATH:/usr/local/libexec/singularity/bin/' >> $BASH_ENV
       - run:
-          name: Build and push
-          command: make push
-
+          name: Update go to 1.12
+          working_directory: /tmp
+          command: |
+            wget https://dl.google.com/go/go1.12.linux-amd64.tar.gz
+            sudo rm -rf /usr/local/go
+            sudo tar -C /usr/local -xzf go1.12.linux-amd64.tar.gz
+      - run:
+          name: Install dev libraries
+          command: |
+            sudo apt-get update -y
+            sudo apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools libseccomp-dev libgpgme11-dev
+      - run:
+          name: Install singularity
+          command: |
+            git clone https://github.com/sylabs/singularity.git $GOPATH/src/github.com/sylabs/singularity
+            cd $GOPATH/src/github.com/sylabs/singularity
+            ./mconfig -p /usr/local
+            make -j$(nproc) -C ./builddir
+            sudo make -C ./builddir install
+      - run:
+          name: Authorize remote library
+          command: |
+            echo $SYLABS_TOKEN >> token
+            singularity remote login SylabsCloud --tokenfile token
+      - run:
+          name: Publish images
+          command: |
+            cd $GOPATH/src/github.com/sylabs/slurm-operator
+            make push
 
 workflows:
   version: 2

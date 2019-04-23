@@ -15,7 +15,7 @@ spec:
       serviceAccountName: slurm-operator
       containers:
         - name: slurm-operator
-          image: sylabsio/slurm:operator
+          image: cloud.sylabs.io/sashayakovtseva/slurm:operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
