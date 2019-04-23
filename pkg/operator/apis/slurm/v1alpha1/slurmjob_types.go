@@ -42,10 +42,6 @@ type SlurmJobSpec struct {
 	// Cannot be updated. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources.
 	Resources map[string]int64 `json:"resources,omitempty"`
 
-	// PodSecurityContext holds pod-level security attributes and common container settings.
-	// More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.14/#podsecuritycontext-v1-core
-	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
-
 	// Results may be specified for an optional results collection step.
 	// When specified, after job is completed all results will be downloaded from Slurm
 	// cluster with respect to this configuration.

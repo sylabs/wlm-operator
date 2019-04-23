@@ -17,6 +17,7 @@ spec:
         - name: slurm-operator
           image: sylabsio/slurm:operator
           imagePullPolicy: Always
+          args: ["-jc-uid", "1000","-jc-uid", "1000"]
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
@@ -28,3 +29,6 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "slurm-operator"
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
