@@ -224,14 +224,6 @@ func getVolumes(cr *slurmv1alpha1.SlurmJob) []corev1.Volume {
 
 	volumes = append(volumes,
 		corev1.Volume{
-			Name: "slurm-cfg",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/var/lib/syslurm",
-					Type: &[]corev1.HostPathType{corev1.HostPathDirectoryOrCreate}[0],
-				},
-			},
-		}, corev1.Volume{
 			Name: "red-box-sock",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
@@ -254,10 +246,6 @@ func getVolumesMount(cr *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
 	// default SLRUM config which have to exist on every k8s node. The config is managed and created by RD
 	vms = append(vms,
 		corev1.VolumeMount{
-			Name:      "slurm-cfg",
-			ReadOnly:  true,
-			MountPath: "/syslurm",
-		}, corev1.VolumeMount{
 			Name:      "red-box-sock",
 			MountPath: "/red-box.sock",
 		},
