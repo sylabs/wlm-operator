@@ -68,10 +68,10 @@ jobs:
             sudo rm -rf /usr/local/go
             sudo tar -C /usr/local -xzf go1.12.linux-amd64.tar.gz
       - run:
-          name: Install dev libraries
+          name: Install prerequisities
           command: |
             sudo apt-get update -y
-            sudo apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools libseccomp-dev libgpgme11-dev
+            sudo apt-get install -y expect build-essential libssl-dev uuid-dev squashfs-tools libseccomp-dev libgpgme11-dev
       - run:
           name: Install singularity
           command: |
@@ -83,14 +83,44 @@ jobs:
       - run:
           name: Authorize remote library
           command: |
+            mkdir $HOME/.singularity
             touch $HOME/.singularity/remote.yaml
             echo $SYLABS_TOKEN >> token
             singularity remote login SylabsCloud --tokenfile token
+            singularity keys pull $SYLABS_KEY_FINGERPRINT
+            echo $SYLABS_KEY_BASE64 | sed 's/ //g' | base64 -d - > key
+            cat > import.sh <<EOF
+            #!/usr/bin/expect -f
+            set timeout -1
+            spawn singularity keys import key
+            expect "Enter your old password : "
+            send -- "\r"
+            expect "Enter a new password for this key : "
+            send -- "\r"
+            expect  "Retype your passphrase : "
+            send -- "\r"
+            expect eof
+            EOF
+            chmod +x import.sh
+            ./import.sh
       - run:
           name: Publish images
           command: |
             cd $GOPATH/src/github.com/sylabs/slurm-operator
-            make push
+            cat > push.sh <<EOF
+            #!/usr/bin/expect -f
+            set timeout -1
+            spawn make push
+            expect "Enter key passphrase : "
+            send -- "\r"
+            expect "Enter key passphrase : "
+            send -- "\r"
+            expect "Enter key passphrase : "
+            send -- "\r"
+            expect eof
+            EOF
+            chmod +x push.sh
+            ./push.sh
 
 workflows:
   version: 2
