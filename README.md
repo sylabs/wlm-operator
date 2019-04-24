@@ -7,7 +7,7 @@ With slurm operator batch jobs can be managed via Kubernetes. To do that operato
 will spawn a `job-companion` container that will talk to slurm.
 
 <p align="center">
-  <img width="460" height="300" src="/docs/local-mode.png">
+  <img width="460" height="300" src="/docs/slurm-k8s.png">
 </p>
 
 ## Installation
