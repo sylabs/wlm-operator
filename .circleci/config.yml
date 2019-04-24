@@ -93,7 +93,6 @@ jobs:
             #!/usr/bin/expect -f
             set timeout -1
             spawn singularity keys import key
-            match_max 100000
             expect "Enter your old password : "
             send -- "\r"
             expect "Enter a new password for this key : "
