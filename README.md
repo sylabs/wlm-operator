@@ -6,7 +6,9 @@ Singularity implementation of k8s operator for interacting with Slurm.
 With slurm operator batch jobs can be managed via Kubernetes. To do that operator
 will spawn a `job-companion` container that will talk to slurm.
 
-![local mode](/docs/local-mode.png)
+<p align="center">
+  <img width="460" height="300" src="/docs/local-mode.png">
+</p>
 
 ## Installation
 
