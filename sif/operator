@@ -24,4 +24,4 @@ Stage: two
 	/usr/local/go/src/github.com/sylabs/slurm-operator/main /
 
 %runscript
-	./main "$@"
+	exec ./main "$@"
