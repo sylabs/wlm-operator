@@ -39,7 +39,7 @@ push:
 		echo " PUSH" $${f} ; \
 		sudo singularity build sif/$${f}.sif sif/$${f} ;\
 		singularity sign sif/$${f}.sif;\
-		singularity push sif/$${f}.sif library://library/default/slurm:$${f} ;\
+		singularity push sif/$${f}.sif library://sashayakovtseva/default/slurm:$${f} ;\
 	done
 
 .PHONY: dep
