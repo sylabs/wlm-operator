@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	jobCompanionImage = "cloud.sylabs.io/sashayakovtseva/default/slurm:job-companion"
+	jobCompanionImage = "cloud.sylabs.io/library/slurm/job-companion:latest"
 )
 
 // Reconciler reconciles a SlurmJob object
