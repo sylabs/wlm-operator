@@ -46,11 +46,11 @@ var (
 )
 
 func main() {
-	slurmConfigMapPath := flag.String("slurm-config-map", "", "path to attached config map volume with slurm config")
+	slurmConfigMapPath := flag.String("slurm-config", "", "path to attached config map volume with slurm config")
 	flag.Parse()
 
 	if *slurmConfigMapPath == "" {
-		log.Fatal("slurm config-map path cannot be empty")
+		log.Fatal("slurm config path cannot be empty")
 	}
 
 	nodeName := os.Getenv(envMyNodeName)

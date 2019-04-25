@@ -4,7 +4,7 @@
 Singularity implementation of k8s operator for interacting with Slurm.
 
 With slurm operator batch jobs can be managed via Kubernetes. To do that operator
-will spawn a `job-companion` container that will talk to slurm.
+will spawn a `job-companion` container that will talk to Slurm.
 
 <p align="center">
   <img width="580" height="400" src="/docs/slurm-k8s.png">
@@ -12,7 +12,7 @@ will spawn a `job-companion` container that will talk to slurm.
 
 ## Installation
 
-It is assumed you already have Kubernetes and Slurm clusters running in a suitable topology.
+It is assumed you already have Kubernetes with Singularity-CRI and Slurm clusters running in a suitable topology.
 There are a couple steps needed to set up slurm operator:
 
 1. set up red-box
@@ -21,11 +21,11 @@ There are a couple steps needed to set up slurm operator:
 
 ### Setting up red-box
 
-Red-box is a REST HTTP server over unix sockets that acts as a proxy between `job-companion` and
-Slurm itself. Under the hood it runs Slurm binaries and returns Slurm response in a convenient form
+Red-box is a REST HTTP server over unix sockets that acts as a proxy between `job-companion` and a
+Slurm cluster itself. Under the hood it runs Slurm binaries and returns Slurm response in a convenient form
 so that `job-companion` understands it.
 
-Red-box should be run on each Kubernetes node where slurm jobs may be scheduled. 
+Red-box should be run on each Kubernetes node where Slurm jobs may be scheduled. 
 Steps for setting up red-box for a single node with installed Go 1.10+ are the following: 
 
 ```bash
@@ -45,26 +45,25 @@ The most simple way to run the red-box:
 ./bin/red-box
 ```
 
-This will create `/var/run/syslurm/red-box.sock` socket and start red-box there. 
-NOTE: `/var/run/syslurm/red-box.sock` location cannot not be changed at the moment. 
+This will create `/var/run/syslurm/red-box.sock` socket and start red-box there.
+NOTE: `/var/run/syslurm/red-box.sock` location cannot not be changed at the moment.
 
 ### Setting up slurm resource daemon
 
 Resource daemon is used for k8s node labeling and resource provisioning so that
-Slurm jobs will be correctly scheduled. It is also responsible for provisioning
-`job-companion` with correct slurm address. 
+Slurm jobs will be correctly scheduled.
 
-Setting up resource daemon required a few steps. First of all you should determine
+Setting up resource daemon requires a few steps. First of all you should determine
 which k8s nodes will be used for Slurm job scheduling. Further assumed that all k8s nodes
 are leveraged:
 
 ```bash
 $ kubectl get no
 NAME       STATUS    ROLES     AGE       VERSION
-minikube   Ready     master    7d        v1.13.2
+node01     Ready     master    7d        v1.13.2
 ```
 
-In the example above we have a single node cluster, and node name is `minikube`. 
+In the example above we have a single node cluster, and node name is `node01`. 
 
 After nodes to configure are determined a configuration should be set up. General configuration
 scheme is the following:
@@ -81,10 +80,13 @@ scheme is the following:
 	    <label name>: <label value>
 	...
 
-Resources and labels reflect Slurm cluster capabilities behind the node. They will be applied 
+Resources and labels reflect capabilities of a Slurm cluster behind the node. They will be applied 
 to the node allowing more precise job scheduling. 
 
-Resource daemon expects full configuration to be passed in `SLURM_CLUSTER_CONFIG` environment variable.
+Resource daemon expects full configuration to be available in `slurm` file under the location
+specified by `--slurm-config` flag. After startup resource daemon will start watching `slurm` file
+contents for changes and dynamically adjust corresponding node's labels and resources.
+
 For convenience we automate this process, so all you need to do is set up
 [k8s ConfigMap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/) named
 `slurm-config` with a single field `config` as the following:
@@ -97,21 +99,20 @@ metadata:
   namespace: default
 data:
   config: |
-    minikube:
+    node01:
       resources:
-        cpu: 2
+        cpu: 24
       labels:
         cuda: 10.0
         containers: singularity
 ```
 
-In the [example above](deploy/slurm-config.yaml) `minikube` node is configured to talk to Slurm cluster that
-is set up in a Vagrant box. Connected Slurm cluster has 2 CPUs and cuda of
-version 10.0 installed, which is also reflected in the config. When jobs will be scheduled Slurm resourced
-and labels will be taken into account so that job will be scheduled on a cluster that is capable of running it.
+In the [example above](deploy/slurm-config.yaml) `node01` is configured to talk to a Slurm cluster
+that has 24 CPUs and cuda version 10.0 installed, which is also reflected in the config. When jobs
+are scheduled configured  Slurm resources and labels are taken into account so that a job is scheduled
+on a suitable cluster that is capable of executing it.
 
 First, apply the configuration to the existing k8s cluster:
-
 ```bash
 $ kubectl apply -f deploy/slurm-config.yaml
 configmap "slurm-config" created
@@ -126,12 +127,12 @@ Data
 ====
 config:
 ----
-minikube:
-  red_box_addr: /home/vagrant/red-box.sock
+node01:
   resources:
-    cpu: 2
+    cpu: 24
   labels:
     cuda: 10.0
+    containers: singularity
 
 Events:  <none>
 ```
@@ -140,9 +141,9 @@ Events:  <none>
 Start resource daemon:
 ```bash
 $ kubectl apply -f deploy/resource-daemon.yaml
-serviceaccount "slurm-resource-daemon" created
-clusterrole.rbac.authorization.k8s.io "slurm-resource-role" created
-clusterrolebinding.rbac.authorization.k8s.io "slurm-resource-bind" created
+serviceaccount "slurm-rd" created
+clusterrole.rbac.authorization.k8s.io "slurm-rd" created
+clusterrolebinding.rbac.authorization.k8s.io "slurm-rd" created
 daemonset.apps "slurm-rd" created
 
 $ kubectl get daemonset
@@ -162,14 +163,14 @@ You will see something like this:
 ```text
 Labels:             beta.kubernetes.io/arch=amd64
                     beta.kubernetes.io/os=linux
-                    kubernetes.io/hostname=minikube
+                    kubernetes.io/hostname=node01
                     node-role.kubernetes.io/master=
                     slurm.sylabs.io/containers=singularity
                     slurm.sylabs.io/cuda=10.0
                     slurm.sylabs.io/workload-manager=slurm
 ...
 Capacity:
- slurm.sylabs.io/cpu:  2
+ slurm.sylabs.io/cpu:  24
 ...
 ```
 
@@ -188,16 +189,16 @@ NAME                        AGE
 slurmjobs.slurm.sylabs.io   1m
 
 $ kubectl apply -f deploy/operator-rbac.yaml 
-clusterrolebinding.rbac.authorization.k8s.io "slurm-job-operator" created
-clusterrole.rbac.authorization.k8s.io "slurm-job-operator" created
-serviceaccount "slurm-job-operator" created
+clusterrolebinding.rbac.authorization.k8s.io "slurm-operator" created
+clusterrole.rbac.authorization.k8s.io "slurm-operator" created
+serviceaccount "slurm-operator" created
 
 $ kubectl apply -f deploy/operator.yaml 
-deployment.apps "slurm-job-operator" created
+deployment.apps "slurm-operator" created
 
 $ kubectl get deployment
 NAME                 DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-slurm-job-operator   1         1         1            1           37s
+slurm-operator       1         1         1            1           37s
 ```
 
 That's it! After all those steps you can run Slurm jobs via Kubernetes.
@@ -227,20 +228,20 @@ spec:
     mount:
       name: data
       hostPath:
-        path: /home/vagrant/job-results
+        path: /home/job-results
         type: DirectoryOrCreate
     from: slurm-4.out # can be omitted
 ```
 
 In the example above we will run lolcow Singularity container in Slurm and collect the results 
-to `/home/vagrant/job-results` located on node. Generally job results can be collected to any
-supported [k8s volume](https://kubernetes.io/docs/concepts/storage/volumes/).
+to `/home/job-results` located on a k8s node where job has been scheduled. Generally, job results
+can be collected to any supported [k8s volume](https://kubernetes.io/docs/concepts/storage/volumes/).
 
-By default `job-companion` will be run with uid 1000, so you should make sure it has a write access to 
-a volume where you want to store the results (host directory `/home/vagrant/job-results` in the example above).
+By default `job-companion` will be run with UID and GID 1000, so you should make sure it has a write access to 
+a volume where you want to store the results (host directory `/home/job-results` in the example above).
+The UID and GID can be configured with operator flags, see [operator.yaml](./deploy/operator.yaml) for the example.
 
 After that you can submit cow job:
-
 ```bash
 $ kubectl apply -f examples/cow.yaml 
 slurmjob.slurm.sylabs.io "cow" created
@@ -254,12 +255,12 @@ NAME                                  READY     STATUS      RESTARTS   AGE
 cow-job                               0/1       Completed   0          30m
 ```
 
-Validate job results appeared on node:
+Validate job results appeared on a node:
 ```bash
-$ ls -la /home/vagrant/job-results
+$ ls -la /home/job-results
 cow-job
   
-$ cd /home/vagrant/job-results/cow-job 
+$ cd /home/job-results/cow-job 
 $ ls
 slurm-4.out
 
@@ -290,18 +291,20 @@ Slurm operator supports result collection to a provided [k8s volume](https://kub
 so that a user won't need to have access to a Slurm cluster to analyze job results.
 
 However, some configuration is required for this feature to work. More specifically, job-companion can collect results
-located on submit server only (i.e. where `red-box` is running), while slurm job can be scheduled on arbitrary
-slurm worker node. It means that some kind of a shared storage among slurm nodes should be configured so that despite
-of slurm worker node chosen to run a job, results will appear on submit server as well. 
+located on a submit server only (i.e. where `red-box` is running), while Slurm job can be scheduled on an arbitrary
+Slurm worker node. This means that some kind of a shared storage among Slurm nodes should be configured so that despite
+of Slurm worker node chosen to run a job, results will appear on a submit server as well. 
+NOTE: result collection is a network and IO consuming task, so collecting large files (e.g. 1Gb result of a
+machine learning job) may not be a great idea.
 
 Let's walk through basic configuration steps. Further assumed that default results file
-is collected (_slurm-<jobID>.out_). This file can be found on Slurm worker node that is executing a job in a folder,
-from which job was submitted. Configuration for custom results file will differ in shared paths only:
+is collected (_slurm-<jobID>.out_). This file can be found on a Slurm worker node that is executing a job.
+More specifically, you'll find them in a folder, from which job was submitted (i.e. `red-box`'s working dir).
+Configuration for custom results file will differ in shared paths only:
 
 	$RESULTS_DIR = red-box's working directory
 
 Share $RESULTS_DIR among all Slurm nodes, e.g set up nfs share for $RESULTS_DIR.
-
 
 ## Developers
 
