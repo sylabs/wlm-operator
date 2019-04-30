@@ -151,7 +151,7 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 // newPodForSJ returns a job-companion pod for the slurm job.
 func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 	labels := map[string]string{
-		"app": sj.Name,
+		"slurm-job": sj.Name,
 	}
 
 	// since we are running only slurm jobs, we need to be
