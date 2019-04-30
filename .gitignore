@@ -20,3 +20,6 @@ _output
 .kube
 build/*
 bin/
+
+.vagrant
+vagrant/etc/join.sh
