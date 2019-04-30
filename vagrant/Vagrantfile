@@ -1,0 +1,65 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+IMAGE_NAME = "bento/ubuntu-18.04"
+N = 2
+
+
+Vagrant.configure("2") do |config|
+  config.ssh.insert_key = false
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 1024
+    v.cpus = 2
+  end
+
+  config.vm.define "k8s-master" do |master|
+        master.vm.box = IMAGE_NAME
+        config.vm.synced_folder "etc/", "/sync/etc"
+        master.vm.network "private_network", ip: "192.168.60.10"
+        master.vm.hostname = "k8s-master"
+        master.vm.provision "common",
+         type:"shell",
+         preserve_order: true, 
+         path: "install-common.sh", 
+         privileged: false
+        master.vm.provision "master-setup", 
+         type:"shell", 
+         preserve_order: true, 
+         path: "install-master.sh", 
+         privileged: false
+        master.vm.provision "slurm-operator-master",
+         type:"shell",
+         preserve_order: true,
+         path: "install-slurm-operator-master.sh",
+         privileged: false
+    end
+
+  (1..N).each do |i|
+    config.vm.define "node-#{i}" do |node|
+        node.vm.box = IMAGE_NAME
+        config.vm.synced_folder "etc/", "/sync/etc"
+        node.vm.network "private_network", ip: "192.168.60.#{i + 10}"
+        node.vm.hostname = "node-#{i}"
+        node.vm.provision "common",
+         type:"shell",
+         preserve_order: true,
+         path: "install-common.sh",
+         privileged: false
+        node.vm.provision "slave-setup",
+         type:"shell", 
+         preserve_order: true,
+         path: "install-node.sh", 
+         privileged: false
+        node.vm.provision "slurm",
+         type:"shell",
+         preserve_order: true,
+         path: "install-slurm.sh",
+         privileged: false
+        node.vm.provision "slurm-operator",
+         type:"shell",
+         preserve_order: true,
+         path: "install-slurm-operator.sh",
+         privileged: false
+    end
+  end
+end
