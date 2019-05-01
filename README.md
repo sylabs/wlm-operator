@@ -318,9 +318,12 @@ Before submitting any pull requests make sure you have done the following:
 ## Vagrant
 
 You can use vagrant with k8s and slurm for testing purposes.
+
 To start vagrant box:  
+
 ```bash
 cd vagrant
 vagrnat up && vagrant ssh k8s-master
 ```
 `vagrant up` - will take near 15 minutes to start
+
