@@ -13,7 +13,7 @@
 // limitations under the License.
 
 syntax = "proto3";
-package slurm;
+package api;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
@@ -24,7 +24,7 @@ service WorkloadManager {
     // returns job id that can be used to track job status.
     rpc SubmitJob (SubmitJobRequest) returns (SubmitJobResponse);
     // CancelJob cancels job by job id.
-    rpc CancelJob (CancelJobRequest) returns (CancelJobResponse)
+    rpc CancelJob (CancelJobRequest) returns (CancelJobResponse);
     // JobInfo returns complete information about a particular job.
     rpc JobInfo (JobInfoRequest) returns (JobInfoResponse);
     // JobSteps returns information about each individual job step.
