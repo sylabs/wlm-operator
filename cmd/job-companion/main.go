@@ -118,6 +118,7 @@ func runBatch(c slurm.Slurm, batch string, cOps *collectOptions) error {
 			state == slurm.JobStatusFailed ||
 			state == slurm.JobStatusCanceled {
 
+			time.Sleep(10 * time.Second) // TODO remome after migration to grpc. Give some time to finish pulling job logs
 			cancelTailLogs()
 			<-tailLogsDone // need to wail till all logs will be printed, not to ruin formatting
 
