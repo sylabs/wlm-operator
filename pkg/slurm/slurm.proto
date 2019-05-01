@@ -18,24 +18,38 @@ package slurm;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
+// WorkloadManager defines API for interaction with HPC workload manager, e.g slurm.
 service WorkloadManager {
+    // SubmitJob submits new job to the workload manager and
+    // returns job id that can be used to track job status.
     rpc SubmitJob (SubmitJobRequest) returns (SubmitJobResponse);
+    // CancelJob cancels job by job id.
     rpc CancelJob (CancelJobRequest) returns (CancelJobResponse)
+    // JobInfo returns complete information about a particular job.
     rpc JobInfo (JobInfoRequest) returns (JobInfoResponse);
+    // JobSteps returns information about each individual job step.
     rpc JobSteps (JobStepsRequest) returns (JobStepsResponse);
+    // OpenFile opens a file and streams its content back. May be
+    // useful for results collecting.
     rpc OpenFile (OpenFileRequest) returns (stream Chunk);
+    // TailFile opens a file and streams its content back. Unlike
+    // OpenFile this call will watch file content changes and stream
+    // new chunks continuously.
     rpc TailFile (TailFileRequest) returns (stream Chunk);
 }
 
 message SubmitJobRequest {
+    // Bash script that will be submitted to a workload manager.
     string script = 1;
 }
 
 message SubmitJobResponse {
+    // Job ID to track submitted job.
     int64 job_id = 1;
 }
 
 message CancelJobRequest {
+    // ID of a job to be cancelled.
     int64 job_id = 1;
 }
 
@@ -43,31 +57,36 @@ message CancelJobResponse {
 }
 
 message JobInfoRequest {
+    // ID of a job to fetch info of.
     int64 job_id = 1;
 }
 
 message JobInfoResponse {
+    // Job information.
     JobInfo info = 1;
 }
 
 message JobStepsRequest {
+    // ID of a job to fetch steps of.
     int64 job_id = 1;
 }
 
 message JobStepsResponse {
+    // Job steps information.
     repeated JobStepInfo job_steps = 1;
 }
 
 
 message OpenFileRequest {
+    // Path to file to open.
     string path = 1;
 }
 
 
 message TailFileRequest {
+    // Path to file to tail.
     string path = 1;
 }
-
 
 enum JobStatus {
     COMPLETED = 0;
@@ -76,34 +95,59 @@ enum JobStatus {
     UNKNOWN = 3;
 }
 
+// JobInfo represents compete information about a single job.
 message JobInfo {
+    // ID of a job.
     string id = 1;
+    // ID of a user who submitted the job.
     string user_id = 2;
+    // Job name.
     string name = 3;
+    // Job exit code. For slurm workload manager will be in form "int:int".
     string exit_code = 4;
+    // Job current status.
     JobStatus status = 5;
+    // Job submit time.
     google.protobuf.Timestamp submit_time = 6;
+    // Job start time.
     google.protobuf.Timestamp start_time = 7;
+    // Job running time.
     google.protobuf.Duration run_time = 8;
+    // Job time limit.
     google.protobuf.Duration time_limit = 9;
+    // Job working directory.
     string working_dir = 10;
+    // Path to job's standard output file.
     string std_out = 11;
+    // Path to job's standard error file.
     string std_err = 12;
+    // Cluster partition on which job resides.
     string partition = 13;
+    // List of nodes on which job is executed.
     string node_list = 14;
+    // Host from which job was submitted.
     string batch_host = 15;
+    // Number of nodes requested by job.
     string num_nodes = 16;
 }
 
+// JobStepInfo represents information about a single job step.
 message JobStepInfo {
+    // ID od a job step.
     string id = 1;
+    // Job step name.
     string name = 2;
+    // Job step exit code.
     int32 exit_code = 3;
+    // Job step current status.
     JobStatus status = 4;
+    // Job step start time.
     google.protobuf.Timestamp start_time = 5;
+    // Job step end time.
     google.protobuf.Duration end_time = 6;
 }
 
+// Chunk is an arbitrary amount of bytes.
 message Chunk {
     bytes content = 1;
 }
