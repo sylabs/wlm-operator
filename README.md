@@ -317,7 +317,7 @@ Before submitting any pull requests make sure you have done the following:
 
 ## Vagrant
 
-You can use vagrant with k8s and slurm for testing purposes.
+You can use vagrant with k8s, slurm and slurm-operator for testing purposes.
 
 To start vagrant box:  
 
@@ -325,5 +325,6 @@ To start vagrant box:
 cd vagrant
 vagrnat up && vagrant ssh k8s-master
 ```
-`vagrant up` - will take near 15 minutes to start
+`vagrant up` - will take near 15 minutes to start.
 
+Inside vagrant you will have 3 vms. One for k8s-master and two for k8s-nodes with SLURM on each. Slurm-operator is also installed and ready to use.
