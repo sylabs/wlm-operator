@@ -219,7 +219,7 @@ spec:
   batch: |
     #!/bin/sh
     ##SBATCH --nodes=1 --cpus-per-task=1
-    srun singularity pull library://sylabsed/examples/lolcow
+    srun singularity pull -U library://sylabsed/examples/lolcow
     srun singularity run lolcow_latest.sif
     srun rm lolcow_latest.sif
   nodeSelector:
