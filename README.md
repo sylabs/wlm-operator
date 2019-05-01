@@ -327,4 +327,4 @@ vagrnat up && vagrant ssh k8s-master
 ```
 `vagrant up` - will take near 15 minutes to start.
 
-Inside vagrant you will have 3 vms. One for k8s-master and two for k8s-nodes with SLURM on each. Slurm-operator is also installed and ready to use.
+Vagrant will spin up tree VMs - a k8s master and two k8s worker nodes. SLURM is installed on each k8s worker. Slurm-operator is also installed and ready to use.
