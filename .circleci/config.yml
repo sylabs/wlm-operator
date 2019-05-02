@@ -137,6 +137,10 @@ workflows:
           requires:
             - get_source
       - publish:
+          filters:
+            branches:
+              only:
+                - master
           requires:
             - build
             - test
