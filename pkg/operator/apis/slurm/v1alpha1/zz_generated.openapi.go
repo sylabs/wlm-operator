@@ -97,7 +97,7 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobResults(ref common.ReferenceCal
 						},
 					},
 				},
-				Required: []string{"mount"},
+				Required: []string{"mount", "from"},
 			},
 		},
 		Dependencies: []string{

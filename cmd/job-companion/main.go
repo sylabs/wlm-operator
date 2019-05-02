@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -40,7 +39,7 @@ var (
 	mountPath = flag.String("cr-mount", "",
 		"path to the volume/directory where results should be collected, empty if results should not be collected")
 	resultsPath = flag.String("file-to-collect", "",
-		"path to a specific file that should be collected as job result, if omitted - default slurm-{JobID}.out will be collected")
+		"path to a specific file that should be collected as job result")
 	batch = flag.String("batch", "", "batch script that will be executed on slurm cluster")
 )
 
@@ -64,6 +63,10 @@ func main() {
 
 	var ops *collectOptions
 	if mp := *mountPath; mp != "" {
+		if *resultsPath == "" {
+			log.Fatal("file-to-collect can't be empty when cr-mount is specified")
+		}
+
 		ops = &collectOptions{
 			Mount: mp,
 			From:  *resultsPath,
@@ -223,11 +226,6 @@ func tailLogs(ctx context.Context, c slurm.Slurm, logFile string) chan struct{} 
 }
 
 func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
-	if cOps.From == "" {
-		// in case from is not specified we are using default slurm-{jobID}.out template
-		cOps.From = fmt.Sprintf("slurm-%d.out", jobID)
-	}
-
 	fromFile, err := c.Open(cOps.From)
 	if err != nil {
 		return errors.Wrapf(err, "can't open file with results on remote host file name: %s", cOps.From)

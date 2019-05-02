@@ -67,7 +67,7 @@ type SlurmJobResults struct {
 	Mount v1.Volume `json:"mount"`
 
 	// From is a path to the results to be collected from a Slurm cluster.
-	From string `json:"from,omitempty"`
+	From string `json:"from"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

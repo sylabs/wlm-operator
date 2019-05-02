@@ -70,6 +70,7 @@ spec:
                   type: object
               required:
               - mount
+              - from
               type: object
           required:
           - batch
