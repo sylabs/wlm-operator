@@ -542,7 +542,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9f6f4d3a74834ddec54d5c6491d58780805f336ca2a2a429f559f477b8ad00c6"
+  digest = "1:8750c495cba39e0d2402c424760734a695d4ab91579374f0624f411d52cda1a6"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -551,6 +551,8 @@
     "http2",
     "http2/hpack",
     "idna",
+    "internal/timeseries",
+    "trace",
   ]
   pruneopts = "NUT"
   revision = "4a65cf94b67935be46fbc55ddaea48ae3f7a1471"
@@ -650,6 +652,55 @@
   pruneopts = "NUT"
   revision = "54a98f90d1c46b7731eb8fb305d2a321c30ef610"
   version = "v1.5.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:c3076e7defee87de1236f1814beb588f40a75544c60121e6eb38b3b3721783e2"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  pruneopts = "NUT"
+  revision = "357c62f0e4bbba7e6cc403ae09edcf3e2b9028fe"
+
+[[projects]]
+  digest = "1:ffb498178a6bbe5a877e715cc85a40d5a712883d85f5bf05acf26dbd6c8f71e2"
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
+    "codes",
+    "connectivity",
+    "credentials",
+    "credentials/internal",
+    "encoding",
+    "encoding/proto",
+    "grpclog",
+    "internal",
+    "internal/backoff",
+    "internal/balancerload",
+    "internal/binarylog",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
+    "stats",
+    "status",
+    "tap",
+  ]
+  pruneopts = "NUT"
+  revision = "25c4f928eaa6d96443009bd842389fb4fa48664e"
+  version = "v1.20.1"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
@@ -999,6 +1050,9 @@
   input-imports = [
     "github.com/go-openapi/spec",
     "github.com/golang/glog",
+    "github.com/golang/protobuf/proto",
+    "github.com/golang/protobuf/ptypes/duration",
+    "github.com/golang/protobuf/ptypes/timestamp",
     "github.com/gorilla/mux",
     "github.com/hpcloud/tail",
     "github.com/operator-framework/operator-sdk/pkg/k8sutil",
@@ -1010,6 +1064,9 @@
     "github.com/stretchr/testify/require",
     "github.com/sylabs/singularity-cri/pkg/fs",
     "golang.org/x/sys/unix",
+    "google.golang.org/grpc",
+    "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/status",
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
