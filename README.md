@@ -230,7 +230,7 @@ spec:
       hostPath:
         path: /home/job-results
         type: DirectoryOrCreate
-    from: slurm-4.out # can be omitted
+    from: slurm-4.out # specify here file name with results your job generates
 ```
 
 In the example above we will run lolcow Singularity container in Slurm and collect the results 
