@@ -1,0 +1,32 @@
+apiVersion: slurm.sylabs.io/v1alpha1
+kind: SlurmJob
+metadata:
+  name: fox
+spec:
+  batch: |
+    #!/bin/bash
+    #SBATCH -J singularity-mpi
+    #SBATCH -N 2 # total number of nodes
+    #SBATCH --time=00:05:00
+    git clone https://bitbucket.org/sashayakovtseva/foxs-algorithm.git fox
+    singularity pull -U mpich.sif library://sashayakovtseva/default/mpich:3.1.4
+    singularity exec mpich.sif make -C fox
+    mpirun -n 9 singularity exec --pwd $PWD/fox mpich.sif ./main
+    mkdir fox-result
+    cp fox/A.txt fox-result
+    cp fox/B.txt fox-result
+    cp fox/C.txt fox-result
+    cp fox/log* fox-result
+    tar -czvf fox-result.tar.gz fox-result
+    rm mpich.sif
+    rm -rf fox-result
+    rm -rf fox
+  nodeSelector:
+    slurm.sylabs.io/containers: singularity
+  results:
+    from: fox-result.tar.gz
+    mount:
+      name: nfs-storage
+      nfs:
+        server: 192.168.1.41
+        path: /var/nfsshare/results
