@@ -15,7 +15,8 @@ Stage: builder
 	cd /usr/local/go/src/github.com/sylabs/slurm-operator
 	CGO_ENABLED=0 go build -o main cmd/job-companion/main.go
 
-Bootstrap: scratch
+Bootstrap: busybox
+MirrorURL: https://www.busybox.net/downloads/binaries/1.28.1-defconfig-multiarch/busybox-x86_64
 Stage: two
 
 %files from builder
