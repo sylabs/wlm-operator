@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package tail
 
 import (
 	"bytes"
@@ -24,16 +24,14 @@ import (
 )
 
 type tailReader struct {
-	t *tail.Tail
-
-	buff *bytes.Buffer
-
+	t        *tail.Tail
 	isClosed bool
 
-	lock sync.Mutex
+	mu   sync.Mutex
+	buff *bytes.Buffer
 }
 
-func newTailReader(path string) (*tailReader, error) {
+func NewReader(path string) (*tailReader, error) {
 	t, err := tail.TailFile(path, tail.Config{Follow: true, ReOpen: true})
 	if err != nil {
 		return nil, err
@@ -42,7 +40,6 @@ func newTailReader(path string) (*tailReader, error) {
 	tr := &tailReader{
 		t:    t,
 		buff: &bytes.Buffer{},
-		lock: sync.Mutex{},
 	}
 
 	go tr.readTail()
@@ -53,9 +50,9 @@ func newTailReader(path string) (*tailReader, error) {
 // Read returns EOF error only after invoking Close.
 // Before close in case of EOF errors it will be returning nil.
 func (tr *tailReader) Read(p []byte) (int, error) {
-	tr.lock.Lock()
+	tr.mu.Lock()
 	n, err := io.ReadFull(tr.buff, p)
-	tr.lock.Unlock()
+	tr.mu.Unlock()
 	if (err == io.EOF || err == io.ErrUnexpectedEOF) && !tr.isClosed {
 		return n, nil
 	}
@@ -85,9 +82,9 @@ func (tr *tailReader) readTail() {
 			return
 		}
 
-		tr.lock.Lock()
+		tr.mu.Lock()
 		_, err := tr.buff.WriteString(l.Text + "\n")
-		tr.lock.Unlock()
+		tr.mu.Unlock()
 		if err != nil {
 			log.Printf("Could not write to buffer err: %s", err)
 			return
