@@ -17,7 +17,6 @@ package slurm
 import (
 	"fmt"
 	"io"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -44,10 +43,10 @@ var (
 
 // JobInfo contains information about a single Slurm job.
 type JobInfo struct {
-	ID         string         `json:"id" slurm:"JobId"`
-	UserID     string         `json:"user_id" slurm:"UserId"`
+	ID         int            `json:"id" slurm:"JobId"`
+	UserID     int            `json:"user_id" slurm:"UserId"`
 	Name       string         `json:"name" slurm:"JobName"`
-	ExitCode   string         `json:"exit_code" slurm:"ExitCode"`
+	ExitCode   int            `json:"exit_code" slurm:"ExitCode"`
 	State      string         `json:"state" slurm:"JobState"`
 	SubmitTime *time.Time     `json:"submit_time" slurm:"SubmitTime"`
 	StartTime  *time.Time     `json:"start_time" slurm:"StartTime"`
@@ -59,7 +58,7 @@ type JobInfo struct {
 	Partition  string         `json:"partition" slurm:"Partition"`
 	NodeList   string         `json:"node_list" slurm:"NodeList"`
 	BatchHost  string         `json:"batch_host" slurm:"BatchHost"`
-	NumNodes   string         `json:"num_nodes" slurm:"NumNodes"`
+	NumNodes   int            `json:"num_nodes" slurm:"NumNodes"`
 }
 
 // JobStepInfo contains information about Slurm job step.
@@ -94,26 +93,6 @@ type Slurm interface {
 	Tail(path string) (io.ReadCloser, error)
 }
 
-func JobInfoFromScontrolResponse(r string) (*JobInfo, error) {
-	rFields := strings.Fields(r)
-	slurmFields := make(map[string]string)
-	for _, f := range rFields {
-		s := strings.Split(f, "=")
-		if len(s) != 2 {
-			// just skipping empty fields
-			continue
-		}
-		slurmFields[s[0]] = s[1]
-	}
-
-	ji := &JobInfo{}
-	if err := ji.fillFromSlurmFields(slurmFields); err != nil {
-		return nil, err
-	}
-
-	return ji, nil
-}
-
 // ParseSacctResponse is a helper that parses sacct output and
 // returns results in a convenient form.
 func ParseSacctResponse(raw string) ([]*JobStepInfo, error) {
@@ -125,12 +104,12 @@ func ParseSacctResponse(raw string) ([]*JobStepInfo, error) {
 			return nil, errors.New("output must contain 6 sections")
 		}
 
-		startedAt, err := parseTime(splitted[0])
+		startedAt, err := ParseTime(splitted[0])
 		if err != nil {
 			return nil, err
 		}
 
-		finishedAt, err := parseTime(splitted[1])
+		finishedAt, err := ParseTime(splitted[1])
 		if err != nil {
 			return nil, err
 		}
@@ -157,44 +136,7 @@ func ParseSacctResponse(raw string) ([]*JobStepInfo, error) {
 	return infos, nil
 }
 
-func (ji *JobInfo) fillFromSlurmFields(fields map[string]string) error {
-	t := reflect.TypeOf(*ji)
-	for i := 0; i < t.NumField(); i++ {
-		tagV, ok := t.Field(i).Tag.Lookup("slurm")
-		if !ok {
-			continue
-		}
-
-		sField, ok := fields[tagV]
-		if !ok {
-			continue
-		}
-
-		var val reflect.Value
-		switch tagV {
-		case "SubmitTime", "StartTime":
-			t, err := parseTime(sField)
-			if err != nil {
-				return errors.Wrapf(err, "can't parse time: %s", sField)
-			}
-			val = reflect.ValueOf(t)
-		case "RunTime", "TimeLimit":
-			d, err := parseDuration(sField)
-			if err != nil {
-				return errors.Wrapf(err, "can't parse duration: %s", sField)
-			}
-			val = reflect.ValueOf(d)
-		default:
-			val = reflect.ValueOf(sField)
-		}
-
-		reflect.ValueOf(ji).Elem().Field(i).Set(val)
-	}
-
-	return nil
-}
-
-func parseDuration(durationStr string) (*time.Duration, error) {
+func ParseDuration(durationStr string) (*time.Duration, error) {
 	sp := strings.Split(durationStr, ":")
 	if len(sp) < 3 {
 		// we can skip since data is invalid or not available for that field
@@ -220,7 +162,7 @@ func parseDuration(durationStr string) (*time.Duration, error) {
 	return &d, err
 }
 
-func parseTime(timeStr string) (*time.Time, error) {
+func ParseTime(timeStr string) (*time.Time, error) {
 	const slurmTimeLayout = "2006-01-02T15:04:05"
 
 	if timeStr == "" || strings.ToLower(timeStr) == "unknown" {

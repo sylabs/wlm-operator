@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build cgo
+
 package local
 
 import (
@@ -28,11 +30,16 @@ import (
 	"github.com/sylabs/slurm-operator/pkg/tail"
 )
 
+// #cgo CFLAGS: -I${SRCDIR}/include
+// #cgo LDFLAGS: -L/usr/lib/x86_64-linux-gnu/slurm/ -lslurm
+// #include "slurm.h" // slurm api calls
+// #include "slurm_errno.h" // slurm error definitions
+import "C"
+
 const (
-	sbatchBinaryName   = "sbatch"
-	scancelBinaryName  = "scancel"
-	scontrolBinaryName = "scontrol"
-	sacctBinaryName    = "sacct"
+	sbatchBinaryName  = "sbatch"
+	scancelBinaryName = "scancel"
+	sacctBinaryName   = "sacct"
 )
 
 // Client implements Slurm interface for communicating with
@@ -42,7 +49,7 @@ type Client struct{}
 // NewClient returns new local client.
 func NewClient() (*Client, error) {
 	var missing []string
-	for _, bin := range []string{sacctBinaryName, sbatchBinaryName, scancelBinaryName, scontrolBinaryName} {
+	for _, bin := range []string{sacctBinaryName, sbatchBinaryName, scancelBinaryName} {
 		_, err := exec.LookPath(bin)
 		if err != nil {
 			missing = append(missing, bin)
@@ -105,18 +112,67 @@ func (*Client) Tail(path string) (io.ReadCloser, error) {
 }
 
 func (*Client) SJobInfo(jobID int64) (*slurm.JobInfo, error) {
-	cmd := exec.Command(scontrolBinaryName, "show", "jobid", strconv.FormatInt(jobID, 10))
-
-	out, err := cmd.Output()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get info for jobid: %d", jobID)
+	var cJobInfoMsg *C.job_info_msg_t
+	err := C.slurm_load_job(&cJobInfoMsg, C.uint32_t(jobID), C.uint16_t(0))
+	defer C.slurm_free_job_info_msg(cJobInfoMsg)
+	if err != C.SLURM_SUCCESS {
+		errNo := C.slurm_get_errno()
+		errMsg := C.slurm_strerror(errNo)
+		return nil, errors.New(C.GoString(errMsg))
 	}
-
-	ji, err := slurm.JobInfoFromScontrolResponse(string(out))
-	if err != nil {
-		return nil, errors.Wrap(err, "can't parse scontrol response")
+	if cJobInfoMsg.record_count == 0 {
+		return nil, errors.New("slurm_load_job returned empty job array")
 	}
+	log.Printf("slurm_load_job returned %v records", cJobInfoMsg.record_count)
+	log.Printf("slurm_load_job returned %+v", cJobInfoMsg.job_array)
 
+	// data := unsafe.Pointer(cJobInfoMsg.job_array)
+	// count := int(cJobInfoMsg.record_count)
+	// carray := *(*[]C.job_info_t)(unsafe.Pointer(&reflect.SliceHeader{
+	// 	Data: uintptr(data),
+	// 	Len:  count,
+	// 	Cap:  count,
+	// }))
+	//
+	// res := get_res(slres)
+	//
+	// array := make([]*table, count)
+	// for i := 0; i < count; i++ {
+	// 	array[i] = get_res(&carray[i])
+	// }
+	//
+	// (*res)["JobArray"] = array
+	//
+	// C.slurm_free_job_info_msg(slres)
+	//
+	// w.Header().Set("Content-Type", "application/json")
+	// json.NewEncoder(w).Encode(&res)
+
+	// slice := (*[1 << 28]C.slurm_job_info_t)(unsafe.Pointer(cJobInfoMsg.job_array))[:cJobInfoMsg.record_count:cJobInfoMsg.record_count]
+	// cJobInfo := slice[0]
+	// log.Printf("job info: %+v", cJobInfo)
+	//
+	// ji := &slurm.JobInfo{
+	// 	ID:         int(cJobInfo.job_id),
+	// 	UserID:     int(cJobInfo.user_id),
+	// 	Name:       C.GoString(cJobInfo.name),
+	// 	ExitCode:   int(cJobInfo.exit_code),
+	// 	State:      "",
+	// 	SubmitTime: nil,
+	// 	StartTime:  nil,
+	// 	RunTime:    nil,
+	// 	TimeLimit:  nil,
+	// 	WorkDir:    C.GoString(cJobInfo.work_dir),
+	// 	StdOut:     C.GoString(cJobInfo.std_out),
+	// 	StdErr:     C.GoString(cJobInfo.std_err),
+	// 	Partition:  C.GoString(cJobInfo.partition),
+	// 	NodeList:   C.GoString(cJobInfo.nodes),
+	// 	BatchHost:  C.GoString(cJobInfo.batch_host),
+	// 	NumNodes:   int(cJobInfo.num_nodes),
+	// }
+
+	var ji *slurm.JobInfo
+	log.Printf("Job info: %v", ji)
 	return ji, nil
 }
 

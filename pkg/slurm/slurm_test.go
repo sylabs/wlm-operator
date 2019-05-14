@@ -15,7 +15,6 @@
 package slurm
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -80,84 +79,8 @@ const (
 )
 
 var (
-	testSubmitTime  = time.Date(2019, 04, 16, 11, 49, 19, 0, time.UTC)
-	testStartTime   = time.Date(2019, 04, 16, 11, 49, 20, 0, time.UTC)
-	testSacctTime   = time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC)
-	testRunTime     = 30 * time.Second
-	testLimitTime   = 25 * time.Hour
-	testZeroRunTime = time.Duration(0)
+	testSacctTime = time.Date(2019, 2, 20, 11, 16, 55, 0, time.UTC)
 )
-
-func TestJobInfoFromScontrolResponse(t *testing.T) {
-	type args struct {
-		r string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *JobInfo
-		wantErr bool
-	}{
-		{
-			name: "t1",
-			args: args{r: testScontrolResponse},
-			want: &JobInfo{
-				ID:         "53",
-				UserID:     "vagrant(1000)",
-				Name:       "sbatch",
-				ExitCode:   "0:0",
-				State:      "RUNNING",
-				SubmitTime: &testSubmitTime,
-				StartTime:  &testStartTime,
-				RunTime:    &testRunTime,
-				TimeLimit:  &testLimitTime,
-				WorkDir:    "/home/vagrant",
-				StdOut:     "/home/vagrant/slurm-53.out",
-				StdErr:     "/home/vagrant/slurm-53.out",
-				Partition:  "debug",
-				NodeList:   "vagrant",
-				BatchHost:  "vagrant",
-				NumNodes:   "1",
-			},
-			wantErr: false,
-		},
-		{
-			name: "t2",
-			args: args{r: testPendingScontrolRsponse},
-			want: &JobInfo{
-				ID:         "52",
-				UserID:     "vagrant(1000)",
-				Name:       "sbatch",
-				ExitCode:   "0:0",
-				State:      "PENDING",
-				SubmitTime: &testSubmitTime,
-				StartTime:  nil,
-				RunTime:    &testZeroRunTime,
-				TimeLimit:  nil,
-				WorkDir:    "/home/vagrant",
-				StdOut:     "/home/vagrant/slurm-52.out",
-				StdErr:     "/home/vagrant/slurm-52.out",
-				Partition:  "debug",
-				NodeList:   "(null)",
-				BatchHost:  "",
-				NumNodes:   "1",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := JobInfoFromScontrolResponse(tt.args.r)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JobInfoFromScontrolResponse() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("JobInfoFromScontrolResponse() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func TestParseSacctResponse(t *testing.T) {
 	tt := []struct {
