@@ -18,16 +18,17 @@ import (
 	"context"
 	"flag"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"time"
 
+	"google.golang.org/grpc"
+
+	"github.com/sylabs/slurm-operator/pkg/workload/api"
+
 	"github.com/pkg/errors"
-	"github.com/sylabs/slurm-operator/pkg/slurm"
-	"github.com/sylabs/slurm-operator/pkg/slurm/rest"
 )
 
 const envJobName = "JOB_NAME"
@@ -56,7 +57,7 @@ func main() {
 	}
 
 	log.Printf("Job will be executed locally by red-box at: %s", *sock)
-	client, err := getLocalClient(*sock)
+	client, err := getGRPCClient(*sock)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,74 +81,75 @@ func main() {
 	log.Println("Job finished")
 }
 
-func getLocalClient(addr string) (*rest.Client, error) {
-	c := rest.Config{
-		ControllerAddress: addr,
-	}
-	client, err := rest.NewClient(c)
+func getGRPCClient(addr string) (api.WorkloadManagerClient, error) {
+	conn, err := grpc.Dial("unix://"+addr, grpc.WithInsecure())
 	if err != nil {
-		return nil, errors.Wrap(err, "initializing rest client")
+		return nil, errors.Wrapf(err, "can't connect to %s", addr)
 	}
 
-	return client, nil
+	return api.NewWorkloadManagerClient(conn), nil
 }
 
-func runBatch(c slurm.Slurm, batch string, cOps *collectOptions) error {
-	id, err := c.SBatch(batch)
-	if err != nil {
-		return err
-	}
-	sInfo, err := c.SJobInfo(id)
+func runBatch(c api.WorkloadManagerClient, batch string, cOps *collectOptions) error {
+	sjResp, err := c.SubmitJob(context.Background(), &api.SubmitJobRequest{Script: batch})
 	if err != nil {
 		return err
 	}
 
-	log.Printf("JobID: %d", id)
+	jobID := sjResp.JobId
+
+	infoResp, err := c.JobInfo(context.Background(), &api.JobInfoRequest{JobId: jobID})
+	if err != nil {
+		return err
+	}
+	info := infoResp.Info
+
+	log.Printf("JobID: %d", jobID)
 
 	ctx, cancelTailLogs := context.WithCancel(context.Background())
-	tailLogsDone := tailLogs(ctx, c, sInfo.StdOut)
+	tailLogsDone := tailLogs(ctx, c, info.StdOut)
 
 	for {
 		time.Sleep(1 * time.Second)
 
-		sInfo, err = c.SJobInfo(id)
+		infoResp, err = c.JobInfo(context.Background(), &api.JobInfoRequest{JobId: jobID})
 		if err != nil {
 			cancelTailLogs()
 			return err
 		}
+		info = infoResp.Info
 
-		state := sInfo.State
-		if state == slurm.JobStatusCompleted ||
-			state == slurm.JobStatusFailed ||
-			state == slurm.JobStatusCanceled {
+		state := info.Status
+		if state == api.JobStatus_COMPLETED ||
+			state == api.JobStatus_FAILED ||
+			state == api.JobStatus_CANCELLED {
 
-			time.Sleep(10 * time.Second) // TODO remome after migration to grpc. Give some time to finish pulling job logs
 			cancelTailLogs()
 			<-tailLogsDone // need to wail till all logs will be printed, not to ruin formatting
 
 			switch state {
-			case slurm.JobStatusFailed:
+			case api.JobStatus_FAILED:
 				// in other way logs are already printed
-				if sInfo.StdOut != sInfo.StdErr {
-					if err := logErrOutput(c, sInfo.StdErr); err != nil {
+				if info.StdOut != info.StdErr {
+					if err := logErrOutput(c, info.StdErr); err != nil {
 						log.Printf("Can't print error logs err: %s", err)
 					}
 				}
 
-				if err := logJobSteps(c, id); err != nil {
+				if err := logJobSteps(c, jobID); err != nil {
 					log.Printf("Can't print steps info err: %s", err)
 				}
 
 				return errors.New("job failed")
-			case slurm.JobStatusCanceled:
-				if err := logJobSteps(c, id); err != nil {
+			case api.JobStatus_CANCELLED:
+				if err := logJobSteps(c, jobID); err != nil {
 					log.Printf("Can't print steps info err: %s", err)
 				}
 
 				return errors.New("job canceled")
-			case slurm.JobStatusCompleted:
+			case api.JobStatus_COMPLETED:
 				if cOps != nil {
-					return collectResults(c, id, cOps)
+					return collectResults(c, jobID, cOps)
 				}
 				return nil
 			}
@@ -155,69 +157,96 @@ func runBatch(c slurm.Slurm, batch string, cOps *collectOptions) error {
 	}
 }
 
-func logErrOutput(c slurm.Slurm, path string) error {
-	f, err := c.Open(path)
+func logErrOutput(c api.WorkloadManagerClient, path string) error {
+	f, err := c.OpenFile(context.Background(), &api.OpenFileRequest{Path: path})
 	if err != nil {
 		return err
 	}
-
-	logs, err := ioutil.ReadAll(f)
-	if err != nil {
-		return err
-	}
+	defer f.CloseSend()
 
 	log.Printf("Stderr output from %s", path)
-	log.Println(string(logs))
-	return nil
+	for {
+		chunk, err := f.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+
+			return errors.Wrap(err, "can't receive chunk")
+		}
+
+		log.Print(string(chunk.Content))
+	}
 }
 
-func logJobSteps(c slurm.Slurm, id int64) error {
-	steps, err := c.SJobSteps(id)
+func logJobSteps(c api.WorkloadManagerClient, id int64) error {
+	stepsResp, err := c.JobSteps(context.Background(), &api.JobStepsRequest{JobId: id})
 	if err != nil {
 		return err
 	}
 
-	for _, i := range steps {
-		log.Printf("JobID:%s State:%s ExitCode:%d Name:%s", i.ID, i.State, i.ExitCode, i.Name)
+	for _, i := range stepsResp.JobSteps {
+		log.Printf("JobID:%s State:%s ExitCode:%d Name:%s",
+			i.Id,
+			api.JobStatus_name[int32(i.Status)],
+			i.ExitCode,
+			i.Name,
+		)
 	}
 	return nil
 }
 
-func tailLogs(ctx context.Context, c slurm.Slurm, logFile string) chan struct{} {
+func tailLogs(ctx context.Context, c api.WorkloadManagerClient, logFile string) chan struct{} {
 	done := make(chan struct{})
 
 	go func() {
 		defer close(done)
-
-		f, err := c.Tail(logFile)
+		tf, err := c.TailFile(context.Background())
 		if err != nil {
-			log.Printf("Can't tail file %s err: %s", logFile, err)
+			if err != io.EOF {
+				log.Printf("Can't tail file %s err: %s", logFile, err)
+			}
 			return
 		}
-		defer f.Close()
+		defer tf.CloseSend()
+		if err := tf.Send(&api.TailFileRequest{Path: logFile, Action: api.TailAction_Start}); err != nil {
+			log.Printf("Can't send tail request err: %s", err)
+		}
 
 		buffCh := make(chan []byte)
 
 		// since reading from f is blocking we need to do it in a separate gorutine
 		go func() {
+			defer close(buffCh)
 			for {
-				buff := make([]byte, 128)
-				n, err := f.Read(buff)
+				chunk, err := tf.Recv()
 				if err != nil {
 					return
 				}
 
-				buffCh <- buff[:n]
+				buffCh <- chunk.Content
 			}
 		}()
 
+		var waitingEOF bool
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Tail logs finished from context")
-				return
-			case chunk := <-buffCh:
-				os.Stdout.Write(chunk)
+				if waitingEOF {
+					continue
+				}
+
+				waitingEOF = true
+				if err := tf.Send(&api.TailFileRequest{Path: logFile, Action: api.TailAction_ReadToEndAndClose}); err != nil {
+					log.Printf("Can't send tail request err: %s", err)
+					return
+				}
+			case chunk, ok := <-buffCh:
+				if !ok {
+					return
+				}
+
+				_, _ = os.Stdout.Write(chunk)
 			}
 		}
 	}()
@@ -225,12 +254,12 @@ func tailLogs(ctx context.Context, c slurm.Slurm, logFile string) chan struct{} 
 	return done
 }
 
-func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
-	fromFile, err := c.Open(cOps.From)
+func collectResults(c api.WorkloadManagerClient, jobID int64, cOps *collectOptions) error {
+	fromFile, err := c.OpenFile(context.Background(), &api.OpenFileRequest{Path: cOps.From})
 	if err != nil {
 		return errors.Wrapf(err, "can't open file with results on remote host file name: %s", cOps.From)
 	}
-	defer fromFile.Close()
+	defer fromFile.CloseSend()
 
 	// creating folder with JOB_NAME on attached volume
 	dirName := path.Join(cOps.Mount, jobName)
@@ -242,10 +271,20 @@ func collectResults(c slurm.Slurm, jobID int64, cOps *collectOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "could not create file with results on mounted volume")
 	}
+	defer toFile.Close()
 
-	if _, err := io.Copy(toFile, fromFile); err != nil {
-		return errors.Wrap(err, "can't copy from results file to mounted volume file")
+	for {
+		chunk, err := fromFile.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+
+			return errors.Wrap(err, "can't receive chunk")
+		}
+
+		if _, err := toFile.Write(chunk.Content); err != nil {
+			return errors.Wrap(err, "can't write to file")
+		}
 	}
-
-	return nil
 }

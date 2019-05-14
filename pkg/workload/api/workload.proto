@@ -35,7 +35,7 @@ service WorkloadManager {
     // TailFile opens a file and streams its content back. Unlike
     // OpenFile this call will watch file content changes and stream
     // new chunks continuously.
-    rpc TailFile (TailFileRequest) returns (stream Chunk);
+    rpc TailFile (stream TailFileRequest) returns (stream Chunk);
 }
 
 message SubmitJobRequest {
@@ -83,9 +83,15 @@ message OpenFileRequest {
 }
 
 
+enum TailAction {
+    Start = 0;
+    ReadToEndAndClose = 1;
+}
+
 message TailFileRequest {
+    TailAction action = 1;
     // Path to file to tail.
-    string path = 1;
+    string path = 2;
 }
 
 enum JobStatus {
@@ -144,7 +150,7 @@ message JobStepInfo {
     // Job step start time.
     google.protobuf.Timestamp start_time = 5;
     // Job step end time.
-    google.protobuf.Duration end_time = 6;
+    google.protobuf.Timestamp end_time = 6;
 }
 
 // Chunk is an arbitrary amount of bytes.

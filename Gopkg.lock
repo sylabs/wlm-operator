@@ -1051,6 +1051,7 @@
     "github.com/go-openapi/spec",
     "github.com/golang/glog",
     "github.com/golang/protobuf/proto",
+    "github.com/golang/protobuf/ptypes",
     "github.com/golang/protobuf/ptypes/duration",
     "github.com/golang/protobuf/ptypes/timestamp",
     "github.com/gorilla/mux",

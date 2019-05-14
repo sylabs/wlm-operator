@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"log"
 	"net"
@@ -24,8 +23,13 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/sylabs/slurm-operator/internal/red-box/api"
 	"github.com/sylabs/slurm-operator/pkg/slurm/local"
+
+	sgrpc "github.com/sylabs/slurm-operator/internal/red-box/api/grpc"
+	"github.com/sylabs/slurm-operator/pkg/workload/api"
+
+	"google.golang.org/grpc"
+
 	"golang.org/x/sys/unix"
 )
 
@@ -33,12 +37,6 @@ func main() {
 	sock := flag.String("socket", "/var/run/syslurm/red-box.sock", "unix socket to serve slurm API")
 	flag.Parse()
 
-	slurmClient, err := local.NewClient()
-	if err != nil {
-		log.Fatalf("Could not create new local slurm client: %v", err)
-	}
-
-	router := api.NewSlurmRouter(slurmClient)
 	ln, err := net.Listen("unix", *sock)
 	if err != nil {
 		log.Fatalf("Could not listen unix: %v", err)
@@ -47,22 +45,27 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	srv := http.Server{Handler: router}
+	s := grpc.NewServer()
+
+	c, err := local.NewClient()
+	if err != nil {
+		log.Fatalf("Could not create slurm client: %s", err)
+	}
+
+	a := sgrpc.NewApi(c)
+	api.RegisterWorkloadManagerServer(s, a)
+
 	go func() {
 		defer wg.Done()
 
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, unix.SIGINT, unix.SIGTERM, unix.SIGQUIT)
 		log.Printf("Shutting down due to %v", <-sig)
-		err = srv.Shutdown(context.Background())
-		if err != nil {
-			log.Printf("Could not shutdown server gracefully: %v", err)
-		}
+		s.GracefulStop()
 	}()
 
 	log.Printf("Starting server on %s", ln.Addr())
-	err = srv.Serve(ln)
-	if err != nil && err != http.ErrServerClosed {
+	if err := s.Serve(ln); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Could not serve requests: %v", err)
 	}
 	wg.Wait()
