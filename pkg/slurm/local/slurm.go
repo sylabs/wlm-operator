@@ -25,6 +25,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/slurm-operator/pkg/slurm"
+	"github.com/sylabs/slurm-operator/pkg/tail"
 )
 
 const (
@@ -95,7 +96,7 @@ func (*Client) Open(path string) (io.ReadCloser, error) {
 }
 
 func (*Client) Tail(path string) (io.ReadCloser, error) {
-	tr, err := newTailReader(path)
+	tr, err := tail.NewReader(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create tail reader")
 	}
