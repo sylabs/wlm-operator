@@ -23,7 +23,7 @@ import (
 	"github.com/hpcloud/tail"
 )
 
-type tailReader struct {
+type Reader struct {
 	t        *tail.Tail
 	isClosed bool
 
@@ -31,13 +31,13 @@ type tailReader struct {
 	buff *bytes.Buffer
 }
 
-func NewReader(path string) (*tailReader, error) {
+func NewReader(path string) (*Reader, error) {
 	t, err := tail.TailFile(path, tail.Config{Follow: true, ReOpen: true})
 	if err != nil {
 		return nil, err
 	}
 
-	tr := &tailReader{
+	tr := &Reader{
 		t:    t,
 		buff: &bytes.Buffer{},
 	}
@@ -49,7 +49,7 @@ func NewReader(path string) (*tailReader, error) {
 
 // Read returns EOF error only after invoking Close.
 // Before close in case of EOF errors it will be returning nil.
-func (tr *tailReader) Read(p []byte) (int, error) {
+func (tr *Reader) Read(p []byte) (int, error) {
 	tr.mu.Lock()
 	n, err := io.ReadFull(tr.buff, p)
 	tr.mu.Unlock()
@@ -60,12 +60,12 @@ func (tr *tailReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-func (tr *tailReader) Close() error {
+func (tr *Reader) Close() error {
 	_ = tr.t.StopAtEOF() // it returns stop reason instead of err
 	return nil
 }
 
-func (tr *tailReader) readTail() {
+func (tr *Reader) readTail() {
 	defer func() {
 		log.Println("Read tail finished")
 		tr.isClosed = true
