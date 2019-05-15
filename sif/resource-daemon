@@ -15,7 +15,8 @@ Stage: builder
 	cd /usr/local/go/src/github.com/sylabs/slurm-operator
 	CGO_ENABLED=0 go build -o main cmd/resource-daemon/main.go
 
-Bootstrap: scratch
+Bootstrap: library
+From: library/default/busybox:1.28
 Stage: two
 
 %files from builder
