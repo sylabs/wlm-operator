@@ -1,4 +1,4 @@
-package grpc
+package api
 
 import (
 	"context"
@@ -20,15 +20,15 @@ import (
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
 )
 
-type Api struct {
+type Slurm struct {
 	client *local.Client
 }
 
-func NewApi(c *local.Client) *Api {
-	return &Api{client: c}
+func NewSlurmAPI(c *local.Client) *Slurm {
+	return &Slurm{client: c}
 }
 
-func (a *Api) SubmitJob(ctx context.Context, r *api.SubmitJobRequest) (*api.SubmitJobResponse, error) {
+func (a *Slurm) SubmitJob(ctx context.Context, r *api.SubmitJobRequest) (*api.SubmitJobResponse, error) {
 	id, err := a.client.SBatch(r.Script)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't submit sbatch script")
@@ -39,7 +39,7 @@ func (a *Api) SubmitJob(ctx context.Context, r *api.SubmitJobRequest) (*api.Subm
 	}, nil
 }
 
-func (a *Api) CancelJob(ctx context.Context, r *api.CancelJobRequest) (*api.CancelJobResponse, error) {
+func (a *Slurm) CancelJob(ctx context.Context, r *api.CancelJobRequest) (*api.CancelJobResponse, error) {
 	if err := a.client.SCancel(r.JobId); err != nil {
 		return nil, errors.Wrapf(err, "can't cancel job %d", r.JobId)
 	}
@@ -47,7 +47,7 @@ func (a *Api) CancelJob(ctx context.Context, r *api.CancelJobRequest) (*api.Canc
 	return &api.CancelJobResponse{}, nil
 }
 
-func (a *Api) JobInfo(ctx context.Context, r *api.JobInfoRequest) (*api.JobInfoResponse, error) {
+func (a *Slurm) JobInfo(ctx context.Context, r *api.JobInfoRequest) (*api.JobInfoResponse, error) {
 	info, err := a.client.SJobInfo(r.JobId)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't get job %d info", r.JobId)
@@ -61,7 +61,7 @@ func (a *Api) JobInfo(ctx context.Context, r *api.JobInfoRequest) (*api.JobInfoR
 	return &api.JobInfoResponse{Info: pInfo}, nil
 }
 
-func (a *Api) JobSteps(ctx context.Context, r *api.JobStepsRequest) (*api.JobStepsResponse, error) {
+func (a *Slurm) JobSteps(ctx context.Context, r *api.JobStepsRequest) (*api.JobStepsResponse, error) {
 	steps, err := a.client.SJobSteps(r.JobId)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't get job %d steps", r.JobId)
@@ -75,7 +75,7 @@ func (a *Api) JobSteps(ctx context.Context, r *api.JobStepsRequest) (*api.JobSte
 	return &api.JobStepsResponse{JobSteps: pSteps}, nil
 }
 
-func (a *Api) OpenFile(r *api.OpenFileRequest, s api.WorkloadManager_OpenFileServer) error {
+func (a *Slurm) OpenFile(r *api.OpenFileRequest, s api.WorkloadManager_OpenFileServer) error {
 	fd, err := a.client.Open(r.Path)
 	if err != nil {
 		return errors.Wrapf(err, "can't open file at %s", r.Path)
@@ -103,7 +103,7 @@ func (a *Api) OpenFile(r *api.OpenFileRequest, s api.WorkloadManager_OpenFileSer
 	return nil
 }
 
-func (a *Api) TailFile(s api.WorkloadManager_TailFileServer) error {
+func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 	r, err := s.Recv()
 	if err != nil {
 		return errors.Wrap(err, "can't receive request")
