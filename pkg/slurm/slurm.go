@@ -15,23 +15,27 @@
 package slurm
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"log"
+	"os"
+	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+
+	"github.com/sylabs/slurm-operator/pkg/tail"
 )
 
 const (
-	// JobStatusCompleted means Slurm job is finished successfully.
-	JobStatusCompleted = "COMPLETED"
-	// JobStatusCanceled means Slurm job was cancelled.
-	JobStatusCanceled = "CANCELLED"
-	// JobStatusFailed means job is failed to execute successfully.
-	JobStatusFailed = "FAILED"
+	sbatchBinaryName   = "sbatch"
+	scancelBinaryName  = "scancel"
+	scontrolBinaryName = "scontrol"
+	sacctBinaryName    = "sacct"
 )
 
 var (
@@ -41,6 +45,25 @@ var (
 	// ErrFileNotFound is returned when Open fails to find a file.
 	ErrFileNotFound = errors.New("file is not found")
 )
+
+// Client implements Slurm interface for communicating with
+// a local Slurm cluster by calling Slurm binaries directly.
+type Client struct{}
+
+// NewClient returns new local client.
+func NewClient() (*Client, error) {
+	var missing []string
+	for _, bin := range []string{sacctBinaryName, sbatchBinaryName, scancelBinaryName, scontrolBinaryName} {
+		_, err := exec.LookPath(bin)
+		if err != nil {
+			missing = append(missing, bin)
+		}
+	}
+	if len(missing) != 0 {
+		return nil, errors.Errorf("no slurm binaries found: %s", strings.Join(missing, ", "))
+	}
+	return &Client{}, nil
+}
 
 // JobInfo contains information about a single Slurm job.
 type JobInfo struct {
@@ -72,26 +95,97 @@ type JobStepInfo struct {
 	State      string     `json:"state"`
 }
 
-// Slurm defines interface for interacting with Slurm cluster.
-// Interaction can be done in different ways, e.g over ssh, http,
-// or even by calling binaries directly.
-type Slurm interface {
-	// SBatch submits batch job and returns job id if succeeded.
-	SBatch(command string) (int64, error)
-	// SCancel cancels batch job.
-	SCancel(jobID int64) error
-	// SJobInfo returns information about a submitted batch job.
-	SJobInfo(jobID int64) (*JobInfo, error)
-	// SJobSteps returns information about each step in a submitted batch job
-	SJobSteps(jobID int64) ([]*JobStepInfo, error)
-	// Open opens arbitrary file in a read-only mode on
-	// Slurm cluster, e.g. for collecting job results.
-	// It is a caller's responsibility to call Close on the returned
-	// file to free any allocated resources. Is a file is not found
-	// Open will return ErrFileNotFound.
-	Open(path string) (io.ReadCloser, error)
-	// Tail follows file until close invoked.
-	Tail(path string) (io.ReadCloser, error)
+// SBatch submits batch job and returns job id if succeeded.
+func (*Client) SBatch(command string) (int64, error) {
+	cmd := exec.Command(sbatchBinaryName, "--parsable")
+	cmd.Stdin = bytes.NewBufferString(command)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		if out != nil {
+			log.Println(string(out))
+		}
+		return 0, errors.Wrap(err, "failed to execute sbatch")
+	}
+
+	id, err := strconv.Atoi(strings.TrimSpace(string(out)))
+	if err != nil {
+		return 0, errors.Wrap(err, "could not parse job id")
+	}
+
+	return int64(id), nil
+}
+
+// SCancel cancels batch job.
+func (*Client) SCancel(jobID int64) error {
+	cmd := exec.Command(scancelBinaryName, strconv.FormatInt(jobID, 10))
+
+	out, err := cmd.CombinedOutput()
+	if err != nil && out != nil {
+		log.Println(string(out))
+	}
+	return errors.Wrap(err, "failed to execute scancel")
+}
+
+// Open opens arbitrary file at path in a read-only mode.
+func (*Client) Open(path string) (io.ReadCloser, error) {
+	file, err := os.Open(path)
+	if os.IsNotExist(err) {
+		return nil, ErrFileNotFound
+	}
+	return file, errors.Wrapf(err, "could not open %s", path)
+}
+
+func (*Client) Tail(path string) (io.ReadCloser, error) {
+	tr, err := tail.NewReader(path)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create tail reader")
+	}
+
+	return tr, nil
+}
+
+func (*Client) SJobInfo(jobID int64) (*JobInfo, error) {
+	cmd := exec.Command(scontrolBinaryName, "show", "jobid", strconv.FormatInt(jobID, 10))
+
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get info for jobid: %d", jobID)
+	}
+
+	ji, err := JobInfoFromScontrolResponse(string(out))
+	if err != nil {
+		return nil, errors.Wrap(err, "can't parse scontrol response")
+	}
+
+	return ji, nil
+}
+
+// SJobSteps returns information about a submitted batch job.
+func (*Client) SJobSteps(jobID int64) ([]*JobStepInfo, error) {
+	cmd := exec.Command(sacctBinaryName,
+		"-p",
+		"-n",
+		"-j",
+		strconv.FormatInt(jobID, 10),
+		"-o start,end,exitcode,state,jobid,jobname",
+	)
+
+	out, err := cmd.Output()
+	if err != nil {
+		ee, ok := err.(*exec.ExitError)
+		if ok {
+			return nil, errors.Wrapf(err, "failed to execute sacct: %s", ee.Stderr)
+		}
+		return nil, errors.Wrap(err, "failed to execute sacct")
+	}
+
+	jInfo, err := ParseSacctResponse(string(out))
+	if err != nil {
+		return nil, errors.Wrap(err, ErrInvalidSacctResponse.Error())
+	}
+
+	return jInfo, nil
 }
 
 func JobInfoFromScontrolResponse(r string) (*JobInfo, error) {

@@ -15,142 +15,85 @@
 package api
 
 import (
-	"bytes"
-	"context"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/sylabs/slurm-operator/pkg/slurm"
+
 	"github.com/stretchr/testify/require"
-	"github.com/sylabs/slurm-operator/pkg/slurm/local"
 )
 
-func newTestServer(_ *testing.T) (*httptest.Server, func()) {
-	slurmClient := &local.Client{}
-
-	router := NewSlurmRouter(slurmClient)
-	srv := httptest.NewServer(router)
-	return srv, func() {
-		srv.CloseClientConnections()
-		srv.Close()
+func Test_mapSInfoToProtoInfo(t *testing.T) {
+	testInfo := slurm.JobInfo{
+		ID:         "1",
+		UserID:     "vagrant",
+		Name:       "test.job",
+		ExitCode:   "0:1",
+		State:      "COMPLETED",
+		SubmitTime: &[]time.Time{time.Now()}[0],
+		StartTime:  &[]time.Time{time.Now().Add(1 * time.Second)}[0],
+		RunTime:    &[]time.Duration{time.Second}[0],
+		TimeLimit:  &[]time.Duration{time.Hour}[0],
+		WorkDir:    "/home",
+		StdOut:     "1",
+		StdErr:     "2",
+		Partition:  "debug",
+		NodeList:   "node1",
+		BatchHost:  "host1",
+		NumNodes:   "2",
 	}
+	pi, err := mapSInfoToProtoInfo(&testInfo)
+	require.NoError(t, err)
+
+	require.EqualValues(t, testInfo.ID, pi.Id)
+	require.EqualValues(t, testInfo.UserID, pi.UserId)
+	require.EqualValues(t, testInfo.Name, pi.Name)
+	require.EqualValues(t, testInfo.ExitCode, pi.ExitCode)
+	require.EqualValues(t, testInfo.State, pi.Status.String())
+	require.EqualValues(t, testInfo.SubmitTime.Nanosecond(), pi.SubmitTime.Nanos)
+	require.EqualValues(t, testInfo.SubmitTime.Unix(), pi.SubmitTime.Seconds)
+	require.EqualValues(t, testInfo.StartTime.Nanosecond(), pi.StartTime.Nanos)
+	require.EqualValues(t, testInfo.StartTime.Unix(), pi.StartTime.Seconds)
+	require.EqualValues(t, testInfo.RunTime.Seconds(), pi.RunTime.Seconds)
+	require.EqualValues(t, testInfo.TimeLimit.Seconds(), pi.TimeLimit.Seconds)
+	require.EqualValues(t, testInfo.WorkDir, pi.WorkingDir)
+	require.EqualValues(t, testInfo.StdOut, pi.StdOut)
+	require.EqualValues(t, testInfo.StdErr, pi.StdErr)
+	require.EqualValues(t, testInfo.Partition, pi.Partition)
+	require.EqualValues(t, testInfo.NodeList, pi.NodeList)
+	require.EqualValues(t, testInfo.BatchHost, pi.BatchHost)
+	require.EqualValues(t, testInfo.NumNodes, pi.NumNodes)
 }
 
-func TestApi_Open(t *testing.T) {
-	testFile, err := ioutil.TempFile("", "")
-	require.NoError(t, err)
-	defer os.Remove(testFile.Name())
-
-	fileContent := []byte(`
-Hello!
-This is a test output from SLURM!
-`)
-
-	_, err = testFile.Write(fileContent)
-	require.NoError(t, err)
-	require.NoError(t, testFile.Close())
-
-	srv, cleanup := newTestServer(t)
-	defer cleanup()
-
-	t.Run("no path", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/open", srv.URL), nil)
-		require.NoError(t, err)
-		resp, err := srv.Client().Do(req)
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		content, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, "no path query parameter is found\n", string(content))
-	})
-
-	t.Run("non existent file", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/open?path=/foo/bar", srv.URL), nil)
-		require.NoError(t, err)
-		resp, err := srv.Client().Do(req)
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		require.Equal(t, http.StatusNotFound, resp.StatusCode)
-	})
-
-	t.Run("all ok", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/open?path=%s", srv.URL, testFile.Name()), nil)
-		require.NoError(t, err)
-		resp, err := srv.Client().Do(req)
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		content, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, fileContent, content, "unexpected file content")
-	})
-}
-
-func TestApi_Tail(t *testing.T) {
-	testFile, err := ioutil.TempFile("", "")
-	require.NoError(t, err)
-	defer os.Remove(testFile.Name())
-	defer testFile.Close()
-	writerCtx, wrCancel := context.WithCancel(context.Background())
-	readerCtx, rCancel := context.WithCancel(context.Background())
-	testT := time.NewTimer(10 * time.Second)
-	go func() {
-		<-testT.C
-		wrCancel()
-		// need give reader some time to read out all data
-		<-time.NewTimer(2 * time.Second).C
-		rCancel()
-	}()
-
-	tick := time.NewTicker(1 * time.Second)
-	writeCount := 0
-	go func(ctx context.Context) {
-		for {
-			select {
-			case <-ctx.Done():
-				log.Println("Logs finished")
-				return
-			case <-tick.C:
-				testFile.Write([]byte("test\n"))
-				writeCount++
-			}
-		}
-	}(writerCtx)
-
-	srv, cleanup := newTestServer(t)
-	defer cleanup()
-
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/tail?path=%s", srv.URL, testFile.Name()), nil)
-	require.NoError(t, err)
-	req = req.WithContext(readerCtx)
-	resp, err := srv.Client().Do(req)
-	require.NoError(t, err)
-	require.EqualValues(t, 200, resp.StatusCode)
-
-	b := &bytes.Buffer{}
-	readCount := 0
-
-	for {
-		buff := make([]byte, 128)
-		n, err := resp.Body.Read(buff)
-		if err != nil {
-			require.EqualValues(t, "context canceled", err.Error())
-			break
-		}
-		b.Write(buff[:n])
-		readCount++
+func Test_mapSStepsToProtoSteps(t *testing.T) {
+	var steps = []*slurm.JobStepInfo{
+		{
+			ID:         "1",
+			Name:       "job1",
+			StartedAt:  &[]time.Time{time.Now()}[0],
+			FinishedAt: &[]time.Time{time.Now()}[0],
+			ExitCode:   1,
+			State:      "FAILED",
+		},
+		{
+			ID:         "2",
+			Name:       "job2",
+			StartedAt:  &[]time.Time{time.Now()}[0],
+			FinishedAt: &[]time.Time{time.Now()}[0],
+			ExitCode:   2,
+			State:      "COMPLETED",
+		},
 	}
 
-	require.EqualValues(t, writeCount, readCount)
-	fi, err := testFile.Stat()
+	pSteps, err := mapSStepsToProtoSteps(steps)
 	require.NoError(t, err)
-	require.EqualValues(t, fi.Size(), b.Len())
+	require.Len(t, pSteps, 2)
+	for i := range pSteps {
+		require.EqualValues(t, steps[i].ID, pSteps[i].Id)
+		require.EqualValues(t, steps[i].Name, pSteps[i].Name)
+		require.EqualValues(t, steps[i].StartedAt.Unix(), pSteps[i].StartTime.Seconds)
+		require.EqualValues(t, steps[i].FinishedAt.Unix(), pSteps[i].EndTime.Seconds)
+		require.EqualValues(t, steps[i].ExitCode, pSteps[i].ExitCode)
+		require.EqualValues(t, steps[i].State, pSteps[i].Status.String())
+	}
 }

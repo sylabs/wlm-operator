@@ -15,210 +15,268 @@
 package api
 
 import (
-	"encoding/json"
+	"context"
 	"io"
 	"log"
-	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/sylabs/slurm-operator/pkg/slurm"
+
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/duration"
+	"github.com/golang/protobuf/ptypes/timestamp"
+
+	"github.com/pkg/errors"
+
+	"github.com/sylabs/slurm-operator/pkg/workload/api"
 )
 
-// SBatchRequest represents submitted SBatch request.
-type SBatchRequest struct {
-	Command string `json:"command"`
+// Slurm implements WorkloadManagerServer
+type Slurm struct {
+	client *slurm.Client
 }
 
-// SCancel cancels batch job.
-func (a *api) SCancel(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idS, ok := vars["id"]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	id, err := strconv.ParseInt(idS, 10, 0)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Println(err)
-		return
-	}
-
-	err = a.slurm.SCancel(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
+// NewSlurmAPI creates a new instance of Slurm
+func NewSlurmAPI(c *slurm.Client) *Slurm {
+	return &Slurm{client: c}
 }
 
-// SBatch submits batch job and returns job id if succeeded.
-func (a *api) SBatch(w http.ResponseWriter, r *http.Request) {
-	var sb SBatchRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&sb); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Println(err)
-		return
-	}
-
-	if sb.Command == "" {
-		http.Error(w, "command must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	jid, err := a.slurm.SBatch(sb.Command)
+// SubmitJob submits job and returns id of it in case of success
+func (a *Slurm) SubmitJob(ctx context.Context, r *api.SubmitJobRequest) (*api.SubmitJobResponse, error) {
+	id, err := a.client.SBatch(r.Script)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, errors.Wrap(err, "can't submit sbatch script")
 	}
 
-	w.Write([]byte(strconv.FormatInt(jid, 10)))
+	return &api.SubmitJobResponse{
+		JobId: id,
+	}, nil
 }
 
-// SJobSteps returns information about a submitted batch job.
-func (a *api) SJobInfo(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	idS, ok := vars["id"]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+// CancelJob cancels job
+func (a *Slurm) CancelJob(ctx context.Context, r *api.CancelJobRequest) (*api.CancelJobResponse, error) {
+	if err := a.client.SCancel(r.JobId); err != nil {
+		return nil, errors.Wrapf(err, "can't cancel job %d", r.JobId)
 	}
 
-	id, err := strconv.ParseInt(idS, 10, 0)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Println(err)
-		return
-	}
-
-	sinfo, err := a.slurm.SJobInfo(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-
-	if err := json.NewEncoder(w).Encode(sinfo); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
+	return &api.CancelJobResponse{}, nil
 }
 
-// SJobSteps returns information about steps in a submitted batch job.
-func (a *api) SJobSteps(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	idS, ok := vars["id"]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	id, err := strconv.ParseInt(idS, 10, 0)
+// JobInfo returns information about a job from 'scontrol show jobid'
+// Safe to call before job finished. After it could return an error
+func (a *Slurm) JobInfo(ctx context.Context, r *api.JobInfoRequest) (*api.JobInfoResponse, error) {
+	info, err := a.client.SJobInfo(r.JobId)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Println(err)
-		return
+		return nil, errors.Wrapf(err, "can't get job %d info", r.JobId)
 	}
 
-	stepsInfo, err := a.slurm.SJobSteps(id)
+	pInfo, err := mapSInfoToProtoInfo(info)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
+		return nil, errors.Wrap(err, "can't convert slurm info into proto info")
 	}
 
-	if err := json.NewEncoder(w).Encode(stepsInfo); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
+	return &api.JobInfoResponse{Info: pInfo}, nil
 }
 
-// Open streams content of an arbitrary file.
-func (a *api) Open(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	path := query.Get("path")
-	if path == "" {
-		http.Error(w, "no path query parameter is found", http.StatusBadRequest)
-		return
+// JobSteps returns information about job steps from 'sacct'
+// Safe to call after job started. Before it could return an error
+func (a *Slurm) JobSteps(ctx context.Context, r *api.JobStepsRequest) (*api.JobStepsResponse, error) {
+	steps, err := a.client.SJobSteps(r.JobId)
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't get job %d steps", r.JobId)
 	}
 
-	file, err := a.slurm.Open(path)
-	if err == slurm.ErrFileNotFound {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
+	pSteps, err := mapSStepsToProtoSteps(steps)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, errors.Wrap(err, "can't convert slurm steps into proto steps")
 	}
-	defer file.Close()
 
-	_, err = io.Copy(w, file)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	return &api.JobStepsResponse{JobSteps: pSteps}, nil
 }
 
-// Tail follows and streams file content till client close the connection.
-func (a *api) Tail(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	path := query.Get("path")
-	if path == "" {
-		http.Error(w, "no path query parameter is found", http.StatusBadRequest)
-		return
-	}
-
-	file, err := a.slurm.Tail(path)
+// OpenFile opens requested file and return chunks with bytes
+func (a *Slurm) OpenFile(r *api.OpenFileRequest, s api.WorkloadManager_OpenFileServer) error {
+	fd, err := a.client.Open(r.Path)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return errors.Wrapf(err, "can't open file at %s", r.Path)
 	}
-	defer file.Close()
-
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, "response writer doesn't implement flusher", http.StatusInternalServerError)
-		return
-	}
-
-	flusher.Flush() // flush to send headers
-
-	throttle := time.Tick(200 * time.Millisecond)
+	defer fd.Close()
 
 	buff := make([]byte, 128)
 	for {
-		select {
-		case <-r.Context().Done():
-			log.Println("Client closed connection")
-			return
-		case <-throttle:
-			n, err := file.Read(buff)
-			if err != nil {
-				if err != io.EOF || err != io.ErrUnexpectedEOF {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-				}
+		n, err := fd.Read(buff)
+		if n > 0 {
+			if err := s.Send(&api.Chunk{Content: buff[:n]}); err != nil {
+				return errors.Wrap(err, "can't send chunk")
+			}
+		}
 
-				return
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// TailFile tails a file till close requested
+// To start receiving file bytes client should send a request with file path and action start,
+// to stop client should send a request with action readToEndAndClose (file path is not required)
+//  and after reaching end method will send EOF error
+func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
+	r, err := s.Recv()
+	if err != nil {
+		return errors.Wrap(err, "can't receive request")
+	}
+
+	fd, err := a.client.Tail(r.Path)
+	if err != nil {
+		return errors.Wrapf(err, "can't tail file at %s", r.Path)
+	}
+	defer func(p string) {
+		log.Printf("Tail file at %s finished", p)
+	}(r.Path)
+
+	requestCh := make(chan *api.TailFileRequest)
+	go func() {
+		r, err := s.Recv()
+		if err != nil {
+			if err != io.EOF {
+				log.Printf("can't recive request err: %s", err)
+			}
+			return
+		}
+
+		requestCh <- r
+	}()
+
+	buff := make([]byte, 128)
+
+	for {
+		select {
+		case <-s.Context().Done():
+			return s.Context().Err()
+		case r := <-requestCh:
+			if r.Action == api.TailAction_ReadToEndAndClose {
+				_ = fd.Close()
+			}
+		case <-time.Tick(100 * time.Millisecond):
+			n, err := fd.Read(buff)
+			if err != nil && n == 0 {
+				return err
 			}
 
 			if n == 0 {
 				continue
 			}
 
-			if _, err := w.Write(buff[:n]); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+			if err := s.Send(&api.Chunk{Content: buff[:n]}); err != nil {
+				return errors.Wrap(err, "can't send chunk")
 			}
-			flusher.Flush()
 		}
 	}
+}
+
+func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) {
+	pSteps := make([]*api.JobStepInfo, len(ss))
+
+	for i, s := range ss {
+		var startedAt *timestamp.Timestamp
+		if s.StartedAt != nil {
+			pt, err := ptypes.TimestampProto(*s.StartedAt)
+			if err != nil {
+				return nil, errors.Wrap(err, "can't convert started go time to proto time")
+			}
+
+			startedAt = pt
+		}
+
+		var finishedAt *timestamp.Timestamp
+		if s.FinishedAt != nil {
+			pt, err := ptypes.TimestampProto(*s.FinishedAt)
+			if err != nil {
+				return nil, errors.Wrap(err, "can't convert finished go time to proto time")
+			}
+
+			finishedAt = pt
+		}
+
+		status, ok := api.JobStatus_value[s.State]
+		if !ok {
+			status = int32(api.JobStatus_UNKNOWN)
+		}
+
+		pSteps[i] = &api.JobStepInfo{
+			Id:        s.ID,
+			Name:      s.Name,
+			ExitCode:  int32(s.ExitCode),
+			Status:    api.JobStatus(status),
+			StartTime: startedAt,
+			EndTime:   finishedAt,
+		}
+	}
+
+	return pSteps, nil
+}
+
+func mapSInfoToProtoInfo(si *slurm.JobInfo) (*api.JobInfo, error) {
+	var submitTime *timestamp.Timestamp
+	if si.SubmitTime != nil {
+		pt, err := ptypes.TimestampProto(*si.SubmitTime)
+		if err != nil {
+			return nil, errors.Wrap(err, "can't convert submit go time to proto time")
+		}
+
+		submitTime = pt
+	}
+
+	var startTime *timestamp.Timestamp
+	if si.StartTime != nil {
+		pt, err := ptypes.TimestampProto(*si.StartTime)
+		if err != nil {
+			return nil, errors.Wrap(err, "can't convert start go time to proto time")
+		}
+
+		startTime = pt
+	}
+
+	var runTime *duration.Duration
+	if si.RunTime != nil {
+		runTime = ptypes.DurationProto(*si.RunTime)
+	}
+
+	var timeLimit *duration.Duration
+	if si.TimeLimit != nil {
+		timeLimit = ptypes.DurationProto(*si.TimeLimit)
+	}
+
+	status, ok := api.JobStatus_value[si.State]
+	if !ok {
+		status = int32(api.JobStatus_UNKNOWN)
+	}
+
+	pi := api.JobInfo{
+		Id:         si.ID,
+		UserId:     si.UserID,
+		Name:       si.Name,
+		ExitCode:   si.ExitCode,
+		Status:     api.JobStatus(status),
+		SubmitTime: submitTime,
+		StartTime:  startTime,
+		RunTime:    runTime,
+		TimeLimit:  timeLimit,
+		WorkingDir: si.WorkDir,
+		StdOut:     si.StdOut,
+		StdErr:     si.StdErr,
+		Partition:  si.Partition,
+		NodeList:   si.NodeList,
+		BatchHost:  si.BatchHost,
+		NumNodes:   si.NumNodes,
+	}
+
+	return &pi, nil
 }
