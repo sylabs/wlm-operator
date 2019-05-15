@@ -246,7 +246,11 @@ func tailLogs(ctx context.Context, c api.WorkloadManagerClient, logFile string) 
 					return
 				}
 
-				_, _ = os.Stdout.Write(chunk)
+				_, err = os.Stdout.Write(chunk)
+				if err != nil {
+					log.Printf("Can't write to stdout err: %s", err)
+					return
+				}
 			}
 		}
 	}()
