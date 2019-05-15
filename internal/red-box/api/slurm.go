@@ -6,28 +6,27 @@ import (
 	"log"
 	"time"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm/local"
-
-	"github.com/golang/protobuf/ptypes/duration"
-
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"github.com/pkg/errors"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm"
-
+	"github.com/sylabs/slurm-operator/pkg/slurm/local"
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
 )
 
+// Slurm implements WorkloadManagerServer
 type Slurm struct {
 	client *local.Client
 }
 
+// NewSlurmAPI creates a new instance of Slurm
 func NewSlurmAPI(c *local.Client) *Slurm {
 	return &Slurm{client: c}
 }
 
+// SubmitJob submits job and returns id of it in case of success
 func (a *Slurm) SubmitJob(ctx context.Context, r *api.SubmitJobRequest) (*api.SubmitJobResponse, error) {
 	id, err := a.client.SBatch(r.Script)
 	if err != nil {
@@ -39,6 +38,7 @@ func (a *Slurm) SubmitJob(ctx context.Context, r *api.SubmitJobRequest) (*api.Su
 	}, nil
 }
 
+// CancelJob cancels job
 func (a *Slurm) CancelJob(ctx context.Context, r *api.CancelJobRequest) (*api.CancelJobResponse, error) {
 	if err := a.client.SCancel(r.JobId); err != nil {
 		return nil, errors.Wrapf(err, "can't cancel job %d", r.JobId)
@@ -47,6 +47,8 @@ func (a *Slurm) CancelJob(ctx context.Context, r *api.CancelJobRequest) (*api.Ca
 	return &api.CancelJobResponse{}, nil
 }
 
+// JobInfo returns information about a job from 'scontrol show jobid'
+// Safe to call before job finished. After it could return an error
 func (a *Slurm) JobInfo(ctx context.Context, r *api.JobInfoRequest) (*api.JobInfoResponse, error) {
 	info, err := a.client.SJobInfo(r.JobId)
 	if err != nil {
@@ -61,6 +63,8 @@ func (a *Slurm) JobInfo(ctx context.Context, r *api.JobInfoRequest) (*api.JobInf
 	return &api.JobInfoResponse{Info: pInfo}, nil
 }
 
+// JobSteps returns information about job steps from 'sacct'
+// Safe to call after job started. Before it could return an error
 func (a *Slurm) JobSteps(ctx context.Context, r *api.JobStepsRequest) (*api.JobStepsResponse, error) {
 	steps, err := a.client.SJobSteps(r.JobId)
 	if err != nil {
@@ -75,6 +79,7 @@ func (a *Slurm) JobSteps(ctx context.Context, r *api.JobStepsRequest) (*api.JobS
 	return &api.JobStepsResponse{JobSteps: pSteps}, nil
 }
 
+// OpenFile opens requested file and return chunks with bytes
 func (a *Slurm) OpenFile(r *api.OpenFileRequest, s api.WorkloadManager_OpenFileServer) error {
 	fd, err := a.client.Open(r.Path)
 	if err != nil {
@@ -103,6 +108,10 @@ func (a *Slurm) OpenFile(r *api.OpenFileRequest, s api.WorkloadManager_OpenFileS
 	return nil
 }
 
+// TailFile tails a file till close requested
+// To start receiving file bytes client should send a request with file path and action start,
+// to stop client should send a request with action readToEndAndClose (file path is not required)
+//  and after reaching end method will send EOF error
 func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 	r, err := s.Recv()
 	if err != nil {
@@ -157,7 +166,7 @@ func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 	}
 }
 
-func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) {
+func mapSStepsToProtoSteps(ss []*local.JobStepInfo) ([]*api.JobStepInfo, error) {
 	var pSteps []*api.JobStepInfo
 
 	for _, s := range ss {
@@ -199,7 +208,7 @@ func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) 
 	return pSteps, nil
 }
 
-func mapSInfoToProtoInfo(si *slurm.JobInfo) (*api.JobInfo, error) {
+func mapSInfoToProtoInfo(si *local.JobInfo) (*api.JobInfo, error) {
 	var submitTime *timestamp.Timestamp
 	if si.SubmitTime != nil {
 		pt, err := ptypes.TimestampProto(*si.SubmitTime)

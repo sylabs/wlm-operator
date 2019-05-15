@@ -16,15 +16,17 @@ package local
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
+	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/tail"
 )
 
@@ -33,6 +35,21 @@ const (
 	scancelBinaryName  = "scancel"
 	scontrolBinaryName = "scontrol"
 	sacctBinaryName    = "sacct"
+
+	// JobStatusCompleted means Slurm job is finished successfully.
+	JobStatusCompleted = "COMPLETED"
+	// JobStatusCanceled means Slurm job was cancelled.
+	JobStatusCanceled = "CANCELLED"
+	// JobStatusFailed means job is failed to execute successfully.
+	JobStatusFailed = "FAILED"
+)
+
+var (
+	// ErrInvalidSacctResponse is returned when trying to parse sacct
+	// response that is invalid.
+	ErrInvalidSacctResponse = errors.New("unable to parse sacct response")
+	// ErrFileNotFound is returned when Open fails to find a file.
+	ErrFileNotFound = errors.New("file is not found")
 )
 
 // Client implements Slurm interface for communicating with
@@ -52,6 +69,36 @@ func NewClient() (*Client, error) {
 		return nil, errors.Errorf("no slurm binaries found: %s", strings.Join(missing, ", "))
 	}
 	return &Client{}, nil
+}
+
+// JobInfo contains information about a single Slurm job.
+type JobInfo struct {
+	ID         string         `json:"id" slurm:"JobId"`
+	UserID     string         `json:"user_id" slurm:"UserId"`
+	Name       string         `json:"name" slurm:"JobName"`
+	ExitCode   string         `json:"exit_code" slurm:"ExitCode"`
+	State      string         `json:"state" slurm:"JobState"`
+	SubmitTime *time.Time     `json:"submit_time" slurm:"SubmitTime"`
+	StartTime  *time.Time     `json:"start_time" slurm:"StartTime"`
+	RunTime    *time.Duration `json:"run_time" slurm:"RunTime"`
+	TimeLimit  *time.Duration `json:"time_limit" slurm:"TimeLimit"`
+	WorkDir    string         `json:"work_dir" slurm:"WorkDir"`
+	StdOut     string         `json:"std_out" slurm:"StdOut"`
+	StdErr     string         `json:"std_err" slurm:"StdErr"`
+	Partition  string         `json:"partition" slurm:"Partition"`
+	NodeList   string         `json:"node_list" slurm:"NodeList"`
+	BatchHost  string         `json:"batch_host" slurm:"BatchHost"`
+	NumNodes   string         `json:"num_nodes" slurm:"NumNodes"`
+}
+
+// JobStepInfo contains information about Slurm job step.
+type JobStepInfo struct {
+	ID         string     `json:"id"`
+	Name       string     `json:"name"`
+	StartedAt  *time.Time `json:"started_at"`
+	FinishedAt *time.Time `json:"finished_at"`
+	ExitCode   int        `json:"exit_code"`
+	State      string     `json:"state"`
 }
 
 // SBatch submits batch job and returns job id if succeeded.
@@ -90,7 +137,7 @@ func (*Client) SCancel(jobID int64) error {
 func (*Client) Open(path string) (io.ReadCloser, error) {
 	file, err := os.Open(path)
 	if os.IsNotExist(err) {
-		return nil, slurm.ErrFileNotFound
+		return nil, ErrFileNotFound
 	}
 	return file, errors.Wrapf(err, "could not open %s", path)
 }
@@ -104,7 +151,7 @@ func (*Client) Tail(path string) (io.ReadCloser, error) {
 	return tr, nil
 }
 
-func (*Client) SJobInfo(jobID int64) (*slurm.JobInfo, error) {
+func (*Client) SJobInfo(jobID int64) (*JobInfo, error) {
 	cmd := exec.Command(scontrolBinaryName, "show", "jobid", strconv.FormatInt(jobID, 10))
 
 	out, err := cmd.Output()
@@ -112,7 +159,7 @@ func (*Client) SJobInfo(jobID int64) (*slurm.JobInfo, error) {
 		return nil, errors.Wrapf(err, "failed to get info for jobid: %d", jobID)
 	}
 
-	ji, err := slurm.JobInfoFromScontrolResponse(string(out))
+	ji, err := JobInfoFromScontrolResponse(string(out))
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse scontrol response")
 	}
@@ -121,7 +168,7 @@ func (*Client) SJobInfo(jobID int64) (*slurm.JobInfo, error) {
 }
 
 // SJobSteps returns information about a submitted batch job.
-func (*Client) SJobSteps(jobID int64) ([]*slurm.JobStepInfo, error) {
+func (*Client) SJobSteps(jobID int64) ([]*JobStepInfo, error) {
 	cmd := exec.Command(sacctBinaryName,
 		"-p",
 		"-n",
@@ -139,10 +186,151 @@ func (*Client) SJobSteps(jobID int64) ([]*slurm.JobStepInfo, error) {
 		return nil, errors.Wrap(err, "failed to execute sacct")
 	}
 
-	jInfo, err := slurm.ParseSacctResponse(string(out))
+	jInfo, err := ParseSacctResponse(string(out))
 	if err != nil {
-		return nil, errors.Wrap(err, slurm.ErrInvalidSacctResponse.Error())
+		return nil, errors.Wrap(err, ErrInvalidSacctResponse.Error())
 	}
 
 	return jInfo, nil
+}
+
+func JobInfoFromScontrolResponse(r string) (*JobInfo, error) {
+	rFields := strings.Fields(r)
+	slurmFields := make(map[string]string)
+	for _, f := range rFields {
+		s := strings.Split(f, "=")
+		if len(s) != 2 {
+			// just skipping empty fields
+			continue
+		}
+		slurmFields[s[0]] = s[1]
+	}
+
+	ji := &JobInfo{}
+	if err := ji.fillFromSlurmFields(slurmFields); err != nil {
+		return nil, err
+	}
+
+	return ji, nil
+}
+
+// ParseSacctResponse is a helper that parses sacct output and
+// returns results in a convenient form.
+func ParseSacctResponse(raw string) ([]*JobStepInfo, error) {
+	lines := strings.Split(strings.Trim(raw, "\n"), "\n")
+	infos := make([]*JobStepInfo, len(lines))
+	for i, l := range lines {
+		splitted := strings.Split(l, "|")
+		if len(splitted) != 7 {
+			return nil, errors.New("output must contain 6 sections")
+		}
+
+		startedAt, err := parseTime(splitted[0])
+		if err != nil {
+			return nil, err
+		}
+
+		finishedAt, err := parseTime(splitted[1])
+		if err != nil {
+			return nil, err
+		}
+
+		exitCodeSplitted := strings.Split(splitted[2], ":")
+		if len(exitCodeSplitted) != 2 {
+			return nil, errors.New("exit code must contain 2 sections")
+		}
+		exitCode, err := strconv.Atoi(exitCodeSplitted[0])
+		if err != nil {
+			return nil, err
+		}
+		j := JobStepInfo{
+			StartedAt:  startedAt,
+			FinishedAt: finishedAt,
+			ExitCode:   exitCode,
+			State:      splitted[3],
+			ID:         splitted[4],
+			Name:       splitted[5],
+		}
+		infos[i] = &j
+	}
+
+	return infos, nil
+}
+
+func (ji *JobInfo) fillFromSlurmFields(fields map[string]string) error {
+	t := reflect.TypeOf(*ji)
+	for i := 0; i < t.NumField(); i++ {
+		tagV, ok := t.Field(i).Tag.Lookup("slurm")
+		if !ok {
+			continue
+		}
+
+		sField, ok := fields[tagV]
+		if !ok {
+			continue
+		}
+
+		var val reflect.Value
+		switch tagV {
+		case "SubmitTime", "StartTime":
+			t, err := parseTime(sField)
+			if err != nil {
+				return errors.Wrapf(err, "can't parse time: %s", sField)
+			}
+			val = reflect.ValueOf(t)
+		case "RunTime", "TimeLimit":
+			d, err := parseDuration(sField)
+			if err != nil {
+				return errors.Wrapf(err, "can't parse duration: %s", sField)
+			}
+			val = reflect.ValueOf(d)
+		default:
+			val = reflect.ValueOf(sField)
+		}
+
+		reflect.ValueOf(ji).Elem().Field(i).Set(val)
+	}
+
+	return nil
+}
+
+func parseDuration(durationStr string) (*time.Duration, error) {
+	sp := strings.Split(durationStr, ":")
+	if len(sp) < 3 {
+		// we can skip since data is invalid or not available for that field
+		return nil, nil
+	}
+
+	if strings.Contains(sp[0], "-") {
+		spl := strings.Split(sp[0], "-")
+		days, err := strconv.ParseInt(spl[0], 10, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		hours, err := strconv.ParseInt(spl[1], 10, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		sp[0] = strconv.FormatInt(days*24+hours, 10)
+	}
+
+	d, err := time.ParseDuration(fmt.Sprintf("%sh%sm%ss", sp[0], sp[1], sp[2]))
+	return &d, err
+}
+
+func parseTime(timeStr string) (*time.Time, error) {
+	const slurmTimeLayout = "2006-01-02T15:04:05"
+
+	if timeStr == "" || strings.ToLower(timeStr) == "unknown" {
+		return nil, nil
+	}
+
+	t, err := time.Parse(slurmTimeLayout, timeStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &t, nil
 }
