@@ -149,7 +149,7 @@ func runBatch(c api.WorkloadManagerClient, batch string, cOps *collectOptions) e
 				return errors.New("job canceled")
 			case api.JobStatus_COMPLETED:
 				if cOps != nil {
-					return collectResults(c, jobID, cOps)
+					return collectResults(c, cOps)
 				}
 				return nil
 			}
@@ -215,7 +215,7 @@ func tailLogs(ctx context.Context, c api.WorkloadManagerClient, logFile string) 
 
 		buffCh := make(chan []byte)
 
-		// since reading from f is blocking we need to do it in a separate gorutine
+		// since reading from tf is blocking we need to do it in a separate gorutine
 		go func() {
 			defer close(buffCh)
 			for {
@@ -254,7 +254,7 @@ func tailLogs(ctx context.Context, c api.WorkloadManagerClient, logFile string) 
 	return done
 }
 
-func collectResults(c api.WorkloadManagerClient, jobID int64, cOps *collectOptions) error {
+func collectResults(c api.WorkloadManagerClient, cOps *collectOptions) error {
 	fromFile, err := c.OpenFile(context.Background(), &api.OpenFileRequest{Path: cOps.From})
 	if err != nil {
 		return errors.Wrapf(err, "can't open file with results on remote host file name: %s", cOps.From)

@@ -187,7 +187,7 @@ func mapSStepsToProtoSteps(ss []*local.JobStepInfo) ([]*api.JobStepInfo, error) 
 				return nil, errors.Wrap(err, "can't convert finished go time to proto time")
 			}
 
-			startedAt = pt
+			finishedAt = pt
 		}
 
 		status, ok := api.JobStatus_value[s.State]
