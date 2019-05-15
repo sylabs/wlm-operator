@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/slurm-operator/pkg/tail"
@@ -155,13 +156,25 @@ func (*Client) SJobInfo(jobID int64) (*JobInfo, error) {
 	if err != C.SLURM_SUCCESS {
 		errNo := C.slurm_get_errno()
 		errMsg := C.slurm_strerror(errNo)
-		return nil, errors.New(C.GoString(errMsg))
+		return nil, errors.Errorf("slurm_load_job error: %s", C.GoString(errMsg))
 	}
-	if cJobInfoMsg.record_count == 0 {
-		return nil, errors.New("slurm_load_job returned empty job array")
+	if cJobInfoMsg.record_count != 1 {
+		return nil, errors.Errorf("slurm_load_job returned %d jobs, want 1", cJobInfoMsg.record_count)
 	}
 	log.Printf("slurm_load_job returned %v records", cJobInfoMsg.record_count)
 	log.Printf("slurm_load_job returned %+v", cJobInfoMsg.job_array)
+
+	var cJobsInfoMsg *C.job_info_msg_t
+	err = C.slurm_load_jobs(C.time_t(0), &cJobsInfoMsg, C.uint16_t(0))
+	defer C.slurm_free_job_info_msg(cJobsInfoMsg)
+	if err != C.SLURM_SUCCESS {
+		errNo := C.slurm_get_errno()
+		errMsg := C.slurm_strerror(errNo)
+		return nil, errors.Errorf("slurm_load_jobs error: %s", C.GoString(errMsg))
+	}
+	log.Printf("slurm_load_jobs returned %v records", cJobsInfoMsg.record_count)
+	slice := (*[1 << 28]C.slurm_job_info_t)(unsafe.Pointer(cJobsInfoMsg.job_array))[:cJobsInfoMsg.record_count:cJobsInfoMsg.record_count]
+	log.Printf("jobs info: %+v", slice)
 
 	// data := unsafe.Pointer(cJobInfoMsg.job_array)
 	// count := int(cJobInfoMsg.record_count)
