@@ -24,11 +24,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"google.golang.org/grpc"
+	"github.com/pkg/errors"
 
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
 
-	"github.com/pkg/errors"
+	"google.golang.org/grpc"
 )
 
 const envJobName = "JOB_NAME"
@@ -57,10 +57,12 @@ func main() {
 	}
 
 	log.Printf("Job will be executed locally by red-box at: %s", *sock)
-	client, err := getGRPCClient(*sock)
+
+	conn, err := grpc.Dial("unix://"+*sock, grpc.WithInsecure())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("can't connect to %s %s", *sock, err)
 	}
+	client := api.NewWorkloadManagerClient(conn)
 
 	var ops *collectOptions
 	if mp := *mountPath; mp != "" {
@@ -79,15 +81,6 @@ func main() {
 	}
 
 	log.Println("Job finished")
-}
-
-func getGRPCClient(addr string) (api.WorkloadManagerClient, error) {
-	conn, err := grpc.Dial("unix://"+addr, grpc.WithInsecure())
-	if err != nil {
-		return nil, errors.Wrapf(err, "can't connect to %s", addr)
-	}
-
-	return api.NewWorkloadManagerClient(conn), nil
 }
 
 func runBatch(c api.WorkloadManagerClient, batch string, cOps *collectOptions) error {
@@ -228,15 +221,12 @@ func tailLogs(ctx context.Context, c api.WorkloadManagerClient, logFile string) 
 			}
 		}()
 
-		var waitingEOF bool
+		done := ctx.Done()
+
 		for {
 			select {
-			case <-ctx.Done():
-				if waitingEOF {
-					continue
-				}
-
-				waitingEOF = true
+			case <-done:
+				done = nil
 				if err := tf.Send(&api.TailFileRequest{Path: logFile, Action: api.TailAction_ReadToEndAndClose}); err != nil {
 					log.Printf("Can't send tail request err: %s", err)
 					return

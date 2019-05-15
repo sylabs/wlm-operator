@@ -23,18 +23,18 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm/local"
+	"github.com/sylabs/slurm-operator/pkg/slurm"
 
 	sgrpc "github.com/sylabs/slurm-operator/internal/red-box/api"
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
 
-	"google.golang.org/grpc"
-
 	"golang.org/x/sys/unix"
+
+	"google.golang.org/grpc"
 )
 
 func main() {
-	sock := flag.String("socket", "/var/run/syslurm/red-box.sock", "unix socket to serve slurm Slurm")
+	sock := flag.String("socket", "/var/run/syslurm/red-box.sock", "unix socket to serve slurm API")
 	flag.Parse()
 
 	ln, err := net.Listen("unix", *sock)
@@ -47,7 +47,7 @@ func main() {
 
 	s := grpc.NewServer()
 
-	c, err := local.NewClient()
+	c, err := slurm.NewClient()
 	if err != nil {
 		log.Fatalf("Could not create slurm client: %s", err)
 	}

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package slurm
 
 import (
 	"bytes"
@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sylabs/slurm-operator/pkg/tail"
 )
 
@@ -35,13 +36,6 @@ const (
 	scancelBinaryName  = "scancel"
 	scontrolBinaryName = "scontrol"
 	sacctBinaryName    = "sacct"
-
-	// JobStatusCompleted means Slurm job is finished successfully.
-	JobStatusCompleted = "COMPLETED"
-	// JobStatusCanceled means Slurm job was cancelled.
-	JobStatusCanceled = "CANCELLED"
-	// JobStatusFailed means job is failed to execute successfully.
-	JobStatusFailed = "FAILED"
 )
 
 var (

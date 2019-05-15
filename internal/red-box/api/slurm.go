@@ -1,3 +1,17 @@
+// Copyright (c) 2019 Sylabs, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package api
 
 import (
@@ -6,23 +20,24 @@ import (
 	"log"
 	"time"
 
+	"github.com/sylabs/slurm-operator/pkg/slurm"
+
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"github.com/pkg/errors"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm/local"
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
 )
 
 // Slurm implements WorkloadManagerServer
 type Slurm struct {
-	client *local.Client
+	client *slurm.Client
 }
 
 // NewSlurmAPI creates a new instance of Slurm
-func NewSlurmAPI(c *local.Client) *Slurm {
+func NewSlurmAPI(c *slurm.Client) *Slurm {
 	return &Slurm{client: c}
 }
 
@@ -166,10 +181,10 @@ func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 	}
 }
 
-func mapSStepsToProtoSteps(ss []*local.JobStepInfo) ([]*api.JobStepInfo, error) {
-	var pSteps []*api.JobStepInfo
+func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) {
+	pSteps := make([]*api.JobStepInfo, len(ss))
 
-	for _, s := range ss {
+	for i, s := range ss {
 		var startedAt *timestamp.Timestamp
 		if s.StartedAt != nil {
 			pt, err := ptypes.TimestampProto(*s.StartedAt)
@@ -195,20 +210,20 @@ func mapSStepsToProtoSteps(ss []*local.JobStepInfo) ([]*api.JobStepInfo, error) 
 			status = int32(api.JobStatus_UNKNOWN)
 		}
 
-		pSteps = append(pSteps, &api.JobStepInfo{
+		pSteps[i] = &api.JobStepInfo{
 			Id:        s.ID,
 			Name:      s.Name,
 			ExitCode:  int32(s.ExitCode),
 			Status:    api.JobStatus(status),
 			StartTime: startedAt,
 			EndTime:   finishedAt,
-		})
+		}
 	}
 
 	return pSteps, nil
 }
 
-func mapSInfoToProtoInfo(si *local.JobInfo) (*api.JobInfo, error) {
+func mapSInfoToProtoInfo(si *slurm.JobInfo) (*api.JobInfo, error) {
 	var submitTime *timestamp.Timestamp
 	if si.SubmitTime != nil {
 		pt, err := ptypes.TimestampProto(*si.SubmitTime)
