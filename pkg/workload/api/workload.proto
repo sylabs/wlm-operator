@@ -63,7 +63,7 @@ message JobInfoRequest {
 
 message JobInfoResponse {
     // Job information.
-    JobInfo info = 1;
+    repeated JobInfo info = 1;
 }
 
 message JobStepsRequest {

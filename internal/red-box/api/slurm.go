@@ -223,60 +223,64 @@ func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) 
 	return pSteps, nil
 }
 
-func mapSInfoToProtoInfo(si *slurm.JobInfo) (*api.JobInfo, error) {
-	var submitTime *timestamp.Timestamp
-	if si.SubmitTime != nil {
-		pt, err := ptypes.TimestampProto(*si.SubmitTime)
-		if err != nil {
-			return nil, errors.Wrap(err, "can't convert submit go time to proto time")
+func mapSInfoToProtoInfo(si []*slurm.JobInfo) ([]*api.JobInfo, error) {
+	pInfs := make([]*api.JobInfo, len(si))
+	for i, inf := range si {
+		var submitTime *timestamp.Timestamp
+		if inf.SubmitTime != nil {
+			pt, err := ptypes.TimestampProto(*inf.SubmitTime)
+			if err != nil {
+				return nil, errors.Wrap(err, "can't convert submit go time to proto time")
+			}
+
+			submitTime = pt
 		}
 
-		submitTime = pt
-	}
+		var startTime *timestamp.Timestamp
+		if inf.StartTime != nil {
+			pt, err := ptypes.TimestampProto(*inf.StartTime)
+			if err != nil {
+				return nil, errors.Wrap(err, "can't convert start go time to proto time")
+			}
 
-	var startTime *timestamp.Timestamp
-	if si.StartTime != nil {
-		pt, err := ptypes.TimestampProto(*si.StartTime)
-		if err != nil {
-			return nil, errors.Wrap(err, "can't convert start go time to proto time")
+			startTime = pt
 		}
 
-		startTime = pt
+		var runTime *duration.Duration
+		if inf.RunTime != nil {
+			runTime = ptypes.DurationProto(*inf.RunTime)
+		}
+
+		var timeLimit *duration.Duration
+		if inf.TimeLimit != nil {
+			timeLimit = ptypes.DurationProto(*inf.TimeLimit)
+		}
+
+		status, ok := api.JobStatus_value[inf.State]
+		if !ok {
+			status = int32(api.JobStatus_UNKNOWN)
+		}
+
+		pi := api.JobInfo{
+			Id:         inf.ID,
+			UserId:     inf.UserID,
+			Name:       inf.Name,
+			ExitCode:   inf.ExitCode,
+			Status:     api.JobStatus(status),
+			SubmitTime: submitTime,
+			StartTime:  startTime,
+			RunTime:    runTime,
+			TimeLimit:  timeLimit,
+			WorkingDir: inf.WorkDir,
+			StdOut:     inf.StdOut,
+			StdErr:     inf.StdErr,
+			Partition:  inf.Partition,
+			NodeList:   inf.NodeList,
+			BatchHost:  inf.BatchHost,
+			NumNodes:   inf.NumNodes,
+		}
+		pInfs[i] = &pi
 	}
 
-	var runTime *duration.Duration
-	if si.RunTime != nil {
-		runTime = ptypes.DurationProto(*si.RunTime)
-	}
-
-	var timeLimit *duration.Duration
-	if si.TimeLimit != nil {
-		timeLimit = ptypes.DurationProto(*si.TimeLimit)
-	}
-
-	status, ok := api.JobStatus_value[si.State]
-	if !ok {
-		status = int32(api.JobStatus_UNKNOWN)
-	}
-
-	pi := api.JobInfo{
-		Id:         si.ID,
-		UserId:     si.UserID,
-		Name:       si.Name,
-		ExitCode:   si.ExitCode,
-		Status:     api.JobStatus(status),
-		SubmitTime: submitTime,
-		StartTime:  startTime,
-		RunTime:    runTime,
-		TimeLimit:  timeLimit,
-		WorkingDir: si.WorkDir,
-		StdOut:     si.StdOut,
-		StdErr:     si.StdErr,
-		Partition:  si.Partition,
-		NodeList:   si.NodeList,
-		BatchHost:  si.BatchHost,
-		NumNodes:   si.NumNodes,
-	}
-
-	return &pi, nil
+	return pInfs, nil
 }

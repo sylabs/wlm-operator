@@ -77,6 +77,61 @@ const (
    StdIn=/dev/null
    StdOut=/home/vagrant/slurm-52.out
    Power=`
+
+	testJobArrayScontrolResponse = `JobId=192 ArrayJobId=192 ArrayTaskId=5-8 JobName=sbatch
+   UserId=vagrant(1000) GroupId=vagrant(1000) MCS_label=N/A
+   Priority=4294901702 Nice=0 Account=(null) QOS=(null)
+   JobState=PENDING Reason=Resources Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=00:00:30 TimeLimit=1-01:00:00 TimeMin=N/A
+   SubmitTime=2019-04-16T11:49:19 EligibleTime=2019-04-16T11:48:02
+   StartTime=2019-04-16T11:49:20 EndTime=Unknown Deadline=N/A
+   PreemptTime=None SuspendTime=None SecsPreSuspend=0
+   LastSchedEval=2019-05-17T11:14:42
+   Partition=debug AllocNode:Sid=vagrant:7471
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=(null)
+   NumNodes=1-1 NumCPUs=1 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   TRES=cpu=1,node=1
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   Gres=(null) Reservation=(null)
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=(null)
+   WorkDir=/home/vagrant
+   StdErr=/home/vagrant/slurm-192_4294967294.out
+   StdIn=/dev/null
+   StdOut=/home/vagrant/slurm-192_4294967294.out
+   Power=
+
+JobId=196 ArrayJobId=192 ArrayTaskId=4 JobName=sbatch
+   UserId=vagrant(1000) GroupId=vagrant(1000) MCS_label=N/A
+   Priority=4294901702 Nice=0 Account=(null) QOS=(null)
+   JobState=RUNNING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=00:00:30 TimeLimit=1-01:00:00 TimeMin=N/A
+   SubmitTime=2019-04-16T11:49:19 EligibleTime=2019-04-16T11:49:19
+   StartTime=2019-04-16T11:49:20 EndTime=2019-04-16T12:49:20 Deadline=N/A
+   PreemptTime=None SuspendTime=None SecsPreSuspend=0
+   LastSchedEval=2019-05-17T11:13:59
+   Partition=debug AllocNode:Sid=vagrant:7471
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=vagrant
+   BatchHost=vagrant
+   NumNodes=1 NumCPUs=2 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   TRES=cpu=2,node=1,billing=2
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   Gres=(null) Reservation=(null)
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=(null)
+   WorkDir=/home/vagrant
+   StdErr=/home/vagrant/slurm-192_4.out
+   StdIn=/dev/null
+   StdOut=/home/vagrant/slurm-192_4.out
+   Power=`
 )
 
 var (
@@ -95,13 +150,13 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *JobInfo
+		want    []*JobInfo
 		wantErr bool
 	}{
 		{
 			name: "t1",
 			args: args{r: testScontrolResponse},
-			want: &JobInfo{
+			want: []*JobInfo{{
 				ID:         "53",
 				UserID:     "vagrant(1000)",
 				Name:       "sbatch",
@@ -118,13 +173,13 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 				NodeList:   "vagrant",
 				BatchHost:  "vagrant",
 				NumNodes:   "1",
-			},
+			}},
 			wantErr: false,
 		},
 		{
 			name: "t2",
 			args: args{r: testPendingScontrolRsponse},
-			want: &JobInfo{
+			want: []*JobInfo{{
 				ID:         "52",
 				UserID:     "vagrant(1000)",
 				Name:       "sbatch",
@@ -141,8 +196,49 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 				NodeList:   "(null)",
 				BatchHost:  "",
 				NumNodes:   "1",
-			},
+			}},
 			wantErr: false,
+		},
+		{
+			name: "t3",
+			args: args{r: testJobArrayScontrolResponse},
+			want: []*JobInfo{{
+				ID:         "192",
+				UserID:     "vagrant(1000)",
+				Name:       "sbatch",
+				ExitCode:   "0:0",
+				State:      "PENDING",
+				SubmitTime: &testSubmitTime,
+				StartTime:  &testStartTime,
+				RunTime:    &testRunTime,
+				TimeLimit:  &testLimitTime,
+				WorkDir:    "/home/vagrant",
+				StdOut:     "/home/vagrant/slurm-192_4294967294.out",
+				StdErr:     "/home/vagrant/slurm-192_4294967294.out",
+				Partition:  "debug",
+				NodeList:   "(null)",
+				BatchHost:  "",
+				NumNodes:   "1-1",
+			},
+				{
+					ID:         "196",
+					UserID:     "vagrant(1000)",
+					Name:       "sbatch",
+					ExitCode:   "0:0",
+					State:      "RUNNING",
+					SubmitTime: &testSubmitTime,
+					StartTime:  &testStartTime,
+					RunTime:    &testRunTime,
+					TimeLimit:  &testLimitTime,
+					WorkDir:    "/home/vagrant",
+					StdOut:     "/home/vagrant/slurm-192_4.out",
+					StdErr:     "/home/vagrant/slurm-192_4.out",
+					Partition:  "debug",
+					NodeList:   "vagrant",
+					BatchHost:  "vagrant",
+					NumNodes:   "1",
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -152,6 +248,7 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 				t.Errorf("JobInfoFromScontrolResponse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("JobInfoFromScontrolResponse() = %v, want %v", got, tt.want)
 			}

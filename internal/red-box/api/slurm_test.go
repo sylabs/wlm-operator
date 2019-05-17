@@ -42,8 +42,10 @@ func Test_mapSInfoToProtoInfo(t *testing.T) {
 		BatchHost:  "host1",
 		NumNodes:   "2",
 	}
-	pi, err := mapSInfoToProtoInfo(&testInfo)
+	pinfs, err := mapSInfoToProtoInfo([]*slurm.JobInfo{&testInfo})
 	require.NoError(t, err)
+	require.Len(t, pinfs, 1)
+	pi := pinfs[0]
 
 	require.EqualValues(t, testInfo.ID, pi.Id)
 	require.EqualValues(t, testInfo.UserID, pi.UserId)

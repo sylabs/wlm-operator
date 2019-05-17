@@ -95,7 +95,7 @@ func runBatch(c api.WorkloadManagerClient, batch string, cOps *collectOptions) e
 	if err != nil {
 		return err
 	}
-	info := infoResp.Info
+	info := infoResp.Info[0]
 
 	log.Printf("JobID: %d", jobID)
 
@@ -110,7 +110,7 @@ func runBatch(c api.WorkloadManagerClient, batch string, cOps *collectOptions) e
 			cancelTailLogs()
 			return err
 		}
-		info = infoResp.Info
+		info = infoResp.Info[0]
 
 		state := info.Status
 		if state == api.JobStatus_COMPLETED ||
