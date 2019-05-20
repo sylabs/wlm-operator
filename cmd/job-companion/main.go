@@ -95,7 +95,7 @@ func runBatch(c api.WorkloadManagerClient, batch string, cOps *collectOptions) e
 	if err != nil {
 		return err
 	}
-	info := infoResp.Info[0] // response is always contains at leas one element
+	info := infoResp.Info[0] // response always contains at leas one element
 
 	log.Printf("JobID: %d", jobID)
 
