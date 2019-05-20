@@ -75,6 +75,10 @@ func (a *Slurm) JobInfo(ctx context.Context, r *api.JobInfoRequest) (*api.JobInf
 		return nil, errors.Wrap(err, "can't convert slurm info into proto info")
 	}
 
+	if len(pInfo) == 0 {
+		return nil, errors.New("job info slice is empty, probably invalid scontrol output")
+	}
+
 	return &api.JobInfoResponse{Info: pInfo}, nil
 }
 
@@ -278,6 +282,7 @@ func mapSInfoToProtoInfo(si []*slurm.JobInfo) ([]*api.JobInfo, error) {
 			NodeList:   inf.NodeList,
 			BatchHost:  inf.BatchHost,
 			NumNodes:   inf.NumNodes,
+			ArrayId:    inf.ArrayJobID,
 		}
 		pInfs[i] = &pi
 	}

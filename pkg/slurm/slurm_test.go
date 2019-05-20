@@ -173,6 +173,7 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 				NodeList:   "vagrant",
 				BatchHost:  "vagrant",
 				NumNodes:   "1",
+				ArrayJobID: "",
 			}},
 			wantErr: false,
 		},
@@ -196,6 +197,7 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 				NodeList:   "(null)",
 				BatchHost:  "",
 				NumNodes:   "1",
+				ArrayJobID: "",
 			}},
 			wantErr: false,
 		},
@@ -219,6 +221,7 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 				NodeList:   "(null)",
 				BatchHost:  "",
 				NumNodes:   "1-1",
+				ArrayJobID: "192",
 			},
 				{
 					ID:         "196",
@@ -237,6 +240,7 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 					NodeList:   "vagrant",
 					BatchHost:  "vagrant",
 					NumNodes:   "1",
+					ArrayJobID: "192",
 				},
 			},
 		},
@@ -248,7 +252,6 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 				t.Errorf("JobInfoFromScontrolResponse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("JobInfoFromScontrolResponse() = %v, want %v", got, tt.want)
 			}

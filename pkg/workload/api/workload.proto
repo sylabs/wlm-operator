@@ -26,6 +26,8 @@ service WorkloadManager {
     // CancelJob cancels job by job id.
     rpc CancelJob (CancelJobRequest) returns (CancelJobResponse);
     // JobInfo returns complete information about a particular job.
+    // In case of JobArray the first job in slice is a root.
+    // JobInfoResponse have to contain at least one element
     rpc JobInfo (JobInfoRequest) returns (JobInfoResponse);
     // JobSteps returns information about each individual job step.
     rpc JobSteps (JobStepsRequest) returns (JobStepsResponse);
@@ -135,6 +137,8 @@ message JobInfo {
     string batch_host = 15;
     // Number of nodes requested by job.
     string num_nodes = 16;
+    // Job array id.
+    string array_id = 17;
 }
 
 // JobStepInfo represents information about a single job step.

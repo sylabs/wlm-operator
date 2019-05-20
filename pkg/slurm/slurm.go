@@ -69,6 +69,7 @@ func NewClient() (*Client, error) {
 type JobInfo struct {
 	ID         string         `json:"id" slurm:"JobId"`
 	UserID     string         `json:"user_id" slurm:"UserId"`
+	ArrayJobID string         `json:"array_job_id" slurm:"ArrayJobId"`
 	Name       string         `json:"name" slurm:"JobName"`
 	ExitCode   string         `json:"exit_code" slurm:"ExitCode"`
 	State      string         `json:"state" slurm:"JobState"`
@@ -189,9 +190,12 @@ func (*Client) SJobSteps(jobID int64) ([]*JobStepInfo, error) {
 }
 
 func JobInfoFromScontrolResponse(r string) ([]*JobInfo, error) {
-	infos := make([]*JobInfo, 0)
+	r = strings.TrimSpace(r)
 	rawInfos := strings.Split(r, "\n\n")
-	for _, raw := range rawInfos {
+
+	infos := make([]*JobInfo, len(rawInfos))
+
+	for i, raw := range rawInfos {
 		rFields := strings.Fields(raw)
 		slurmFields := make(map[string]string)
 		for _, f := range rFields {
@@ -207,7 +211,7 @@ func JobInfoFromScontrolResponse(r string) ([]*JobInfo, error) {
 		if err := ji.fillFromSlurmFields(slurmFields); err != nil {
 			return nil, err
 		}
-		infos = append(infos, ji)
+		infos[i] = ji
 	}
 
 	return infos, nil
