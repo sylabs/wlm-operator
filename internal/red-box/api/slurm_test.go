@@ -41,6 +41,7 @@ func Test_mapSInfoToProtoInfo(t *testing.T) {
 		NodeList:   "node1",
 		BatchHost:  "host1",
 		NumNodes:   "2",
+		ArrayJobID: "111",
 	}
 	pinfs, err := mapSInfoToProtoInfo([]*slurm.JobInfo{&testInfo})
 	require.NoError(t, err)
@@ -65,6 +66,7 @@ func Test_mapSInfoToProtoInfo(t *testing.T) {
 	require.EqualValues(t, testInfo.NodeList, pi.NodeList)
 	require.EqualValues(t, testInfo.BatchHost, pi.BatchHost)
 	require.EqualValues(t, testInfo.NumNodes, pi.NumNodes)
+	require.EqualValues(t, testInfo.ArrayJobID, pi.ArrayId)
 }
 
 func Test_mapSStepsToProtoSteps(t *testing.T) {
