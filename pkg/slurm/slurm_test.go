@@ -15,7 +15,6 @@
 package slurm
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -144,85 +143,84 @@ var (
 )
 
 func TestJobInfoFromScontrolResponse(t *testing.T) {
-	type args struct {
-		r string
-	}
 	tests := []struct {
-		name    string
-		args    args
-		want    []*JobInfo
-		wantErr bool
+		name string
+		in   string
+		want []*JobInfo
 	}{
 		{
 			name: "t1",
-			args: args{r: testScontrolResponse},
-			want: []*JobInfo{{
-				ID:         "53",
-				UserID:     "vagrant(1000)",
-				Name:       "sbatch",
-				ExitCode:   "0:0",
-				State:      "RUNNING",
-				SubmitTime: &testSubmitTime,
-				StartTime:  &testStartTime,
-				RunTime:    &testRunTime,
-				TimeLimit:  &testLimitTime,
-				WorkDir:    "/home/vagrant",
-				StdOut:     "/home/vagrant/slurm-53.out",
-				StdErr:     "/home/vagrant/slurm-53.out",
-				Partition:  "debug",
-				NodeList:   "vagrant",
-				BatchHost:  "vagrant",
-				NumNodes:   "1",
-				ArrayJobID: "",
-			}},
-			wantErr: false,
+			in:   testScontrolResponse,
+			want: []*JobInfo{
+				{
+					ID:         "53",
+					UserID:     "vagrant(1000)",
+					Name:       "sbatch",
+					ExitCode:   "0:0",
+					State:      "RUNNING",
+					SubmitTime: &testSubmitTime,
+					StartTime:  &testStartTime,
+					RunTime:    &testRunTime,
+					TimeLimit:  &testLimitTime,
+					WorkDir:    "/home/vagrant",
+					StdOut:     "/home/vagrant/slurm-53.out",
+					StdErr:     "/home/vagrant/slurm-53.out",
+					Partition:  "debug",
+					NodeList:   "vagrant",
+					BatchHost:  "vagrant",
+					NumNodes:   "1",
+					ArrayJobID: "",
+				},
+			},
 		},
 		{
 			name: "t2",
-			args: args{r: testPendingScontrolRsponse},
-			want: []*JobInfo{{
-				ID:         "52",
-				UserID:     "vagrant(1000)",
-				Name:       "sbatch",
-				ExitCode:   "0:0",
-				State:      "PENDING",
-				SubmitTime: &testSubmitTime,
-				StartTime:  nil,
-				RunTime:    &testZeroRunTime,
-				TimeLimit:  nil,
-				WorkDir:    "/home/vagrant",
-				StdOut:     "/home/vagrant/slurm-52.out",
-				StdErr:     "/home/vagrant/slurm-52.out",
-				Partition:  "debug",
-				NodeList:   "(null)",
-				BatchHost:  "",
-				NumNodes:   "1",
-				ArrayJobID: "",
-			}},
-			wantErr: false,
+			in:   testPendingScontrolRsponse,
+			want: []*JobInfo{
+				{
+					ID:         "52",
+					UserID:     "vagrant(1000)",
+					Name:       "sbatch",
+					ExitCode:   "0:0",
+					State:      "PENDING",
+					SubmitTime: &testSubmitTime,
+					StartTime:  nil,
+					RunTime:    &testZeroRunTime,
+					TimeLimit:  nil,
+					WorkDir:    "/home/vagrant",
+					StdOut:     "/home/vagrant/slurm-52.out",
+					StdErr:     "/home/vagrant/slurm-52.out",
+					Partition:  "debug",
+					NodeList:   "(null)",
+					BatchHost:  "",
+					NumNodes:   "1",
+					ArrayJobID: "",
+				},
+			},
 		},
 		{
 			name: "t3",
-			args: args{r: testJobArrayScontrolResponse},
-			want: []*JobInfo{{
-				ID:         "192",
-				UserID:     "vagrant(1000)",
-				Name:       "sbatch",
-				ExitCode:   "0:0",
-				State:      "PENDING",
-				SubmitTime: &testSubmitTime,
-				StartTime:  &testStartTime,
-				RunTime:    &testRunTime,
-				TimeLimit:  &testLimitTime,
-				WorkDir:    "/home/vagrant",
-				StdOut:     "/home/vagrant/slurm-192_4294967294.out",
-				StdErr:     "/home/vagrant/slurm-192_4294967294.out",
-				Partition:  "debug",
-				NodeList:   "(null)",
-				BatchHost:  "",
-				NumNodes:   "1-1",
-				ArrayJobID: "192",
-			},
+			in:   testJobArrayScontrolResponse,
+			want: []*JobInfo{
+				{
+					ID:         "192",
+					UserID:     "vagrant(1000)",
+					Name:       "sbatch",
+					ExitCode:   "0:0",
+					State:      "PENDING",
+					SubmitTime: &testSubmitTime,
+					StartTime:  &testStartTime,
+					RunTime:    &testRunTime,
+					TimeLimit:  &testLimitTime,
+					WorkDir:    "/home/vagrant",
+					StdOut:     "/home/vagrant/slurm-192_4294967294.out",
+					StdErr:     "/home/vagrant/slurm-192_4294967294.out",
+					Partition:  "debug",
+					NodeList:   "(null)",
+					BatchHost:  "",
+					NumNodes:   "1-1",
+					ArrayJobID: "192",
+				},
 				{
 					ID:         "196",
 					UserID:     "vagrant(1000)",
@@ -247,14 +245,9 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := JobInfoFromScontrolResponse(tt.args.r)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JobInfoFromScontrolResponse() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("JobInfoFromScontrolResponse() = %v, want %v", got, tt.want)
-			}
+			got, err := JobInfoFromScontrolResponse(tt.in)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

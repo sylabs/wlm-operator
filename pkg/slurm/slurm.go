@@ -16,7 +16,6 @@ package slurm
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -301,7 +300,7 @@ func (ji *JobInfo) fillFromSlurmFields(fields map[string]string) error {
 			}
 			val = reflect.ValueOf(t)
 		case "RunTime", "TimeLimit":
-			d, err := parseDuration(sField)
+			d, err := ParseDuration(sField)
 			if err != nil {
 				return errors.Wrapf(err, "can't parse duration: %s", sField)
 			}
@@ -316,30 +315,80 @@ func (ji *JobInfo) fillFromSlurmFields(fields map[string]string) error {
 	return nil
 }
 
-func parseDuration(durationStr string) (*time.Duration, error) {
-	sp := strings.Split(durationStr, ":")
-	if len(sp) < 3 {
-		// we can skip since data is invalid or not available for that field
+// ParseDuration parses slurm duration string. Possible formats are:
+// minutes, minutes:seconds, hours:minutes:seconds, days-hours, days-hours:minutes or days-hours:minutes:seconds
+func ParseDuration(duration string) (*time.Duration, error) {
+	const unlimited = "UNLIMITED"
+	if duration == unlimited || duration == "" {
 		return nil, nil
 	}
 
-	if strings.Contains(sp[0], "-") {
-		spl := strings.Split(sp[0], "-")
-		days, err := strconv.ParseInt(spl[0], 10, 0)
+	var err error
+	var d time.Duration
+	var days, hours, minutes, seconds int64
+	parts := strings.Split(duration, ":")
+	if len(parts) > 3 {
+		return nil, errors.New("invalid duration format")
+	}
+	i := strings.IndexByte(parts[0], '-')
+	if i != -1 {
+		days, err = strconv.ParseInt(parts[0][:i], 10, 0)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "invalid amount of days")
 		}
-
-		hours, err := strconv.ParseInt(spl[1], 10, 0)
+		hours, err = strconv.ParseInt(parts[0][i+1:], 10, 0)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "invalid amount of hours")
 		}
-
-		sp[0] = strconv.FormatInt(days*24+hours, 10)
+		if len(parts) > 1 {
+			minutes, err = strconv.ParseInt(parts[1], 10, 0)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid amount of minutes")
+			}
+		}
+		if len(parts) > 2 {
+			seconds, err = strconv.ParseInt(parts[2], 10, 0)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid amount of seconds")
+			}
+		}
+	} else {
+		switch len(parts) {
+		case 1:
+			minutes, err = strconv.ParseInt(parts[0], 10, 0)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid amount of minutes")
+			}
+		case 2:
+			minutes, err = strconv.ParseInt(parts[0], 10, 0)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid amount of minutes")
+			}
+			seconds, err = strconv.ParseInt(parts[1], 10, 0)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid amount of seconds")
+			}
+		case 3:
+			hours, err = strconv.ParseInt(parts[0], 10, 0)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid amount of hours")
+			}
+			minutes, err = strconv.ParseInt(parts[1], 10, 0)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid amount of minutes")
+			}
+			seconds, err = strconv.ParseInt(parts[2], 10, 0)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid amount of seconds")
+			}
+		}
 	}
 
-	d, err := time.ParseDuration(fmt.Sprintf("%sh%sm%ss", sp[0], sp[1], sp[2]))
-	return &d, err
+	d += time.Hour * 24 * time.Duration(days)
+	d += time.Hour * time.Duration(hours)
+	d += time.Minute * time.Duration(minutes)
+	d += time.Second * time.Duration(seconds)
+	return &d, nil
 }
 
 func parseTime(timeStr string) (*time.Time, error) {
