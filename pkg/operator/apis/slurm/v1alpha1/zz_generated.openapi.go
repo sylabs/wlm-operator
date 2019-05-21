@@ -132,20 +132,6 @@ func schema_operator_apis_slurm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallba
 							},
 						},
 					},
-					"resources": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Compute resources required by this SlurmJob. Cannot be updated. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources.",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"integer"},
-										Format: "int64",
-									},
-								},
-							},
-						},
-					},
 					"results": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Results may be specified for an optional results collection step. When specified, after job is completed all results will be downloaded from Slurm cluster with respect to this configuration.",

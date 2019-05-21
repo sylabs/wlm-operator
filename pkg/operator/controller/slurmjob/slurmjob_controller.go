@@ -22,7 +22,6 @@ import (
 	slurmv1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -150,10 +149,6 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 
 // newPodForSJ returns a job-companion pod for the slurm job.
 func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
-	labels := map[string]string{
-		"slurm-job": sj.Name,
-	}
-
 	// since we are running only slurm jobs, we need to be
 	// sure that pod will be allocated only on nodes with slurm support
 	selectorLabels := map[string]string{
@@ -163,19 +158,9 @@ func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 		selectorLabels[k] = v
 	}
 
-	var resourceRequest corev1.ResourceList
-	for k, v := range sj.Spec.Resources {
-		if resourceRequest == nil {
-			resourceRequest = make(map[corev1.ResourceName]resource.Quantity)
-		}
-
-		q := resource.NewQuantity(v, resource.DecimalSI)
-		resourceRequest[corev1.ResourceName(k)] = *q
-	}
 	args := []string{
 		fmt.Sprintf("--batch=%s", sj.Spec.Batch),
 	}
-
 	if sj.Spec.Results != nil {
 		args = append(args, fmt.Sprintf("--cr-mount=%s", "/collect"))
 		if sj.Spec.Results.From != "" {
@@ -187,7 +172,9 @@ func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sj.Name + "-job",
 			Namespace: sj.Namespace,
-			Labels:    labels,
+			Labels: map[string]string{
+				"slurm-job": sj.Name,
+			},
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{
@@ -200,10 +187,6 @@ func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 					Image:           jobCompanionImage,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Args:            args,
-					Resources: corev1.ResourceRequirements{
-						Requests: resourceRequest,
-						Limits:   resourceRequest,
-					},
 					Env: []corev1.EnvVar{
 						{
 							Name: "JOB_NAME",
