@@ -65,10 +65,11 @@ func NewClient() (*Client, error) {
 	return &Client{}, nil
 }
 
-// JobInfo contains information about a single Slurm job.
+// JobInfo contains information about a Slurm job.
 type JobInfo struct {
 	ID         string         `json:"id" slurm:"JobId"`
 	UserID     string         `json:"user_id" slurm:"UserId"`
+	ArrayJobID string         `json:"array_job_id" slurm:"ArrayJobId"`
 	Name       string         `json:"name" slurm:"JobName"`
 	ExitCode   string         `json:"exit_code" slurm:"ExitCode"`
 	State      string         `json:"state" slurm:"JobState"`
@@ -145,7 +146,7 @@ func (*Client) Tail(path string) (io.ReadCloser, error) {
 	return tr, nil
 }
 
-func (*Client) SJobInfo(jobID int64) (*JobInfo, error) {
+func (*Client) SJobInfo(jobID int64) ([]*JobInfo, error) {
 	cmd := exec.Command(scontrolBinaryName, "show", "jobid", strconv.FormatInt(jobID, 10))
 
 	out, err := cmd.Output()
@@ -188,24 +189,32 @@ func (*Client) SJobSteps(jobID int64) ([]*JobStepInfo, error) {
 	return jInfo, nil
 }
 
-func JobInfoFromScontrolResponse(r string) (*JobInfo, error) {
-	rFields := strings.Fields(r)
-	slurmFields := make(map[string]string)
-	for _, f := range rFields {
-		s := strings.Split(f, "=")
-		if len(s) != 2 {
-			// just skipping empty fields
-			continue
+func JobInfoFromScontrolResponse(r string) ([]*JobInfo, error) {
+	r = strings.TrimSpace(r)
+	rawInfos := strings.Split(r, "\n\n")
+
+	infos := make([]*JobInfo, len(rawInfos))
+
+	for i, raw := range rawInfos {
+		rFields := strings.Fields(raw)
+		slurmFields := make(map[string]string)
+		for _, f := range rFields {
+			s := strings.Split(f, "=")
+			if len(s) != 2 {
+				// just skipping empty fields
+				continue
+			}
+			slurmFields[s[0]] = s[1]
 		}
-		slurmFields[s[0]] = s[1]
+
+		ji := &JobInfo{}
+		if err := ji.fillFromSlurmFields(slurmFields); err != nil {
+			return nil, err
+		}
+		infos[i] = ji
 	}
 
-	ji := &JobInfo{}
-	if err := ji.fillFromSlurmFields(slurmFields); err != nil {
-		return nil, err
-	}
-
-	return ji, nil
+	return infos, nil
 }
 
 // ParseSacctResponse is a helper that parses sacct output and

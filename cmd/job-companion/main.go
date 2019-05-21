@@ -95,30 +95,49 @@ func runBatch(c api.WorkloadManagerClient, batch string, cOps *collectOptions) e
 	if err != nil {
 		return err
 	}
-	info := infoResp.Info
+	info := infoResp.Info[0] // response always contains at leas one element
 
 	log.Printf("JobID: %d", jobID)
 
 	ctx, cancelTailLogs := context.WithCancel(context.Background())
-	tailLogsDone := tailLogs(ctx, c, info.StdOut)
+	var tailLogsDone chan struct{}
+	// we are not tailing logs for JobArrays
+	// since there is no a correct solution how we can print multiple parallel running job outputs
+	// without affecting each other
+	if info.ArrayId == "" {
+		tailLogsDone = tailLogs(ctx, c, info.StdOut)
+	}
+
+	stopLogs := func() {
+		cancelTailLogs()
+
+		// if tail logs done is nil that means that job is a JobArray
+		// and we are not tailing logs for such jobs
+		if tailLogsDone == nil {
+			return
+		}
+
+		<-tailLogsDone // need to wail till all logs will be printed, not to ruin formatting
+	}
 
 	for {
 		time.Sleep(1 * time.Second)
 
 		infoResp, err = c.JobInfo(context.Background(), &api.JobInfoRequest{JobId: jobID})
 		if err != nil {
-			cancelTailLogs()
+			// waits till logs read reaches EOF
+			stopLogs()
 			return err
 		}
-		info = infoResp.Info
+		info = infoResp.Info[0]
 
 		state := info.Status
 		if state == api.JobStatus_COMPLETED ||
 			state == api.JobStatus_FAILED ||
 			state == api.JobStatus_CANCELLED {
 
-			cancelTailLogs()
-			<-tailLogsDone // need to wail till all logs will be printed, not to ruin formatting
+			// waits till logs read reaches EOF
+			stopLogs()
 
 			switch state {
 			case api.JobStatus_FAILED:
