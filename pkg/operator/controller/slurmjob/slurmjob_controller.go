@@ -248,7 +248,7 @@ func getVolumes(cr *slurmv1alpha1.SlurmJob) []corev1.Volume {
 
 func getVolumesMount(cr *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
 	var vms []corev1.VolumeMount
-	// default SLRUM config which have to exist on every k8s node. The config is managed and created by RD
+	// default SLURM config which have to exist on every k8s node. The config is managed and created by RD
 	vms = append(vms,
 		corev1.VolumeMount{
 			Name:      "red-box-sock",
