@@ -31,14 +31,43 @@ import (
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
 )
 
+type Feature struct {
+	Name     string `yaml:"name"`
+	Version  string `yaml:"version"`
+	Quantity int64  `yaml:"quantity"`
+}
+
+type Resources struct {
+	Partition string `yaml:"partition"`
+
+	AutoNodes bool  `yaml:"auto_nodes"`
+	Nodes     int64 `yaml:"nodes"`
+
+	AutoCpuPerNode bool  `yaml:"auto_cpu_per_node"`
+	CpuPerNode     int64 `yaml:"cpu_per_node"`
+
+	AutoMemPerNode bool  `yaml:"auto_mem_per_node"`
+	MemPerNode     int64 `yaml:"mem_per_node"`
+
+	AutoWallTime bool          `yaml:"auto_wall_time"`
+	WallTime     time.Duration `yaml:"wall_time"`
+
+	AdditionalFeatures []*Feature `yaml:"additional_features"`
+}
+
+type Config struct {
+	Resources Resources `yaml:"resources"`
+}
+
 // Slurm implements WorkloadManagerServer
 type Slurm struct {
+	cfg    *Config
 	client *slurm.Client
 }
 
 // NewSlurmAPI creates a new instance of Slurm
-func NewSlurmAPI(c *slurm.Client) *Slurm {
-	return &Slurm{client: c}
+func NewSlurmAPI(c *slurm.Client, cfg *Config) *Slurm {
+	return &Slurm{client: c, cfg: cfg}
 }
 
 // SubmitJob submits job and returns id of it in case of success
@@ -183,6 +212,58 @@ func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 			}
 		}
 	}
+}
+
+func (a *Slurm) Resources(context.Context, *api.ResourcesRequest) (*api.ResourcesResponse, error) {
+	slurmResources, err := a.client.Resources(a.cfg.Resources.Partition)
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"can't get slurm resources for partition %s",
+			a.cfg.Resources.Partition,
+		)
+	}
+
+	response := &api.ResourcesResponse{
+		Nodes:      a.cfg.Resources.Nodes,
+		CpuPerNode: a.cfg.Resources.CpuPerNode,
+		MemPerNode: a.cfg.Resources.MemPerNode,
+		WallTime:   int64(a.cfg.Resources.WallTime.Seconds()),
+	}
+
+	for _, f := range slurmResources.Features {
+		response.Features = append(response.Features, &api.Feature{
+			Name:     f.Name,
+			Version:  f.Version,
+			Quantity: f.Quantity,
+		})
+	}
+
+	for _, f := range a.cfg.Resources.AdditionalFeatures {
+		response.Features = append(response.Features, &api.Feature{
+			Name:     f.Name,
+			Version:  f.Version,
+			Quantity: f.Quantity,
+		})
+	}
+
+	if a.cfg.Resources.AutoNodes {
+		response.Nodes = slurmResources.Nodes
+	}
+
+	if a.cfg.Resources.AutoCpuPerNode {
+		response.CpuPerNode = slurmResources.CpuPerNode
+	}
+
+	if a.cfg.Resources.AutoMemPerNode {
+		response.MemPerNode = slurmResources.MemPerNode
+	}
+
+	if a.cfg.Resources.AutoWallTime {
+		response.WallTime = int64(slurmResources.WallTime.Seconds())
+	}
+
+	return response, nil
 }
 
 func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) {

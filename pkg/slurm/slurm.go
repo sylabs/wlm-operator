@@ -96,6 +96,20 @@ type JobStepInfo struct {
 	State      string     `json:"state"`
 }
 
+type Feature struct {
+	Name     string
+	Version  string
+	Quantity int64
+}
+
+type Resources struct {
+	Nodes      int64
+	MemPerNode int64
+	CpuPerNode int64
+	WallTime   time.Duration
+	Features   []*Feature
+}
+
 // SBatch submits batch job and returns job id if succeeded.
 func (*Client) SBatch(command string) (int64, error) {
 	cmd := exec.Command(sbatchBinaryName, "--parsable")
@@ -187,6 +201,11 @@ func (*Client) SJobSteps(jobID int64) ([]*JobStepInfo, error) {
 	}
 
 	return jInfo, nil
+}
+
+// Resources returns available resources for partition
+func (*Client) Resources(p string) (*Resources, error) {
+	return &Resources{}, nil
 }
 
 func JobInfoFromScontrolResponse(r string) ([]*JobInfo, error) {
