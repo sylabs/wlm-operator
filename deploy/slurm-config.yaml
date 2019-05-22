@@ -6,8 +6,6 @@ metadata:
 data:
   config: |
     minikube:
-      resources:
-        cpu: 2
       labels:
         cuda: 10.0
         containers: singularity

@@ -20,14 +20,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm"
-
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
-
 	"github.com/pkg/errors"
-
+	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
 )
 
@@ -38,8 +35,6 @@ type Feature struct {
 }
 
 type Resources struct {
-	Partition string `yaml:"partition"`
-
 	AutoNodes bool  `yaml:"auto_nodes"`
 	Nodes     int64 `yaml:"nodes"`
 
@@ -56,6 +51,7 @@ type Resources struct {
 }
 
 type Config struct {
+	Partition string    `yaml:"partition"`
 	Resources Resources `yaml:"resources"`
 }
 
@@ -215,13 +211,9 @@ func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 }
 
 func (a *Slurm) Resources(context.Context, *api.ResourcesRequest) (*api.ResourcesResponse, error) {
-	slurmResources, err := a.client.Resources(a.cfg.Resources.Partition)
+	slurmResources, err := a.client.Resources(a.cfg.Partition)
 	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"can't get slurm resources for partition %s",
-			a.cfg.Resources.Partition,
-		)
+		return nil, errors.Wrapf(err, "could not get resources for partition %s", a.cfg.Partition)
 	}
 
 	response := &api.ResourcesResponse{
@@ -247,19 +239,19 @@ func (a *Slurm) Resources(context.Context, *api.ResourcesRequest) (*api.Resource
 		})
 	}
 
-	if a.cfg.Resources.AutoNodes {
+	if a.cfg.Resources.AutoNodes || response.Nodes == 0 {
 		response.Nodes = slurmResources.Nodes
 	}
 
-	if a.cfg.Resources.AutoCpuPerNode {
+	if a.cfg.Resources.AutoCpuPerNode || response.CpuPerNode == 0 {
 		response.CpuPerNode = slurmResources.CpuPerNode
 	}
 
-	if a.cfg.Resources.AutoMemPerNode {
+	if a.cfg.Resources.AutoMemPerNode || response.MemPerNode == 0 {
 		response.MemPerNode = slurmResources.MemPerNode
 	}
 
-	if a.cfg.Resources.AutoWallTime {
+	if a.cfg.Resources.AutoWallTime || response.WallTime == 0 {
 		response.WallTime = int64(slurmResources.WallTime.Seconds())
 	}
 

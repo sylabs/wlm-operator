@@ -5,6 +5,9 @@ SINGULARITY_SLURM_OPERATOR_REPO="github.com/sylabs/slurm-operator"
 export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin
 
 cd ${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO} && make
+cat > ${HOME}/config.yml <<EOF
+partition: debug
+EOF
 
 sudo mkdir -p /var/run/syslurm
 sudo chown vagrant /var/run/syslurm
@@ -19,8 +22,8 @@ Restart=always
 RestartSec=30
 User=vagrant
 Group=vagrant
-WorkingDirectory=/home/vagrant
-ExecStart=/home/vagrant/go/src/github.com/sylabs/slurm-operator/bin/red-box
+WorkingDirectory=${HOME}
+ExecStart=${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO}/bin/red-box
 EOF
 )
 
