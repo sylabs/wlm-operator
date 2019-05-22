@@ -31,6 +31,15 @@ import (
 )
 
 const (
+	unlimited = "UNLIMITED"
+
+	maxTimeF        = "MaxTime"
+	maxNodesF       = "MaxNodes"
+	totalNodesF     = "TotalNodes"
+	maxCPUsPerNodeF = "MaxCPUsPerNode"
+	totalCPUsF      = "TotalCPUs"
+	maxMemPerNodeF  = "MaxMemPerNode"
+
 	sbatchBinaryName   = "sbatch"
 	scancelBinaryName  = "scancel"
 	scontrolBinaryName = "scontrol"
@@ -38,9 +47,13 @@ const (
 )
 
 var (
+	// ErrDurationIsUnlimited means that duration field has value UNLIMITED
+	ErrDurationIsUnlimited = errors.New("duration is unlimited")
+
 	// ErrInvalidSacctResponse is returned when trying to parse sacct
 	// response that is invalid.
 	ErrInvalidSacctResponse = errors.New("unable to parse sacct response")
+
 	// ErrFileNotFound is returned when Open fails to find a file.
 	ErrFileNotFound = errors.New("file is not found")
 )
@@ -194,7 +207,7 @@ func (*Client) SJobSteps(jobID int64) ([]*JobStepInfo, error) {
 		return nil, errors.Wrap(err, "failed to execute sacct")
 	}
 
-	jInfo, err := ParseSacctResponse(string(out))
+	jInfo, err := parseSacctResponse(string(out))
 	if err != nil {
 		return nil, errors.Wrap(err, ErrInvalidSacctResponse.Error())
 	}
@@ -204,7 +217,18 @@ func (*Client) SJobSteps(jobID int64) ([]*JobStepInfo, error) {
 
 // Resources returns available resources for partition
 func (*Client) Resources(p string) (*Resources, error) {
-	return &Resources{}, nil
+	cmd := exec.Command(scontrolBinaryName, "show", "partition", p)
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get partition info")
+	}
+
+	r, err := parseResources(string(out))
+	if err != nil {
+		return nil, errors.Wrap(err, "can't parse scontrol show partition response")
+	}
+
+	return r, nil
 }
 
 func JobInfoFromScontrolResponse(r string) ([]*JobInfo, error) {
@@ -235,9 +259,9 @@ func JobInfoFromScontrolResponse(r string) ([]*JobInfo, error) {
 	return infos, nil
 }
 
-// ParseSacctResponse is a helper that parses sacct output and
+// parseSacctResponse is a helper that parses sacct output and
 // returns results in a convenient form.
-func ParseSacctResponse(raw string) ([]*JobStepInfo, error) {
+func parseSacctResponse(raw string) ([]*JobStepInfo, error) {
 	lines := strings.Split(strings.Trim(raw, "\n"), "\n")
 	infos := make([]*JobStepInfo, len(lines))
 	for i, l := range lines {
@@ -278,6 +302,96 @@ func ParseSacctResponse(raw string) ([]*JobStepInfo, error) {
 	return infos, nil
 }
 
+func parseResources(r string) (*Resources, error) {
+	r = strings.TrimSpace(r)
+	fields := strings.Fields(r)
+
+	fMap := make(map[string][]string)
+	for _, f := range fields {
+		splited := strings.Split(f, "=")
+		if len(splited) != 2 {
+			continue // skipping invalid or empty fields
+		}
+
+		fMap[splited[0]] = append(fMap[splited[0]], strings.Split(splited[1], ",")...)
+	}
+
+	resources := &Resources{}
+
+	for k, v := range fMap {
+		switch k {
+		case maxTimeF:
+			d, err := ParseDuration(v[0])
+			if err != nil {
+				if err == ErrDurationIsUnlimited {
+					resources.WallTime = time.Duration(-1)
+					continue
+				}
+				return nil, errors.Wrap(err, "can't parse duration")
+			}
+			resources.WallTime = *d
+
+		case maxCPUsPerNodeF:
+			if v[0] == unlimited {
+				resources.CpuPerNode = -1
+				vv, ok := fMap[totalCPUsF]
+				if ok {
+					cpus, err := strconv.ParseInt(vv[0], 10, 0)
+					if err != nil {
+						return nil, errors.Wrap(err, "can'y parse total cpus")
+					}
+
+					resources.CpuPerNode = cpus
+				}
+				continue
+			}
+
+			cpus, err := strconv.ParseInt(v[0], 10, 0)
+			if err != nil {
+				return nil, errors.Wrap(err, "can't parse max cpus num")
+			}
+
+			resources.CpuPerNode = cpus
+		case maxMemPerNodeF:
+			if v[0] == unlimited {
+				resources.MemPerNode = -1
+				continue
+			}
+
+			mem, err := strconv.ParseInt(v[0], 10, 0)
+			if err != nil {
+				return nil, errors.Wrap(err, "can't parse max mem")
+			}
+
+			resources.MemPerNode = mem
+
+		case maxNodesF:
+			if v[0] == unlimited {
+				resources.Nodes = -1
+				vv, ok := fMap[totalNodesF]
+				if ok {
+					nodes, err := strconv.ParseInt(vv[0], 10, 0)
+					if err != nil {
+						return nil, errors.Wrap(err, "can't parse total nodes")
+					}
+
+					resources.Nodes = nodes
+				}
+				continue
+			}
+
+			nodes, err := strconv.ParseInt(v[0], 10, 0)
+			if err != nil {
+				return nil, errors.Wrap(err, "can't parse max nodes")
+			}
+
+			resources.Nodes = nodes
+		}
+	}
+
+	return resources, nil
+}
+
 func (ji *JobInfo) fillFromSlurmFields(fields map[string]string) error {
 	t := reflect.TypeOf(*ji)
 	for i := 0; i < t.NumField(); i++ {
@@ -302,6 +416,10 @@ func (ji *JobInfo) fillFromSlurmFields(fields map[string]string) error {
 		case "RunTime", "TimeLimit":
 			d, err := ParseDuration(sField)
 			if err != nil {
+				if err == ErrDurationIsUnlimited {
+					continue
+				}
+
 				return errors.Wrapf(err, "can't parse duration: %s", sField)
 			}
 			val = reflect.ValueOf(d)
@@ -318,9 +436,8 @@ func (ji *JobInfo) fillFromSlurmFields(fields map[string]string) error {
 // ParseDuration parses slurm duration string. Possible formats are:
 // minutes, minutes:seconds, hours:minutes:seconds, days-hours, days-hours:minutes or days-hours:minutes:seconds
 func ParseDuration(duration string) (*time.Duration, error) {
-	const unlimited = "UNLIMITED"
 	if duration == unlimited || duration == "" {
-		return nil, nil
+		return nil, ErrDurationIsUnlimited
 	}
 
 	var err error

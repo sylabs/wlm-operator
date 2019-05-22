@@ -131,6 +131,31 @@ JobId=196 ArrayJobId=192 ArrayTaskId=4 JobName=sbatch
    StdIn=/dev/null
    StdOut=/home/vagrant/slurm-192_4.out
    Power=`
+
+	testScontrolShowPartition = `
+	PartitionName=debug
+   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL
+   AllocNodes=ALL Default=YES QoS=N/A
+   DefaultTime=NONE DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
+   MaxNodes=3 MaxTime=00:30:00 MinNodes=1 LLN=NO MaxCPUsPerNode=1
+   Nodes=vagrant
+   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=OFF
+   State=UP TotalCPUs=2 TotalNodes=8 SelectTypeParameters=NONE
+   DefMemPerNode=UNLIMITED MaxMemPerNode=512`
+
+	testScontrolShowPartitionUnlimited = `
+	PartitionName=debug
+   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL
+   AllocNodes=ALL Default=YES QoS=N/A
+   DefaultTime=NONE DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
+   MaxNodes=UNLIMITED MaxTime=UNLIMITED MinNodes=1 LLN=NO MaxCPUsPerNode=UNLIMITED
+   Nodes=vagrant
+   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=OFF
+   State=UP TotalCPUs=2 TotalNodes=4 SelectTypeParameters=NONE
+   DefMemPerNode=UNLIMITED MaxMemPerNode=UNLIMITED
+`
 )
 
 var (
@@ -341,13 +366,49 @@ func TestParseSacctResponse(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			actual, err := ParseSacctResponse(tc.in)
+			actual, err := parseSacctResponse(tc.in)
 			if tc.expectError == "" {
 				require.NoError(t, err)
 			} else {
 				require.EqualError(t, err, tc.expectError)
 			}
 			require.Equal(t, tc.expect, actual)
+		})
+	}
+}
+
+func Test_parseResources(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want *Resources
+	}{
+		{
+			name: "t1",
+			in:   testScontrolShowPartition,
+			want: &Resources{
+				Nodes:      3,
+				MemPerNode: 512,
+				CpuPerNode: 1,
+				WallTime:   30 * time.Minute,
+				Features:   nil,
+			}},
+		{
+			name: "t2",
+			in:   testScontrolShowPartitionUnlimited,
+			want: &Resources{
+				Nodes:      4,
+				MemPerNode: -1,
+				CpuPerNode: 2,
+				WallTime:   -1,
+				Features:   nil,
+			}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseResources(tt.in)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -359,10 +420,12 @@ func TestParseDuration(t *testing.T) {
 		expectError    bool
 	}{
 		{
-			in: "UNLIMITED",
+			in:          "UNLIMITED",
+			expectError: true,
 		},
 		{
-			in: "",
+			in:          "",
+			expectError: true,
 		},
 		{
 			in:          "6:6:6:6",

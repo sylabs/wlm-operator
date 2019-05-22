@@ -70,7 +70,7 @@ func extractBatchResources(script string) (*slurm.Resources, error) {
 			switch param {
 			case timeLimit, timeLimitShort:
 				duration, err := slurm.ParseDuration(value)
-				if err != nil {
+				if err != nil && err != slurm.ErrDurationIsUnlimited {
 					return nil, errors.Wrapf(err, "could not parse time limit")
 				}
 				if duration != nil {
