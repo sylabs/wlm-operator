@@ -42,7 +42,7 @@ spec:
       serviceAccountName: slurm-rd
       containers:
       - name: slurm-rd
-        image: cloud.sylabs.io/library/slurm/resource-daemon:latest
+        image: cloud.sylabs.io/library/slurm/resource-daemon:dev-latest
         imagePullPolicy: Always
         args: ["-slurm-config", "/etc/config/slurm"]
         env:
@@ -72,9 +72,3 @@ spec:
         - name: red-box-sock
           hostPath:
             path: /var/run/syslurm/red-box.sock
-        - name: slurm-cfg-map-vol
-          configMap:
-            name: slurm-config
-            items:
-              - key: config
-                path: slurm
