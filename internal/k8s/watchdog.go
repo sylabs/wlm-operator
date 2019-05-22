@@ -16,7 +16,6 @@ package k8s
 
 import (
 	"log"
-	"os"
 
 	"github.com/pkg/errors"
 )
@@ -29,10 +28,9 @@ type Patch struct {
 
 // WatchDog is used to perform node patch and cleanup.
 type WatchDog struct {
-	NodeName       string
-	NodeConfigPath string
-	Client         *Client
-	DefaultLabels  map[string]string
+	NodeName      string
+	Client        *Client
+	DefaultLabels map[string]string
 
 	latestPatch *Patch
 }
@@ -52,11 +50,6 @@ func (w *WatchDog) PatchNode(patch *Patch) error {
 
 // CleanNode reverts changes introduced with the latest PatchNode call.
 func (w *WatchDog) CleanNode() {
-	err := os.Remove(w.NodeConfigPath)
-	if err != nil && !os.IsNotExist(err) {
-		log.Printf("Could not delete config on the node: %s", err)
-	}
-
 	if w.latestPatch == nil {
 		return
 	}
