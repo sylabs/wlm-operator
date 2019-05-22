@@ -67,11 +67,14 @@ func extractBatchResources(script string) (*slurm.Resources, error) {
 			case timeLimit, timeLimitShort:
 				duration, err := slurm.ParseDuration(value)
 				if err != nil {
+					if err == slurm.ErrDurationIsUnlimited {
+						continue
+					}
+
 					return nil, errors.Wrapf(err, "could not parse time limit")
 				}
-				if duration != nil {
-					res.WallTime = *duration
-				}
+
+				res.WallTime = *duration
 			case nodes, nodesShort:
 				i := strings.IndexByte(value, '-')
 				// we use min nodes value only
