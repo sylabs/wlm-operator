@@ -17,18 +17,19 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"path"
-	"path/filepath"
+	"strconv"
 	"syscall"
+	"time"
+
+	"github.com/sylabs/slurm-operator/pkg/workload/api"
+	"google.golang.org/grpc"
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity-cri/pkg/fs"
 	"github.com/sylabs/slurm-operator/internal/k8s"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -41,17 +42,11 @@ var (
 	defaultNodeLabels = map[string]string{
 		"workload-manager": "slurm",
 	}
-
-	errNotConfigured = fmt.Errorf("node is not configured")
 )
 
 func main() {
-	slurmConfigMapPath := flag.String("slurm-config", "", "path to attached config map volume with slurm config")
+	sock := flag.String("socket", "/red-box.sock", "unix socket to connect to red-box")
 	flag.Parse()
-
-	if *slurmConfigMapPath == "" {
-		log.Fatal("slurm config path cannot be empty")
-	}
 
 	nodeName := os.Getenv(envMyNodeName)
 	if nodeName == "" {
@@ -64,58 +59,50 @@ func main() {
 		log.Fatalf("could not create k8s client: %v", err)
 	}
 
+	conn, err := grpc.Dial("unix://"+*sock, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("can't connect to %s %s", *sock, err)
+	}
+	client := api.NewWorkloadManagerClient(conn)
+
 	wd := &k8s.WatchDog{
 		NodeName:      nodeName,
 		Client:        k8sClient,
 		DefaultLabels: defaultNodeLabels,
 	}
 
-	if err := watchAndUpdate(wd, *slurmConfigMapPath); err != nil {
+	if err := watchAndUpdate(wd, client); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func loadPatch(nodeName, path string) (*k8s.Patch, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not open config at %s", path)
-	}
-	defer f.Close()
-
-	var cfg map[string]*k8s.Patch
-	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil {
-		return nil, errors.Wrap(err, "could not unmarshal config")
-	}
-
-	nodeConfig, ok := cfg[nodeName]
-	if !ok {
-		return nil, errNotConfigured
-	}
-	return nodeConfig, nil
-}
-
-func updateNode(wd *k8s.WatchDog, configPath string) error {
+func updateNode(wd *k8s.WatchDog, wClient api.WorkloadManagerClient) error {
 	log.Println("Cleaning node before patching")
 	wd.CleanNode()
-	config, err := loadPatch(wd.NodeName, configPath)
+
+	resResp, err := wClient.Resources(context.Background(), &api.ResourcesRequest{})
 	if err != nil {
-		if err == errNotConfigured {
-			log.Println("No node configuration was found, skipping configuration")
-			return nil
-		}
-		return errors.Wrap(err, "could not load patch")
+		return errors.Wrap(err, "can't get resources from red-box")
+	}
+
+	patch := &k8s.Patch{
+		NodeLabels: map[string]string{
+			"nodes":        strconv.FormatInt(resResp.Nodes, 10),
+			"wall-time":    strconv.FormatInt(resResp.WallTime, 10),
+			"cpu-per-node": strconv.FormatInt(resResp.CpuPerNode, 10),
+			"mem-per-node": strconv.FormatInt(resResp.MemPerNode, 10),
+		},
 	}
 
 	log.Println("Patching node")
-	err = wd.PatchNode(config)
-	if err != nil {
+	if err := wd.PatchNode(patch); err != nil {
 		return errors.Wrap(err, "could not patch node")
 	}
 	return nil
 }
 
-func watchAndUpdate(wd *k8s.WatchDog, configPath string) error {
-	if err := updateNode(wd, configPath); err != nil {
+func watchAndUpdate(wd *k8s.WatchDog, wClient api.WorkloadManagerClient) error {
+	if err := updateNode(wd, wClient); err != nil {
 		return errors.Wrap(err, "could not configure node for the first time")
 	}
 	defer wd.CleanNode()
@@ -123,8 +110,7 @@ func watchAndUpdate(wd *k8s.WatchDog, configPath string) error {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
-	configDir := path.Dir(configPath)
-	watcher, err := fs.NewWatcher(configDir, kubeletWatchPath)
+	watcher, err := fs.NewWatcher(kubeletWatchPath)
 	if err != nil {
 		return errors.Wrap(err, "could not create file watcher")
 	}
@@ -142,12 +128,14 @@ func watchAndUpdate(wd *k8s.WatchDog, configPath string) error {
 		case e := <-events:
 			// we want to ignore all events except for config removal
 			// and kubelet socket creation
-			if (filepath.Dir(e.Path) == configDir && e.Op == fs.OpRemove) ||
-				(e.Path == kubeletSocket && e.Op == fs.OpCreate) {
-				err := updateNode(wd, configPath)
-				if err != nil {
+			if e.Path == kubeletSocket && e.Op == fs.OpCreate {
+				if err := updateNode(wd, wClient); err != nil {
 					return errors.Wrap(err, "could not update node")
 				}
+			}
+		case <-time.NewTicker(2 * time.Second).C:
+			if err := updateNode(wd, wClient); err != nil {
+				return errors.Wrap(err, "could not update node")
 			}
 		}
 	}

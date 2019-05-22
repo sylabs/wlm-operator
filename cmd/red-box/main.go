@@ -23,6 +23,8 @@ import (
 	"os/signal"
 	"sync"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"gopkg.in/yaml.v2"
 
 	"github.com/sylabs/slurm-operator/pkg/slurm"
@@ -49,6 +51,8 @@ func main() {
 	if err := yaml.NewDecoder(cfgFile).Decode(&apiCfg); err != nil {
 		log.Fatal(err)
 	}
+
+	spew.Dump(apiCfg)
 
 	ln, err := net.Listen("unix", *sock)
 	if err != nil {
