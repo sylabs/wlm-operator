@@ -144,6 +144,83 @@ srun rm lolcow_latest.sif
 `,
 			expectError: true,
 		},
+		{
+			name: "tasks per node",
+			script: `
+#!/bin/sh
+#SBATCH --ntasks-per-node=3
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectResources: &slurm.Resources{
+				CpuPerNode: 3,
+			},
+		},
+		{
+			name: "invalid tasks per node",
+			script: `
+#!/bin/sh
+#SBATCH --ntasks-per-node foo
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectError: true,
+		},
+		{
+			name: "cpus per task",
+			script: `
+#!/bin/sh
+#SBATCH --cpus-per-task 8
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectResources: &slurm.Resources{
+				CpuPerNode: 8,
+			},
+		},
+		{
+			name: "invalid cpus per task",
+			script: `
+#!/bin/sh
+#SBATCH --cpus-per-task=foo_bar
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectError: true,
+		},
+		{
+			name: "cpus per task short",
+			script: `
+#!/bin/sh
+#SBATCH -c 4
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectResources: &slurm.Resources{
+				CpuPerNode: 4,
+			},
+		},
+		{
+			name: "cpus and tasks",
+			script: `
+#!/bin/sh
+#SBATCH -c 4
+
+#SBATCH --ntasks-per-node 6 -N 3
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectResources: &slurm.Resources{
+				CpuPerNode: 24,
+				Nodes:      3,
+			},
+		},
 	}
 
 	for _, tc := range tt {

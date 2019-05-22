@@ -140,6 +140,38 @@ srun rm lolcow_latest.sif
 			},
 		},
 		{
+			name: "cpus affinity",
+			sj: &v1alpha1.SlurmJob{
+				Spec: v1alpha1.SlurmJobSpec{
+					Batch: `
+#!/bin/sh
+#SBATCH --cpus-per-task 8
+
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+				},
+			},
+			expectAffinity: &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "slurm.sylabs.io/cpu-per-node",
+										Operator: "Gt",
+										Values:   []string{"7"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "full affinity",
 			sj: &v1alpha1.SlurmJob{
 				Spec: v1alpha1.SlurmJobSpec{
@@ -147,6 +179,9 @@ srun rm lolcow_latest.sif
 #!/bin/sh
 #SBATCH -N 7  --mem=120060
 #SBATCH --time=1-00:05:00
+
+#SBATCH --cpus-per-task=8
+#SBATCH --ntasks-per-node=2
 
 srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
@@ -174,6 +209,11 @@ srun rm lolcow_latest.sif
 										Key:      "slurm.sylabs.io/mem-per-node",
 										Operator: "Gt",
 										Values:   []string{"120059"},
+									},
+									{
+										Key:      "slurm.sylabs.io/cpu-per-node",
+										Operator: "Gt",
+										Values:   []string{"15"},
 									},
 								},
 							},

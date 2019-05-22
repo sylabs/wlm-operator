@@ -29,12 +29,15 @@ import (
 // A zero value is returned if corresponding value is not provided.
 func extractBatchResources(script string) (*slurm.Resources, error) {
 	const (
-		sbatchHeader   = "#SBATCH"
-		timeLimit      = "--time"
-		timeLimitShort = "-t"
-		nodes          = "--nodes"
-		nodesShort     = "-N"
-		mem            = "--mem"
+		sbatchHeader     = "#SBATCH"
+		timeLimit        = "--time"
+		timeLimitShort   = "-t"
+		nodes            = "--nodes"
+		nodesShort       = "-N"
+		mem              = "--mem"
+		tasksPerNode     = "--ntasks-per-node"
+		cpusPerTask      = "--cpus-per-task"
+		cpusPerTaskShort = "-c"
 	)
 
 	var res slurm.Resources
@@ -91,6 +94,24 @@ func extractBatchResources(script string) (*slurm.Resources, error) {
 					return nil, errors.Wrapf(err, "could not parse memory")
 				}
 				res.MemPerNode = mem
+			case cpusPerTask, cpusPerTaskShort:
+				cpus, err := strconv.ParseInt(value, 10, 0)
+				if err != nil {
+					return nil, errors.Wrapf(err, "could not parse cpus per node")
+				}
+				if res.CpuPerNode == 0 {
+					res.CpuPerNode = 1
+				}
+				res.CpuPerNode *= cpus
+			case tasksPerNode:
+				tasks, err := strconv.ParseInt(value, 10, 0)
+				if err != nil {
+					return nil, errors.Wrapf(err, "could not parse tasks per node")
+				}
+				if res.CpuPerNode == 0 {
+					res.CpuPerNode = 1
+				}
+				res.CpuPerNode *= tasks
 			}
 		}
 	}

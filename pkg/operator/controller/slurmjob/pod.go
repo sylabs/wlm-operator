@@ -96,7 +96,14 @@ func affinityForSj(sj *slurmv1alpha1.SlurmJob) (*corev1.Affinity, error) {
 		nodeMatch = append(nodeMatch, corev1.NodeSelectorRequirement{
 			Key:      "slurm.sylabs.io/mem-per-node",
 			Operator: "Gt",
-			Values:   []string{strconv.FormatInt(int64(requiredResources.MemPerNode)-1, 10)},
+			Values:   []string{strconv.FormatInt(requiredResources.MemPerNode-1, 10)},
+		})
+	}
+	if requiredResources.CpuPerNode != 0 {
+		nodeMatch = append(nodeMatch, corev1.NodeSelectorRequirement{
+			Key:      "slurm.sylabs.io/cpu-per-node",
+			Operator: "Gt",
+			Values:   []string{strconv.FormatInt(requiredResources.CpuPerNode-1, 10)},
 		})
 	}
 	return &corev1.Affinity{
@@ -153,7 +160,8 @@ func volumesForSj(sj *slurmv1alpha1.SlurmJob) []corev1.Volume {
 }
 
 func volumesMountForSj(sj *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
-	// default SLURM config which have to exist on every k8s node. The config is managed and created by RD
+	// default SLURM config which have to exist on every k8s node.
+	// The config is managed and created by RD
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      "red-box-sock",
