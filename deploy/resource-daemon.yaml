@@ -60,6 +60,8 @@ spec:
             mountPath: /var/lib/kubelet/device-plugins
           - name: slurm-cfg-map-vol
             mountPath: /etc/config
+          - name: red-box-sock
+            mountPath: /red-box.sock
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -67,6 +69,9 @@ spec:
         - name: kubelet-dp
           hostPath:
             path: /var/lib/kubelet/device-plugins
+        - name: red-box-sock
+          hostPath:
+            path: /var/run/syslurm/red-box.sock
         - name: slurm-cfg-map-vol
           configMap:
             name: slurm-config
