@@ -64,7 +64,7 @@ srun rm lolcow_latest.sif
 							{
 								MatchExpressions: []corev1.NodeSelectorRequirement{
 									{
-										Key:      "slurm.sylabs.io/time-limit",
+										Key:      "slurm.sylabs.io/wall-time",
 										Operator: "Gt",
 										Values:   []string{"299"},
 									},
@@ -108,12 +108,44 @@ srun rm lolcow_latest.sif
 			},
 		},
 		{
+			name: "memory affinity",
+			sj: &v1alpha1.SlurmJob{
+				Spec: v1alpha1.SlurmJobSpec{
+					Batch: `
+#!/bin/sh
+#SBATCH --mem=120060
+
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+				},
+			},
+			expectAffinity: &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "slurm.sylabs.io/mem-per-node",
+										Operator: "Gt",
+										Values:   []string{"120059"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "full affinity",
 			sj: &v1alpha1.SlurmJob{
 				Spec: v1alpha1.SlurmJobSpec{
 					Batch: `
 #!/bin/sh
-#SBATCH -N 7
+#SBATCH -N 7  --mem=120060
 #SBATCH --time=1-00:05:00
 
 srun singularity pull -U library://sylabsed/examples/lolcow
@@ -134,9 +166,14 @@ srun rm lolcow_latest.sif
 										Values:   []string{"6"},
 									},
 									{
-										Key:      "slurm.sylabs.io/time-limit",
+										Key:      "slurm.sylabs.io/wall-time",
 										Operator: "Gt",
 										Values:   []string{"86699"},
+									},
+									{
+										Key:      "slurm.sylabs.io/mem-per-node",
+										Operator: "Gt",
+										Values:   []string{"120059"},
 									},
 								},
 							},

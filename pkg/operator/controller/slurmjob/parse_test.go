@@ -113,7 +113,31 @@ srun rm lolcow_latest.sif
 			name: "invalid nodes",
 			script: `
 #!/bin/sh
-#SBATCH --time 00:05:00 -N=foo
+#SBATCH --time 00:05:00   -N=foo
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectError: true,
+		},
+		{
+			name: "memory",
+			script: `
+#!/bin/sh
+#SBATCH --mem 24000
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectResources: &slurm.Resources{
+				MemPerNode: 24000,
+			},
+		},
+		{
+			name: "invalid memory",
+			script: `
+#!/bin/sh
+#SBATCH --mem=foo
 srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif

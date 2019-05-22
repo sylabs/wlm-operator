@@ -87,9 +87,16 @@ func affinityForSj(sj *slurmv1alpha1.SlurmJob) (*corev1.Affinity, error) {
 	}
 	if requiredResources.WallTime != 0 {
 		nodeMatch = append(nodeMatch, corev1.NodeSelectorRequirement{
-			Key:      "slurm.sylabs.io/time-limit",
+			Key:      "slurm.sylabs.io/wall-time",
 			Operator: "Gt",
 			Values:   []string{strconv.FormatInt(int64(requiredResources.WallTime/time.Second)-1, 10)},
+		})
+	}
+	if requiredResources.MemPerNode != 0 {
+		nodeMatch = append(nodeMatch, corev1.NodeSelectorRequirement{
+			Key:      "slurm.sylabs.io/mem-per-node",
+			Operator: "Gt",
+			Values:   []string{strconv.FormatInt(int64(requiredResources.MemPerNode)-1, 10)},
 		})
 	}
 	return &corev1.Affinity{

@@ -34,6 +34,7 @@ func extractBatchResources(script string) (*slurm.Resources, error) {
 		timeLimitShort = "-t"
 		nodes          = "--nodes"
 		nodesShort     = "-N"
+		mem            = "--mem"
 	)
 
 	var res slurm.Resources
@@ -83,6 +84,13 @@ func extractBatchResources(script string) (*slurm.Resources, error) {
 					return nil, errors.Wrapf(err, "could not parse amount of nodes")
 				}
 				res.Nodes = nodes
+			case mem:
+				// suffixes are not supported yet
+				mem, err := strconv.ParseInt(value, 10, 0)
+				if err != nil {
+					return nil, errors.Wrapf(err, "could not parse memory")
+				}
+				res.MemPerNode = mem
 			}
 		}
 	}
