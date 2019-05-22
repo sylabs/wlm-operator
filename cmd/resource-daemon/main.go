@@ -133,7 +133,7 @@ func watchAndUpdate(wd *k8s.WatchDog, wClient api.WorkloadManagerClient) error {
 					return errors.Wrap(err, "could not update node")
 				}
 			}
-		case <-time.NewTicker(2 * time.Second).C:
+		case <-time.NewTicker(15 * time.Second).C:
 			if err := updateNode(wd, wClient); err != nil {
 				return errors.Wrap(err, "could not update node")
 			}
