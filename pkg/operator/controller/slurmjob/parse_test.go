@@ -154,7 +154,7 @@ srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
 			expectResources: &slurm.Resources{
-				CpuPerNode: 3,
+				CPUPerNode: 3,
 			},
 		},
 		{
@@ -178,7 +178,7 @@ srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
 			expectResources: &slurm.Resources{
-				CpuPerNode: 8,
+				CPUPerNode: 8,
 			},
 		},
 		{
@@ -202,7 +202,7 @@ srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
 			expectResources: &slurm.Resources{
-				CpuPerNode: 4,
+				CPUPerNode: 4,
 			},
 		},
 		{
@@ -217,7 +217,7 @@ srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
 			expectResources: &slurm.Resources{
-				CpuPerNode: 24,
+				CPUPerNode: 24,
 				Nodes:      3,
 			},
 		},

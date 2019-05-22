@@ -99,19 +99,19 @@ func extractBatchResources(script string) (*slurm.Resources, error) {
 				if err != nil {
 					return nil, errors.Wrapf(err, "could not parse cpus per node")
 				}
-				if res.CpuPerNode == 0 {
-					res.CpuPerNode = 1
+				if res.CPUPerNode == 0 {
+					res.CPUPerNode = 1
 				}
-				res.CpuPerNode *= cpus
+				res.CPUPerNode *= cpus
 			case tasksPerNode:
 				tasks, err := strconv.ParseInt(value, 10, 0)
 				if err != nil {
 					return nil, errors.Wrapf(err, "could not parse tasks per node")
 				}
-				if res.CpuPerNode == 0 {
-					res.CpuPerNode = 1
+				if res.CPUPerNode == 0 {
+					res.CPUPerNode = 1
 				}
-				res.CpuPerNode *= tasks
+				res.CPUPerNode *= tasks
 			}
 		}
 	}

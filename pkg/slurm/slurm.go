@@ -117,7 +117,7 @@ type Feature struct {
 type Resources struct {
 	Nodes      int64
 	MemPerNode int64
-	CpuPerNode int64
+	CPUPerNode int64
 	WallTime   time.Duration
 	Features   []*Feature
 }
@@ -333,7 +333,7 @@ func parseResources(r string) (*Resources, error) {
 
 		case maxCPUsPerNodeF:
 			if v[0] == unlimited {
-				resources.CpuPerNode = -1
+				resources.CPUPerNode = -1
 				vv, ok := fMap[totalCPUsF]
 				if ok {
 					cpus, err := strconv.ParseInt(vv[0], 10, 0)
@@ -341,7 +341,7 @@ func parseResources(r string) (*Resources, error) {
 						return nil, errors.Wrap(err, "can'y parse total cpus")
 					}
 
-					resources.CpuPerNode = cpus
+					resources.CPUPerNode = cpus
 				}
 				continue
 			}
@@ -351,7 +351,7 @@ func parseResources(r string) (*Resources, error) {
 				return nil, errors.Wrap(err, "can't parse max cpus num")
 			}
 
-			resources.CpuPerNode = cpus
+			resources.CPUPerNode = cpus
 		case maxMemPerNodeF:
 			if v[0] == unlimited {
 				resources.MemPerNode = -1

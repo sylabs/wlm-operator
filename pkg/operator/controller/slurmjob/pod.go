@@ -99,11 +99,11 @@ func affinityForSj(sj *slurmv1alpha1.SlurmJob) (*corev1.Affinity, error) {
 			Values:   []string{strconv.FormatInt(requiredResources.MemPerNode-1, 10)},
 		})
 	}
-	if requiredResources.CpuPerNode != 0 {
+	if requiredResources.CPUPerNode != 0 {
 		nodeMatch = append(nodeMatch, corev1.NodeSelectorRequirement{
 			Key:      "slurm.sylabs.io/cpu-per-node",
 			Operator: "Gt",
-			Values:   []string{strconv.FormatInt(requiredResources.CpuPerNode-1, 10)},
+			Values:   []string{strconv.FormatInt(requiredResources.CPUPerNode-1, 10)},
 		})
 	}
 	return &corev1.Affinity{

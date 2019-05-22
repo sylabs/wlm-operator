@@ -389,7 +389,7 @@ func Test_parseResources(t *testing.T) {
 			want: &Resources{
 				Nodes:      3,
 				MemPerNode: 512,
-				CpuPerNode: 1,
+				CPUPerNode: 1,
 				WallTime:   30 * time.Minute,
 				Features:   nil,
 			}},
@@ -399,7 +399,7 @@ func Test_parseResources(t *testing.T) {
 			want: &Resources{
 				Nodes:      4,
 				MemPerNode: -1,
-				CpuPerNode: 2,
+				CPUPerNode: 2,
 				WallTime:   -1,
 				Features:   nil,
 			}},
