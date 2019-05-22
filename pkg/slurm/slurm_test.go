@@ -351,3 +351,99 @@ func TestParseSacctResponse(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDuration(t *testing.T) {
+	tt := []struct {
+		in             string
+		expectDuration *time.Duration
+		expectError    bool
+	}{
+		{
+			in: "UNLIMITED",
+		},
+		{
+			in: "",
+		},
+		{
+			in:          "6:6:6:6",
+			expectError: true,
+		},
+		{
+			in:             "6",
+			expectDuration: &[]time.Duration{time.Minute * 6}[0],
+		},
+		{
+			in:          "foo",
+			expectError: true,
+		},
+		{
+			in:             "6:06",
+			expectDuration: &[]time.Duration{time.Minute*6 + time.Second*6}[0],
+		},
+		{
+			in:          "foo:06",
+			expectError: true,
+		},
+		{
+			in:          "6:foo",
+			expectError: true,
+		},
+		{
+			in:             "6:06:06",
+			expectDuration: &[]time.Duration{time.Hour*6 + time.Minute*6 + time.Second*6}[0],
+		},
+		{
+			in:          "foo:6:06",
+			expectError: true,
+		},
+		{
+			in:          "6:foo:06",
+			expectError: true,
+		},
+
+		{
+			in:          "6:06:foo",
+			expectError: true,
+		},
+		{
+			in:             "3-5",
+			expectDuration: &[]time.Duration{time.Hour*24*3 + time.Hour*5}[0],
+		},
+		{
+			in:          "foo-5",
+			expectError: true,
+		},
+		{
+			in:          "3-foo",
+			expectError: true,
+		},
+		{
+			in:             "3-5:07",
+			expectDuration: &[]time.Duration{time.Hour*24*3 + time.Hour*5 + time.Minute*7}[0],
+		},
+		{
+			in:          "3-5:foo",
+			expectError: true,
+		},
+		{
+			in:             "3-5:07:08",
+			expectDuration: &[]time.Duration{time.Hour*24*3 + time.Hour*5 + time.Minute*7 + time.Second*8}[0],
+		},
+		{
+			in:          "3-5:07:bar",
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.in, func(t *testing.T) {
+			actual, err := ParseDuration(tc.in)
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tc.expectDuration, actual)
+		})
+	}
+}

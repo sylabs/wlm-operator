@@ -27,7 +27,7 @@ func TestExtractBatchResources(t *testing.T) {
 		name            string
 		script          string
 		expectResources *slurm.Resources
-		expectError     error
+		expectError     bool
 	}{
 		{
 			name: "no resources",
@@ -53,10 +53,38 @@ srun rm lolcow_latest.sif
 			},
 		},
 		{
+			name: "invalid wall time",
+			script: `
+#!/bin/sh
+#SBATCH --time=invalid
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectError: true,
+		},
+		{
 			name: "nodes",
 			script: `
 #!/bin/sh
-#SBATCH -t=00:05:00 --nodes 5
+#SBATCH -t=1-07 --nodes 5
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectResources: &slurm.Resources{
+				WallTime: time.Hour * 31,
+				Nodes:    5,
+			},
+		},
+		{
+			name: "nodes short",
+			script: `
+#!/bin/sh
+#SBATCH --time 00:05:00
+
+#SBATCH -N=5
+
 srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
@@ -66,12 +94,42 @@ srun rm lolcow_latest.sif
 				Nodes:    5,
 			},
 		},
+		{
+			name: "nodes min-max",
+			script: `
+#!/bin/sh
+#SBATCH --time 00:05:00
+#SBATCH --nodes=5-7
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectResources: &slurm.Resources{
+				WallTime: time.Minute * 5,
+				Nodes:    5,
+			},
+		},
+		{
+			name: "invalid nodes",
+			script: `
+#!/bin/sh
+#SBATCH --time 00:05:00 -N=foo
+srun singularity pull -U library://sylabsed/examples/lolcow
+srun singularity run lolcow_latest.sif
+srun rm lolcow_latest.sif
+`,
+			expectError: true,
+		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			resources, err := extractBatchResources(tc.script)
-			require.Equal(t, tc.expectError, err)
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 			require.Equal(t, tc.expectResources, resources)
 		})
 	}
