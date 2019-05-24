@@ -106,13 +106,10 @@ jobs:
       - run:
           name: Publish images
           command: |
-            echo 'export BRANCH=${CIRCLECI_BRANCH}' >> $BASH_ENV
-            source $BASH_ENV
-
             TAG=latest
-            if [ "${BRANCH}" != "master" ]
+            if [ "${CIRCLE_BRANCH}" != "master" ]
             then
-              TAG=${BRANCH}
+              TAG=${CIRCLE_BRANCH}
             fi
 
             cd $GOPATH/src/github.com/sylabs/slurm-operator
