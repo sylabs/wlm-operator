@@ -35,10 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const (
-	defaultJobCompanionImage = "cloud.sylabs.io/library/slurm/job-companion:latest"
-)
-
 // Reconciler reconciles a SlurmJob object
 type Reconciler struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -51,28 +47,16 @@ type Reconciler struct {
 	jcGID int64
 }
 
-type Opt func(*Reconciler)
-
 // NewReconciler returns a new SlurmJob controller.
-func NewReconciler(mgr manager.Manager, jcUID, jcGID int64, opts ...Opt) *Reconciler {
+func NewReconciler(mgr manager.Manager, jcImage string, jcUID, jcGID int64) *Reconciler {
 	r := &Reconciler{
 		client:  mgr.GetClient(),
 		scheme:  mgr.GetScheme(),
 		jcUID:   jcUID,
 		jcGID:   jcGID,
-		jcImage: defaultJobCompanionImage,
-	}
-	for _, o := range opts {
-		o(r)
+		jcImage: jcImage,
 	}
 	return r
-}
-
-// WithCustomJobCompanionImage sets job-companion image that should be used.
-func WithCustomJobCompanionImage(image string) Opt {
-	return func(r *Reconciler) {
-		r.jcImage = image
-	}
 }
 
 // AddToManager adds SlurmJob Reconciler to the given Manager.
