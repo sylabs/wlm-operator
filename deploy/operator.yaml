@@ -17,7 +17,7 @@ spec:
         - name: slurm-operator
           image: cloud.sylabs.io/library/slurm/operator:staging
           imagePullPolicy: Always
-          args: ["-jc-uid", "1000","-jc-uid", "1000", "-jc-image"]
+          args: ["--jc-uid", "1000","--jc-uid", "1000", "--jc-image", "cloud.sylabs.io/library/slurm/job-companion:staging"]
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
