@@ -49,7 +49,7 @@ func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) (*corev1.Pod, error
 			Containers: []corev1.Container{
 				{
 					Name:            "jt1",
-					Image:           jobCompanionImage,
+					Image:           r.jcImage,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Args:            companionArgsForSj(sj),
 					Env: []corev1.EnvVar{

@@ -50,6 +50,7 @@ func main() {
 	_ = flag.Set("logtostderr", "true")
 	jcUID := flag.Int64("jc-uid", 1000, "uid to be used for running job-companion containers")
 	jcGID := flag.Int64("jc-gid", 1000, "gid to be used for running job-companion containers")
+	jcImage := flag.String("jc-image", "", "custom job companion image to use")
 	flag.Parse()
 	defer glog.Flush()
 
@@ -90,8 +91,11 @@ func main() {
 		glog.Fatalf("Failed to add manager to apis scheme: %v", err)
 	}
 
-	// Setup SlurmJob controller
-	sj := slurmjob.NewReconciler(mgr, *jcUID, *jcGID)
+	var opts []slurmjob.Opt
+	if *jcImage != "" {
+		opts = append(opts, slurmjob.WithCustomJobCompanionImage(*jcImage))
+	}
+	sj := slurmjob.NewReconciler(mgr, *jcUID, *jcGID, opts...)
 	if err := sj.AddToManager(mgr); err != nil {
 		glog.Fatalf("Failed to add controller to manager: %v", err)
 	}
