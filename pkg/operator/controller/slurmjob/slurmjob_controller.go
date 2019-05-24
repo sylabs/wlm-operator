@@ -35,29 +35,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const (
-	jobCompanionImage = "cloud.sylabs.io/library/slurm/job-companion:latest"
-)
-
 // Reconciler reconciles a SlurmJob object
 type Reconciler struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	client  client.Client
+	scheme  *runtime.Scheme
+	jcImage string
 
 	jcUID int64
 	jcGID int64
 }
 
 // NewReconciler returns a new SlurmJob controller.
-func NewReconciler(mgr manager.Manager, jcUID, jcGID int64) *Reconciler {
-	return &Reconciler{
-		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		jcUID:  jcUID,
-		jcGID:  jcGID,
+func NewReconciler(mgr manager.Manager, jcImage string, jcUID, jcGID int64) *Reconciler {
+	r := &Reconciler{
+		client:  mgr.GetClient(),
+		scheme:  mgr.GetScheme(),
+		jcUID:   jcUID,
+		jcGID:   jcGID,
+		jcImage: jcImage,
 	}
+	return r
 }
 
 // AddToManager adds SlurmJob Reconciler to the given Manager.
@@ -197,7 +196,7 @@ func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:            "jt1",
-					Image:           jobCompanionImage,
+					Image:           r.jcImage,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Args:            args,
 					Resources: corev1.ResourceRequirements{

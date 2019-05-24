@@ -39,6 +39,8 @@ var (
 	metricsPort int32 = 8383
 )
 
+const defaultJobCompanionImage = "cloud.sylabs.io/library/slurm/job-companion:latest"
+
 func printVersion() {
 	glog.Infof("Go Version: %s", runtime.Version())
 	glog.Infof("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
@@ -50,6 +52,7 @@ func main() {
 	_ = flag.Set("logtostderr", "true")
 	jcUID := flag.Int64("jc-uid", 1000, "uid to be used for running job-companion containers")
 	jcGID := flag.Int64("jc-gid", 1000, "gid to be used for running job-companion containers")
+	jcImage := flag.String("jc-image", defaultJobCompanionImage, "custom job companion image to use")
 	flag.Parse()
 	defer glog.Flush()
 
@@ -90,8 +93,7 @@ func main() {
 		glog.Fatalf("Failed to add manager to apis scheme: %v", err)
 	}
 
-	// Setup SlurmJob controller
-	sj := slurmjob.NewReconciler(mgr, *jcUID, *jcGID)
+	sj := slurmjob.NewReconciler(mgr, *jcImage, *jcUID, *jcGID)
 	if err := sj.AddToManager(mgr); err != nil {
 		glog.Fatalf("Failed to add controller to manager: %v", err)
 	}
