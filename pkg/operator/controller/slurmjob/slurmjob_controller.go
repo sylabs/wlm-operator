@@ -36,27 +36,42 @@ import (
 )
 
 const (
-	jobCompanionImage = "cloud.sylabs.io/library/slurm/job-companion:latest"
+	defaultJobCompanionImage = "cloud.sylabs.io/library/slurm/job-companion:latest"
 )
 
 // Reconciler reconciles a SlurmJob object
 type Reconciler struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	client  client.Client
+	scheme  *runtime.Scheme
+	jcImage string
 
 	jcUID int64
 	jcGID int64
 }
 
+type Opt func(*Reconciler)
+
 // NewReconciler returns a new SlurmJob controller.
-func NewReconciler(mgr manager.Manager, jcUID, jcGID int64) *Reconciler {
-	return &Reconciler{
-		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		jcUID:  jcUID,
-		jcGID:  jcGID,
+func NewReconciler(mgr manager.Manager, jcUID, jcGID int64, opts ...Opt) *Reconciler {
+	r := &Reconciler{
+		client:  mgr.GetClient(),
+		scheme:  mgr.GetScheme(),
+		jcUID:   jcUID,
+		jcGID:   jcGID,
+		jcImage: defaultJobCompanionImage,
+	}
+	for _, o := range opts {
+		o(r)
+	}
+	return r
+}
+
+// WithCustomJobCompanionImage sets job-companion image that should be used.
+func WithCustomJobCompanionImage(image string) Opt {
+	return func(r *Reconciler) {
+		r.jcImage = image
 	}
 }
 
@@ -197,7 +212,7 @@ func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:            "jt1",
-					Image:           jobCompanionImage,
+					Image:           r.jcImage,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Args:            args,
 					Resources: corev1.ResourceRequirements{
