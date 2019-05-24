@@ -34,12 +34,13 @@ lint:
 	--deadline=3m ./...
 
 .PHONY: push
+push: TAG=latest
 push:
 	$(V)for f in `ls sif` ; do \
-		echo " PUSH" $${f} ; \
+		echo " PUSH" $${f}:${TAG} ; \
 		sudo singularity build sif/$${f}.sif sif/$${f} ;\
 		singularity sign sif/$${f}.sif;\
-		singularity push sif/$${f}.sif library://library/slurm/$${f}:latest;\
+		singularity push sif/$${f}.sif library://library/slurm/$${f}:${TAG};\
 	done
 
 .PHONY: dep

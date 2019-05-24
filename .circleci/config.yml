@@ -107,10 +107,17 @@ jobs:
           name: Publish images
           command: |
             cd $GOPATH/src/github.com/sylabs/slurm-operator
+
+            TAG=latest
+            if [ "${CIRCLECI_BRANCH}" -ne "master"]
+            then
+              TAG=${CIRCLECI_BRANCH}
+            fi
+
             cat > push.sh <<EOF
             #!/usr/bin/expect -f
             set timeout -1
-            spawn make push
+            spawn make push TAG=${TAG}
             expect "Enter key passphrase : "
             send -- "\r"
             expect "Enter key passphrase : "
@@ -141,6 +148,7 @@ workflows:
             branches:
               only:
                 - master
+                - staging
           requires:
             - build
             - test
