@@ -106,14 +106,16 @@ jobs:
       - run:
           name: Publish images
           command: |
-            cd $GOPATH/src/github.com/sylabs/slurm-operator
+            echo 'export BRANCH=${CIRCLECI_BRANCH}' >> $BASH_ENV
+            source $BASH_ENV
 
             TAG=latest
-            if [ "${CIRCLECI_BRANCH}" -ne "master"]
+            if [ "${BRANCH}" != "master" ]
             then
-              TAG=${CIRCLECI_BRANCH}
+              TAG=${BRANCH}
             fi
 
+            cd $GOPATH/src/github.com/sylabs/slurm-operator
             cat > push.sh <<EOF
             #!/usr/bin/expect -f
             set timeout -1
