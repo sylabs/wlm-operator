@@ -23,19 +23,31 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm"
-
+	"github.com/davecgh/go-spew/spew"
 	sgrpc "github.com/sylabs/slurm-operator/internal/red-box/api"
+	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
-
 	"golang.org/x/sys/unix"
-
 	"google.golang.org/grpc"
+	"gopkg.in/yaml.v2"
 )
 
 func main() {
+	config := flag.String("config", "config.yml", "path to a config")
 	sock := flag.String("socket", "/var/run/syslurm/red-box.sock", "unix socket to serve slurm API")
 	flag.Parse()
+
+	cfgFile, err := os.Open(*config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var apiCfg sgrpc.Config
+	if err := yaml.NewDecoder(cfgFile).Decode(&apiCfg); err != nil {
+		log.Fatal(err)
+	}
+
+	spew.Dump(apiCfg)
 
 	ln, err := net.Listen("unix", *sock)
 	if err != nil {
@@ -52,7 +64,7 @@ func main() {
 		log.Fatalf("Could not create slurm client: %s", err)
 	}
 
-	a := sgrpc.NewSlurmAPI(c)
+	a := sgrpc.NewSlurmAPI(c, &apiCfg)
 	api.RegisterWorkloadManagerServer(s, a)
 
 	go func() {

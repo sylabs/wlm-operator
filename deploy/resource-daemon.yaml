@@ -42,7 +42,7 @@ spec:
       serviceAccountName: slurm-rd
       containers:
       - name: slurm-rd
-        image: cloud.sylabs.io/library/slurm/resource-daemon:latest
+        image: cloud.sylabs.io/library/slurm/resource-daemon:staging
         imagePullPolicy: Always
         args: ["-slurm-config", "/etc/config/slurm"]
         env:
@@ -60,6 +60,8 @@ spec:
             mountPath: /var/lib/kubelet/device-plugins
           - name: slurm-cfg-map-vol
             mountPath: /etc/config
+          - name: red-box-sock
+            mountPath: /red-box.sock
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -67,9 +69,6 @@ spec:
         - name: kubelet-dp
           hostPath:
             path: /var/lib/kubelet/device-plugins
-        - name: slurm-cfg-map-vol
-          configMap:
-            name: slurm-config
-            items:
-              - key: config
-                path: slurm
+        - name: red-box-sock
+          hostPath:
+            path: /var/run/syslurm/red-box.sock

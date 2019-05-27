@@ -38,6 +38,10 @@ service WorkloadManager {
     // OpenFile this call will watch file content changes and stream
     // new chunks continuously.
     rpc TailFile (stream TailFileRequest) returns (stream Chunk);
+
+    // Resources returns partition resources
+    // nodes, cpu, mem, wall-time and available features
+    rpc Resources(ResourcesRequest) returns (ResourcesResponse);
 }
 
 message SubmitJobRequest {
@@ -84,6 +88,15 @@ message OpenFileRequest {
     string path = 1;
 }
 
+message ResourcesRequest {}
+
+message ResourcesResponse {
+    int64 nodes = 1;
+    int64 cpuPerNode = 2;
+    int64 memPerNode = 3;
+    int64 wallTime = 4;
+    repeated Feature features = 5;
+}
 
 enum TailAction {
     Start = 0;
@@ -160,4 +173,10 @@ message JobStepInfo {
 // Chunk is an arbitrary amount of bytes.
 message Chunk {
     bytes content = 1;
+}
+
+message Feature {
+    string Name = 1;
+    string Version = 2;
+    int64 Quantity = 3;
 }

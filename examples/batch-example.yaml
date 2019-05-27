@@ -5,7 +5,7 @@ metadata:
 spec:
   batch: |
     #!/bin/sh
-    ##SBATCH --nodes=1
+    #SBATCH --nodes=1
     srun sleep 5
     srun hostname
   nodeSelector:

@@ -38,10 +38,6 @@ type SlurmJobSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// Compute resources required by this SlurmJob.
-	// Cannot be updated. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources.
-	Resources map[string]int64 `json:"resources,omitempty"`
-
 	// Results may be specified for an optional results collection step.
 	// When specified, after job is completed all results will be downloaded from Slurm
 	// cluster with respect to this configuration.

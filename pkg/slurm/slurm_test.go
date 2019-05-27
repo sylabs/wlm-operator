@@ -15,7 +15,6 @@
 package slurm
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -132,6 +131,31 @@ JobId=196 ArrayJobId=192 ArrayTaskId=4 JobName=sbatch
    StdIn=/dev/null
    StdOut=/home/vagrant/slurm-192_4.out
    Power=`
+
+	testScontrolShowPartition = `
+	PartitionName=debug
+   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL
+   AllocNodes=ALL Default=YES QoS=N/A
+   DefaultTime=NONE DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
+   MaxNodes=3 MaxTime=00:30:00 MinNodes=1 LLN=NO MaxCPUsPerNode=1
+   Nodes=vagrant
+   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=OFF
+   State=UP TotalCPUs=2 TotalNodes=8 SelectTypeParameters=NONE
+   DefMemPerNode=UNLIMITED MaxMemPerNode=512`
+
+	testScontrolShowPartitionUnlimited = `
+	PartitionName=debug
+   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL
+   AllocNodes=ALL Default=YES QoS=N/A
+   DefaultTime=NONE DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
+   MaxNodes=UNLIMITED MaxTime=UNLIMITED MinNodes=1 LLN=NO MaxCPUsPerNode=UNLIMITED
+   Nodes=vagrant
+   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=OFF
+   State=UP TotalCPUs=2 TotalNodes=4 SelectTypeParameters=NONE
+   DefMemPerNode=UNLIMITED MaxMemPerNode=UNLIMITED
+`
 )
 
 var (
@@ -144,85 +168,84 @@ var (
 )
 
 func TestJobInfoFromScontrolResponse(t *testing.T) {
-	type args struct {
-		r string
-	}
 	tests := []struct {
-		name    string
-		args    args
-		want    []*JobInfo
-		wantErr bool
+		name string
+		in   string
+		want []*JobInfo
 	}{
 		{
 			name: "t1",
-			args: args{r: testScontrolResponse},
-			want: []*JobInfo{{
-				ID:         "53",
-				UserID:     "vagrant(1000)",
-				Name:       "sbatch",
-				ExitCode:   "0:0",
-				State:      "RUNNING",
-				SubmitTime: &testSubmitTime,
-				StartTime:  &testStartTime,
-				RunTime:    &testRunTime,
-				TimeLimit:  &testLimitTime,
-				WorkDir:    "/home/vagrant",
-				StdOut:     "/home/vagrant/slurm-53.out",
-				StdErr:     "/home/vagrant/slurm-53.out",
-				Partition:  "debug",
-				NodeList:   "vagrant",
-				BatchHost:  "vagrant",
-				NumNodes:   "1",
-				ArrayJobID: "",
-			}},
-			wantErr: false,
+			in:   testScontrolResponse,
+			want: []*JobInfo{
+				{
+					ID:         "53",
+					UserID:     "vagrant(1000)",
+					Name:       "sbatch",
+					ExitCode:   "0:0",
+					State:      "RUNNING",
+					SubmitTime: &testSubmitTime,
+					StartTime:  &testStartTime,
+					RunTime:    &testRunTime,
+					TimeLimit:  &testLimitTime,
+					WorkDir:    "/home/vagrant",
+					StdOut:     "/home/vagrant/slurm-53.out",
+					StdErr:     "/home/vagrant/slurm-53.out",
+					Partition:  "debug",
+					NodeList:   "vagrant",
+					BatchHost:  "vagrant",
+					NumNodes:   "1",
+					ArrayJobID: "",
+				},
+			},
 		},
 		{
 			name: "t2",
-			args: args{r: testPendingScontrolRsponse},
-			want: []*JobInfo{{
-				ID:         "52",
-				UserID:     "vagrant(1000)",
-				Name:       "sbatch",
-				ExitCode:   "0:0",
-				State:      "PENDING",
-				SubmitTime: &testSubmitTime,
-				StartTime:  nil,
-				RunTime:    &testZeroRunTime,
-				TimeLimit:  nil,
-				WorkDir:    "/home/vagrant",
-				StdOut:     "/home/vagrant/slurm-52.out",
-				StdErr:     "/home/vagrant/slurm-52.out",
-				Partition:  "debug",
-				NodeList:   "(null)",
-				BatchHost:  "",
-				NumNodes:   "1",
-				ArrayJobID: "",
-			}},
-			wantErr: false,
+			in:   testPendingScontrolRsponse,
+			want: []*JobInfo{
+				{
+					ID:         "52",
+					UserID:     "vagrant(1000)",
+					Name:       "sbatch",
+					ExitCode:   "0:0",
+					State:      "PENDING",
+					SubmitTime: &testSubmitTime,
+					StartTime:  nil,
+					RunTime:    &testZeroRunTime,
+					TimeLimit:  nil,
+					WorkDir:    "/home/vagrant",
+					StdOut:     "/home/vagrant/slurm-52.out",
+					StdErr:     "/home/vagrant/slurm-52.out",
+					Partition:  "debug",
+					NodeList:   "(null)",
+					BatchHost:  "",
+					NumNodes:   "1",
+					ArrayJobID: "",
+				},
+			},
 		},
 		{
 			name: "t3",
-			args: args{r: testJobArrayScontrolResponse},
-			want: []*JobInfo{{
-				ID:         "192",
-				UserID:     "vagrant(1000)",
-				Name:       "sbatch",
-				ExitCode:   "0:0",
-				State:      "PENDING",
-				SubmitTime: &testSubmitTime,
-				StartTime:  &testStartTime,
-				RunTime:    &testRunTime,
-				TimeLimit:  &testLimitTime,
-				WorkDir:    "/home/vagrant",
-				StdOut:     "/home/vagrant/slurm-192_4294967294.out",
-				StdErr:     "/home/vagrant/slurm-192_4294967294.out",
-				Partition:  "debug",
-				NodeList:   "(null)",
-				BatchHost:  "",
-				NumNodes:   "1-1",
-				ArrayJobID: "192",
-			},
+			in:   testJobArrayScontrolResponse,
+			want: []*JobInfo{
+				{
+					ID:         "192",
+					UserID:     "vagrant(1000)",
+					Name:       "sbatch",
+					ExitCode:   "0:0",
+					State:      "PENDING",
+					SubmitTime: &testSubmitTime,
+					StartTime:  &testStartTime,
+					RunTime:    &testRunTime,
+					TimeLimit:  &testLimitTime,
+					WorkDir:    "/home/vagrant",
+					StdOut:     "/home/vagrant/slurm-192_4294967294.out",
+					StdErr:     "/home/vagrant/slurm-192_4294967294.out",
+					Partition:  "debug",
+					NodeList:   "(null)",
+					BatchHost:  "",
+					NumNodes:   "1-1",
+					ArrayJobID: "192",
+				},
 				{
 					ID:         "196",
 					UserID:     "vagrant(1000)",
@@ -247,14 +270,9 @@ func TestJobInfoFromScontrolResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := JobInfoFromScontrolResponse(tt.args.r)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JobInfoFromScontrolResponse() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("JobInfoFromScontrolResponse() = %v, want %v", got, tt.want)
-			}
+			got, err := JobInfoFromScontrolResponse(tt.in)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -348,13 +366,147 @@ func TestParseSacctResponse(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			actual, err := ParseSacctResponse(tc.in)
+			actual, err := parseSacctResponse(tc.in)
 			if tc.expectError == "" {
 				require.NoError(t, err)
 			} else {
 				require.EqualError(t, err, tc.expectError)
 			}
 			require.Equal(t, tc.expect, actual)
+		})
+	}
+}
+
+func Test_parseResources(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want *Resources
+	}{
+		{
+			name: "t1",
+			in:   testScontrolShowPartition,
+			want: &Resources{
+				Nodes:      3,
+				MemPerNode: 512,
+				CPUPerNode: 1,
+				WallTime:   30 * time.Minute,
+				Features:   nil,
+			}},
+		{
+			name: "t2",
+			in:   testScontrolShowPartitionUnlimited,
+			want: &Resources{
+				Nodes:      4,
+				MemPerNode: -1,
+				CPUPerNode: 2,
+				WallTime:   -1,
+				Features:   nil,
+			}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseResources(tt.in)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestParseDuration(t *testing.T) {
+	tt := []struct {
+		in             string
+		expectDuration *time.Duration
+		expectError    bool
+	}{
+		{
+			in:          "UNLIMITED",
+			expectError: true,
+		},
+		{
+			in:          "",
+			expectError: true,
+		},
+		{
+			in:          "6:6:6:6",
+			expectError: true,
+		},
+		{
+			in:             "6",
+			expectDuration: &[]time.Duration{time.Minute * 6}[0],
+		},
+		{
+			in:          "foo",
+			expectError: true,
+		},
+		{
+			in:             "6:06",
+			expectDuration: &[]time.Duration{time.Minute*6 + time.Second*6}[0],
+		},
+		{
+			in:          "foo:06",
+			expectError: true,
+		},
+		{
+			in:          "6:foo",
+			expectError: true,
+		},
+		{
+			in:             "6:06:06",
+			expectDuration: &[]time.Duration{time.Hour*6 + time.Minute*6 + time.Second*6}[0],
+		},
+		{
+			in:          "foo:6:06",
+			expectError: true,
+		},
+		{
+			in:          "6:foo:06",
+			expectError: true,
+		},
+
+		{
+			in:          "6:06:foo",
+			expectError: true,
+		},
+		{
+			in:             "3-5",
+			expectDuration: &[]time.Duration{time.Hour*24*3 + time.Hour*5}[0],
+		},
+		{
+			in:          "foo-5",
+			expectError: true,
+		},
+		{
+			in:          "3-foo",
+			expectError: true,
+		},
+		{
+			in:             "3-5:07",
+			expectDuration: &[]time.Duration{time.Hour*24*3 + time.Hour*5 + time.Minute*7}[0],
+		},
+		{
+			in:          "3-5:foo",
+			expectError: true,
+		},
+		{
+			in:             "3-5:07:08",
+			expectDuration: &[]time.Duration{time.Hour*24*3 + time.Hour*5 + time.Minute*7 + time.Second*8}[0],
+		},
+		{
+			in:          "3-5:07:bar",
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.in, func(t *testing.T) {
+			actual, err := ParseDuration(tc.in)
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tc.expectDuration, actual)
 		})
 	}
 }

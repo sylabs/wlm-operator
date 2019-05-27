@@ -20,25 +20,48 @@ import (
 	"log"
 	"time"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm"
-
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
-
 	"github.com/pkg/errors"
-
+	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
 )
 
+type Feature struct {
+	Name     string `yaml:"name"`
+	Version  string `yaml:"version"`
+	Quantity int64  `yaml:"quantity"`
+}
+
+type Resources struct {
+	AutoNodes      bool `yaml:"auto_nodes"`
+	AutoCPUPerNode bool `yaml:"auto_cpu_per_node"`
+	AutoMemPerNode bool `yaml:"auto_mem_per_node"`
+	AutoWallTime   bool `yaml:"auto_wall_time"`
+
+	Nodes      int64         `yaml:"nodes"`
+	CPUPerNode int64         `yaml:"cpu_per_node"`
+	MemPerNode int64         `yaml:"mem_per_node"`
+	WallTime   time.Duration `yaml:"wall_time"`
+
+	AdditionalFeatures []*Feature `yaml:"additional_features"`
+}
+
+type Config struct {
+	Partition string    `yaml:"partition"`
+	Resources Resources `yaml:"resources"`
+}
+
 // Slurm implements WorkloadManagerServer
 type Slurm struct {
+	cfg    *Config
 	client *slurm.Client
 }
 
 // NewSlurmAPI creates a new instance of Slurm
-func NewSlurmAPI(c *slurm.Client) *Slurm {
-	return &Slurm{client: c}
+func NewSlurmAPI(c *slurm.Client, cfg *Config) *Slurm {
+	return &Slurm{client: c, cfg: cfg}
 }
 
 // SubmitJob submits job and returns id of it in case of success
@@ -183,6 +206,54 @@ func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 			}
 		}
 	}
+}
+
+func (a *Slurm) Resources(context.Context, *api.ResourcesRequest) (*api.ResourcesResponse, error) {
+	slurmResources, err := a.client.Resources(a.cfg.Partition)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not get resources for partition %s", a.cfg.Partition)
+	}
+
+	response := &api.ResourcesResponse{
+		Nodes:      a.cfg.Resources.Nodes,
+		CpuPerNode: a.cfg.Resources.CPUPerNode,
+		MemPerNode: a.cfg.Resources.MemPerNode,
+		WallTime:   int64(a.cfg.Resources.WallTime.Seconds()),
+	}
+
+	for _, f := range slurmResources.Features {
+		response.Features = append(response.Features, &api.Feature{
+			Name:     f.Name,
+			Version:  f.Version,
+			Quantity: f.Quantity,
+		})
+	}
+
+	for _, f := range a.cfg.Resources.AdditionalFeatures {
+		response.Features = append(response.Features, &api.Feature{
+			Name:     f.Name,
+			Version:  f.Version,
+			Quantity: f.Quantity,
+		})
+	}
+
+	if a.cfg.Resources.AutoNodes || response.Nodes == 0 {
+		response.Nodes = slurmResources.Nodes
+	}
+
+	if a.cfg.Resources.AutoCPUPerNode || response.CpuPerNode == 0 {
+		response.CpuPerNode = slurmResources.CPUPerNode
+	}
+
+	if a.cfg.Resources.AutoMemPerNode || response.MemPerNode == 0 {
+		response.MemPerNode = slurmResources.MemPerNode
+	}
+
+	if a.cfg.Resources.AutoWallTime || response.WallTime == 0 {
+		response.WallTime = int64(slurmResources.WallTime.Seconds())
+	}
+
+	return response, nil
 }
 
 func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) {

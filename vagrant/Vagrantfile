@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 IMAGE_NAME = "bento/ubuntu-18.04"
-N = 2
+N = 1
 
 
 Vagrant.configure("2") do |config|
@@ -19,13 +19,13 @@ Vagrant.configure("2") do |config|
         master.vm.hostname = "k8s-master"
         master.vm.provision "common",
          type:"shell",
-         preserve_order: true, 
-         path: "install-common.sh", 
+         preserve_order: true,
+         path: "install-common.sh",
          privileged: false
-        master.vm.provision "master-setup", 
-         type:"shell", 
-         preserve_order: true, 
-         path: "install-master.sh", 
+        master.vm.provision "master-setup",
+         type:"shell",
+         preserve_order: true,
+         path: "install-master.sh",
          privileged: false
         master.vm.provision "slurm-operator-master",
          type:"shell",
@@ -46,9 +46,9 @@ Vagrant.configure("2") do |config|
          path: "install-common.sh",
          privileged: false
         node.vm.provision "slave-setup",
-         type:"shell", 
+         type:"shell",
          preserve_order: true,
-         path: "install-node.sh", 
+         path: "install-node.sh",
          privileged: false
         node.vm.provision "slurm",
          type:"shell",
