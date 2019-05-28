@@ -33,40 +33,39 @@ import (
 )
 
 func main() {
-	config := flag.String("config", "config.yml", "path to a config")
+	configPath := flag.String("config", "config.yaml", "path to a red-box config")
 	sock := flag.String("socket", "/var/run/syslurm/red-box.sock", "unix socket to serve slurm API")
 	flag.Parse()
 
-	cfgFile, err := os.Open(*config)
+	cfgFile, err := os.Open(*configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var apiCfg sgrpc.Config
-	if err := yaml.NewDecoder(cfgFile).Decode(&apiCfg); err != nil {
+	var config sgrpc.Config
+	if err := yaml.NewDecoder(cfgFile).Decode(&config); err != nil {
+		cfgFile.Close()
 		log.Fatal(err)
 	}
-
-	spew.Dump(apiCfg)
+	cfgFile.Close()
+	spew.Dump(config)
 
 	ln, err := net.Listen("unix", *sock)
 	if err != nil {
 		log.Fatalf("Could not listen unix: %v", err)
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	s := grpc.NewServer()
-
 	c, err := slurm.NewClient()
 	if err != nil {
 		log.Fatalf("Could not create slurm client: %s", err)
 	}
 
-	a := sgrpc.NewSlurmAPI(c, &apiCfg)
+	s := grpc.NewServer()
+	a := sgrpc.NewSlurm(c, config)
 	api.RegisterWorkloadManagerServer(s, a)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 

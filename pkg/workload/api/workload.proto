@@ -38,7 +38,6 @@ service WorkloadManager {
     // OpenFile this call will watch file content changes and stream
     // new chunks continuously.
     rpc TailFile (stream TailFileRequest) returns (stream Chunk);
-
     // Resources returns partition resources
     // nodes, cpu, mem, wall-time and available features
     rpc Resources(ResourcesRequest) returns (ResourcesResponse);

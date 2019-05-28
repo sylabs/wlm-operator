@@ -103,7 +103,7 @@ type (
 		MemPerNode int64
 		CPUPerNode int64
 		WallTime   time.Duration
-		Features   []*Feature
+		Features   []Feature
 	}
 )
 
@@ -123,9 +123,13 @@ func NewClient() (*Client, error) {
 }
 
 // SBatch submits batch job and returns job id if succeeded.
-func (*Client) SBatch(command string) (int64, error) {
-	cmd := exec.Command(sbatchBinaryName, "--parsable")
-	cmd.Stdin = bytes.NewBufferString(command)
+func (*Client) SBatch(script, partition string) (int64, error) {
+	var partitionOpt string
+	if partition != "" {
+		partitionOpt = "--partition=" + partition
+	}
+	cmd := exec.Command(sbatchBinaryName, "--parsable", partitionOpt)
+	cmd.Stdin = bytes.NewBufferString(script)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

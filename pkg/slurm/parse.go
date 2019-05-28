@@ -120,7 +120,6 @@ func parseResources(partitionInfo string) (*Resources, error) {
 		if len(s) != 2 {
 			continue // skipping invalid or empty fields
 		}
-
 		fMap[s[0]] = append(fMap[s[0]], strings.Split(s[1], ",")...)
 	}
 
@@ -146,7 +145,6 @@ func parseResources(partitionInfo string) (*Resources, error) {
 				if err != nil {
 					return nil, errors.Wrap(err, "could not parse total cpus")
 				}
-
 				resources.CPUPerNode = cpus
 			}
 		} else {
@@ -154,7 +152,6 @@ func parseResources(partitionInfo string) (*Resources, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "could not parse max cpus num")
 			}
-
 			resources.CPUPerNode = cpus
 		}
 	}
@@ -178,7 +175,6 @@ func parseResources(partitionInfo string) (*Resources, error) {
 				if err != nil {
 					return nil, errors.Wrap(err, "could not parse total nodes")
 				}
-
 				resources.Nodes = nodes
 			}
 		} else {
@@ -186,7 +182,6 @@ func parseResources(partitionInfo string) (*Resources, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "could not parse max nodes")
 			}
-
 			resources.Nodes = nodes
 		}
 	}
