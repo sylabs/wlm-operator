@@ -63,18 +63,6 @@ required = [
   branch = "master" #osdk_branch_annotation
   # version = "=v0.5.0" #osdk_version_annotation
 
-[[constraint]]
-  branch = "master"
-  name = "k8s.io/apimachinery"
-
-[[constraint]]
-  name = "k8s.io/client-go"
-  version = "10.0.0"
-
-[[override]]
-  name = "github.com/gorilla/mux"
-  version = "1.7.0"
-
 [[override]]
   name = "github.com/pkg/errors"
   version = "0.8.1"
