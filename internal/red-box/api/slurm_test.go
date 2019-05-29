@@ -89,7 +89,7 @@ func Test_mapSStepsToProtoSteps(t *testing.T) {
 		},
 	}
 
-	pSteps, err := mapSStepsToProtoSteps(steps)
+	pSteps, err := toProtoSteps(steps)
 	require.NoError(t, err)
 	require.Len(t, pSteps, 2)
 	for i := range pSteps {
