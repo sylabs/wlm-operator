@@ -15,7 +15,12 @@
 //nolint:golint
 package slurm_operator
 
-//go:generate go run vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go -O zz_generated.deepcopy -i ./pkg/operator/apis/slurm/v1alpha1 -h COPYRIGHT
-//go:generate go run vendor/k8s.io/kube-openapi/cmd/openapi-gen/openapi-gen.go -o pkg/operator/apis/slurm -O zz_generated.openapi -p v1alpha1 -i ./pkg/operator/apis/slurm/v1alpha1 -h COPYRIGHT
+//go:generate go run vendor/k8s.io/kube-openapi/cmd/openapi-gen/openapi-gen.go -i ./pkg/operator/apis/slurm/v1alpha1 -o pkg/operator/apis/slurm -O zz_generated.openapi -p v1alpha1 -h COPYRIGHT
 //go:generate go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go crd --output-dir deploy/crds --apis-path pkg/operator/apis
+
+//go:generate go run vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go -i github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1 -O zz_generated.deepcopy --bounding-dirs github.com/sylabs/slurm-operator/pkg/operator/apis -h COPYRIGHT
+//go:generate go run vendor/k8s.io/code-generator/cmd/client-gen/main.go --input github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1 -p github.com/sylabs/slurm-operator/pkg/operator/client/clientset -n versioned --input-base "" -h COPYRIGHT
+//go:generate go run vendor/k8s.io/code-generator/cmd/lister-gen/main.go -i github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1 -p github.com/sylabs/slurm-operator/pkg/operator/client/listers -h COPYRIGHT
+//go:generate go run vendor/k8s.io/code-generator/cmd/informer-gen/main.go -i github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1 --versioned-clientset-package github.com/sylabs/slurm-operator/pkg/operator/client/clientset/versioned --listers-package github.com/sylabs/slurm-operator/pkg/operator/client/listers -p github.com/sylabs/slurm-operator/pkg/operator/client/informers -h COPYRIGHT
+
 //go:generate protoc --go_out=plugins=grpc:. pkg/workload/api/workload.proto

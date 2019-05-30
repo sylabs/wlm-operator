@@ -69,6 +69,7 @@ type SlurmJobResults struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // SlurmJob is the Schema for the slurmjobs API.
+// +genclient
 // +k8s:openapi-gen=true
 // +kubebuilder:resource:shortName=sj
 // +kubebuilder:subresource:status
