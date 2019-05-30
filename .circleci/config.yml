@@ -123,6 +123,8 @@ jobs:
             send -- "\r"
             expect "Enter key passphrase : "
             send -- "\r"
+            expect "Enter key passphrase : "
+            send -- "\r"
             expect eof
             EOF
             chmod +x push.sh
