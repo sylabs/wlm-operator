@@ -71,7 +71,7 @@ func main() {
 				break
 			}
 
-			log.Fatalf("err while recivieng file %s", err)
+			log.Fatalf("err while receiving file %s", err)
 		}
 	}
 
