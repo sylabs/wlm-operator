@@ -40,10 +40,10 @@ service WorkloadManager {
     rpc TailFile (stream TailFileRequest) returns (stream Chunk);
     // Resources returns partition resources
     // nodes, cpu, mem, wall-time and available features
-    rpc Resources(ResourcesRequest) returns (ResourcesResponse);
+    rpc Resources (ResourcesRequest) returns (ResourcesResponse);
 
     // Partitions returns a list of available partitions.
-    rpc Partitions(PartitionsRequest) returns (PartitionsResponse);
+    rpc Partitions (PartitionsRequest) returns (PartitionsResponse);
 }
 
 message SubmitJobRequest {
@@ -111,7 +111,9 @@ message ResourcesResponse {
     repeated Feature features = 5;
 }
 
-message PartitionsRequest {}
+message PartitionsRequest {
+}
+
 message PartitionsResponse {
     repeated string partition = 1;
 }
@@ -131,7 +133,10 @@ enum JobStatus {
     COMPLETED = 0;
     CANCELLED = 1;
     FAILED = 2;
-    UNKNOWN = 3;
+    TIMEOUT = 3;
+    PENDING = 4;
+
+    UNKNOWN = 10;
 }
 
 // JobInfo represents compete information about a single job.
