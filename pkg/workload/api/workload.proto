@@ -41,6 +41,9 @@ service WorkloadManager {
     // Resources returns partition resources
     // nodes, cpu, mem, wall-time and available features
     rpc Resources(ResourcesRequest) returns (ResourcesResponse);
+
+    // Partitions returns a list of available partitions.
+    rpc Partitions(PartitionsRequest) returns (PartitionsResponse);
 }
 
 message SubmitJobRequest {
@@ -106,6 +109,11 @@ message ResourcesResponse {
     int64 wallTime = 4;
     // Set of features of the partition.
     repeated Feature features = 5;
+}
+
+message PartitionsRequest {}
+message PartitionsResponse {
+    repeated string partition = 1;
 }
 
 enum TailAction {
