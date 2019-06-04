@@ -259,6 +259,16 @@ func (s *Slurm) Resources(_ context.Context, req *api.ResourcesRequest) (*api.Re
 	return response, nil
 }
 
+// Partitions returns partition names
+func (s *Slurm) Partitions(context.Context, *api.PartitionsRequest) (*api.PartitionsResponse, error) {
+	names, err := s.client.Partitions()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get partition names")
+	}
+
+	return &api.PartitionsResponse{Partition: names}, nil
+}
+
 func toProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) {
 	pSteps := make([]*api.JobStepInfo, len(ss))
 
