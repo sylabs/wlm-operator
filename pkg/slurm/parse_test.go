@@ -256,3 +256,60 @@ func Test_parseResources(t *testing.T) {
 		})
 	}
 }
+
+const testScontrolShowAllPartitions = `
+PartitionName=debug
+   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL
+   AllocNodes=ALL Default=NO QoS=N/A
+   DefaultTime=NONE DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
+   MaxNodes=1 MaxTime=00:30:00 MinNodes=1 LLN=NO MaxCPUsPerNode=2
+   Nodes=node-1
+   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=OFF
+   State=UP TotalCPUs=2 TotalNodes=1 SelectTypeParameters=NONE
+   DefMemPerNode=UNLIMITED MaxMemPerNode=512
+
+PartitionName=debug2
+   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL
+   AllocNodes=ALL Default=NO QoS=N/A
+   DefaultTime=NONE DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
+   MaxNodes=1 MaxTime=00:30:00 MinNodes=1 LLN=NO MaxCPUsPerNode=2
+   Nodes=node-1
+   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=OFF
+   State=UP TotalCPUs=2 TotalNodes=1 SelectTypeParameters=NONE
+   DefMemPerNode=UNLIMITED MaxMemPerNode=512
+
+PartitionName=debug3
+   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL
+   AllocNodes=ALL Default=YES QoS=N/A
+   DefaultTime=NONE DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
+   MaxNodes=1 MaxTime=00:30:00 MinNodes=1 LLN=NO MaxCPUsPerNode=2
+   Nodes=node-1
+   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=OFF
+   State=UP TotalCPUs=2 TotalNodes=1 SelectTypeParameters=NONE
+   DefMemPerNode=UNLIMITED MaxMemPerNode=512
+
+`
+
+func Test_parsePartitionsNames(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want []string
+	}{
+		{
+			"t1",
+			testScontrolShowAllPartitions,
+			[]string{"debug", "debug2", "debug3"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parsePartitionsNames(tt.in)
+			require.NoError(t, err)
+			require.EqualValues(t, tt.want, got)
+		})
+	}
+}

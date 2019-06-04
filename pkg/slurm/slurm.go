@@ -238,6 +238,22 @@ func (*Client) Resources(partition string) (*Resources, error) {
 	return r, nil
 }
 
+// Partitions returns a list of partition names.
+func (*Client) Partitions() ([]string, error) {
+	cmd := exec.Command(scontrolBinaryName, "show", "partition")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get partition info")
+	}
+
+	partitions, err := parsePartitionsNames(string(out))
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse partitions")
+	}
+
+	return partitions, nil
+}
+
 func jobInfoFromScontrolResponse(jobInfo string) ([]*JobInfo, error) {
 	jobInfo = strings.TrimSpace(jobInfo)
 	rawInfos := strings.Split(jobInfo, "\n\n")

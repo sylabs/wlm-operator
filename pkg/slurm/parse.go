@@ -189,6 +189,27 @@ func parseResources(partitionInfo string) (*Resources, error) {
 	return &resources, nil
 }
 
+// parsePartitionsNames extracts names from scontrol show partitions response.
+func parsePartitionsNames(raw string) ([]string, error) {
+	raw = strings.TrimSpace(raw)
+	partitions := strings.Split(raw, "\n\n")
+
+	const partitionNameF = "PartitionName"
+
+	names := make([]string, len(partitions))
+	for i, p := range partitions {
+		for _, f := range strings.Fields(p) {
+			if s := strings.Split(f, "="); len(s) == 2 {
+				if s[0] == partitionNameF {
+					names[i] = s[1]
+				}
+			}
+		}
+	}
+
+	return names, nil
+}
+
 // parseSacctResponse is a helper that parses sacct output and
 // returns results in a convenient form.
 func parseSacctResponse(raw string) ([]*JobStepInfo, error) {
