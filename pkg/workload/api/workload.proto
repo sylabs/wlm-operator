@@ -123,7 +123,10 @@ enum JobStatus {
     COMPLETED = 0;
     CANCELLED = 1;
     FAILED = 2;
-    UNKNOWN = 3;
+    TIMEOUT = 3;
+    PENDING =4;
+
+    UNKNOWN = 10;
 }
 
 // JobInfo represents compete information about a single job.
