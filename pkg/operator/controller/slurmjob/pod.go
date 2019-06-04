@@ -46,6 +46,7 @@ func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) (*corev1.Pod, error
 				RunAsUser:  &r.jcUID,
 				RunAsGroup: &r.jcGID,
 			},
+			Tolerations: tolerationsForSj(sj),
 			Containers: []corev1.Container{
 				{
 					Name:            "jt1",
@@ -120,11 +121,23 @@ func nodeSelectorForSj(sj *slurmv1alpha1.SlurmJob) map[string]string {
 	// sure that pod will be allocated only on nodes with slurm support
 	nodeSelector := map[string]string{
 		"slurm.sylabs.io/workload-manager": "slurm",
+		"type":                             "virtual-kubelet",
 	}
 	for k, v := range sj.Spec.NodeSelector {
 		nodeSelector[k] = v
 	}
 	return nodeSelector
+}
+
+func tolerationsForSj(sj *slurmv1alpha1.SlurmJob) []corev1.Toleration {
+	return []corev1.Toleration{
+		{
+			Key:      "virtual-kubelet.io/provider",
+			Operator: corev1.TolerationOpEqual,
+			Value:    "slurm",
+			Effect:   corev1.TaintEffectNoSchedule,
+		},
+	}
 }
 
 func companionArgsForSj(sj *slurmv1alpha1.SlurmJob) []string {
