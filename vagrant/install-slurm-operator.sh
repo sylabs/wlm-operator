@@ -5,7 +5,7 @@ SINGULARITY_SLURM_OPERATOR_REPO="github.com/sylabs/slurm-operator"
 export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin
 
 cd ${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO} && make
-cat > ${HOME}/config.yml <<EOF
+cat > ${HOME}/config.yaml <<EOF
 partition: debug
 EOF
 
@@ -16,6 +16,7 @@ export RED_BOX_SERVICE=$(cat <<EOF
 [Unit]
 Description=Slurm operator red-box
 StartLimitIntervalSec=0
+
 [Service]
 Type=simple
 Restart=always
@@ -27,6 +28,6 @@ ExecStart=${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO}/bin/red-box
 EOF
 )
 
-sudo sh -c "printf "%s" '${RED_BOX_SERVICE}' >> /etc/systemd/system/red-box.service"
+sudo sh -c "printf "%s\n" '${RED_BOX_SERVICE}' >> /etc/systemd/system/red-box.service"
 sudo systemctl start red-box
 systemctl status red-box
