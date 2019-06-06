@@ -6,7 +6,8 @@ export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin
 
 cd ${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO} && make
 cat > ${HOME}/config.yaml <<EOF
-partition: debug
+debug:
+  auto_nodes: true
 EOF
 
 sudo mkdir -p /var/run/syslurm
