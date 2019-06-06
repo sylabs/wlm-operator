@@ -16,6 +16,7 @@ package slurmjob
 
 import (
 	"context"
+	"os"
 
 	"github.com/golang/glog"
 	slurmv1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1"
@@ -45,13 +46,12 @@ type Reconciler struct {
 }
 
 // NewReconciler returns a new SlurmJob controller.
-func NewReconciler(mgr manager.Manager, jcImage string, jcUID, jcGID int64) *Reconciler {
+func NewReconciler(mgr manager.Manager) *Reconciler {
 	r := &Reconciler{
-		client:  mgr.GetClient(),
-		scheme:  mgr.GetScheme(),
-		jcUID:   jcUID,
-		jcGID:   jcGID,
-		jcImage: jcImage,
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		jcUID:  int64(os.Getuid()),
+		jcGID:  int64(os.Getgid()),
 	}
 	return r
 }

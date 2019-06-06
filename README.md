@@ -167,7 +167,6 @@ Labels:             beta.kubernetes.io/arch=amd64
                     node-role.kubernetes.io/master=
                     slurm.sylabs.io/containers=singularity
                     slurm.sylabs.io/cuda=10.0
-                    slurm.sylabs.io/workload-manager=slurm
 ...
 Capacity:
  slurm.sylabs.io/cpu:  24

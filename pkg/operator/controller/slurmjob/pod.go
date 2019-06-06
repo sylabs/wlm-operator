@@ -15,7 +15,6 @@
 package slurmjob
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -36,9 +35,6 @@ func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) (*corev1.Pod, error
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sj.Name + "-job",
 			Namespace: sj.Namespace,
-			Labels: map[string]string{
-				"slurm-job": sj.Name,
-			},
 		},
 		Spec: corev1.PodSpec{
 			Affinity: affinity,
@@ -49,25 +45,11 @@ func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) (*corev1.Pod, error
 			Tolerations: tolerationsForSj(sj),
 			Containers: []corev1.Container{
 				{
-					Name:            "jt1",
-					Image:           r.jcImage,
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Args:            companionArgsForSj(sj),
-					Env: []corev1.EnvVar{
-						{
-							Name: "JOB_NAME",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "metadata.name",
-								},
-							},
-						}},
-					VolumeMounts: volumesMountForSj(sj),
+					Name:  "jt1",
+					Image: "no-image",
 				},
 			},
-			Volumes:       volumesForSj(sj),
 			NodeSelector:  nodeSelectorForSj(sj),
-			HostNetwork:   true,
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}, nil
@@ -120,8 +102,7 @@ func nodeSelectorForSj(sj *slurmv1alpha1.SlurmJob) map[string]string {
 	// since we are running only slurm jobs, we need to be
 	// sure that pod will be allocated only on nodes with slurm support
 	nodeSelector := map[string]string{
-		"slurm.sylabs.io/workload-manager": "slurm",
-		"type":                             "virtual-kubelet",
+		"type": "virtual-kubelet",
 	}
 	for k, v := range sj.Spec.NodeSelector {
 		nodeSelector[k] = v
@@ -129,7 +110,7 @@ func nodeSelectorForSj(sj *slurmv1alpha1.SlurmJob) map[string]string {
 	return nodeSelector
 }
 
-func tolerationsForSj(sj *slurmv1alpha1.SlurmJob) []corev1.Toleration {
+func tolerationsForSj(_ *slurmv1alpha1.SlurmJob) []corev1.Toleration {
 	return []corev1.Toleration{
 		{
 			Key:      "virtual-kubelet.io/provider",
@@ -138,55 +119,4 @@ func tolerationsForSj(sj *slurmv1alpha1.SlurmJob) []corev1.Toleration {
 			Effect:   corev1.TaintEffectNoSchedule,
 		},
 	}
-}
-
-func companionArgsForSj(sj *slurmv1alpha1.SlurmJob) []string {
-	args := []string{
-		fmt.Sprintf("--batch=%s", sj.Spec.Batch),
-	}
-	if sj.Spec.Results != nil {
-		args = append(args, fmt.Sprintf("--cr-mount=%s", "/collect"))
-		if sj.Spec.Results.From != "" {
-			args = append(args, fmt.Sprintf("--file-to-collect=%s", sj.Spec.Results.From))
-		}
-	}
-	return args
-}
-
-func volumesForSj(sj *slurmv1alpha1.SlurmJob) []corev1.Volume {
-	volumes := []corev1.Volume{
-		{
-			Name: "red-box-sock",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/var/run/syslurm/red-box.sock",
-					Type: &[]corev1.HostPathType{corev1.HostPathSocket}[0],
-				},
-			},
-		},
-	}
-
-	if sj.Spec.Results != nil {
-		volumes = append(volumes, sj.Spec.Results.Mount)
-	}
-	return volumes
-}
-
-func volumesMountForSj(sj *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
-	// default SLURM config which have to exist on every k8s node.
-	// The config is managed and created by RD
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      "red-box-sock",
-			MountPath: "/red-box.sock",
-		},
-	}
-
-	if sj.Spec.Results != nil {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      sj.Spec.Results.Mount.Name,
-			MountPath: "/collect",
-		})
-	}
-	return volumeMounts
 }
