@@ -78,7 +78,7 @@ func watchPartitions(ctx context.Context, slurmClient api.WorkloadManagerClient,
 			}
 
 			nodes, err := k8sClient.Nodes().List(metav1.ListOptions{
-				LabelSelector: "type=virtual-kubelet,slurm.sylabs.io/workload-manager=slurm",
+				LabelSelector: "type=virtual-kubelet",
 			})
 			if err != nil {
 				log.Printf("Can't get pods %s", err)
@@ -91,8 +91,8 @@ func watchPartitions(ctx context.Context, slurmClient api.WorkloadManagerClient,
 				log.Printf("Can't create partitions  %s", err)
 			}
 
-			nodesToMarkAsDead := notIn(nNames, partitionsResp.Partition)
-			if err := markNodesAsDead(k8sClient, nodesToMarkAsDead); err != nil {
+			nodesToDelete := notIn(nNames, partitionsResp.Partition)
+			if err := deleteControllingPod(k8sClient, nodesToDelete); err != nil {
 				log.Printf("Can't mark node as dead %s", err)
 			}
 		}
@@ -112,7 +112,13 @@ func createNodeForPartitions(k8sClient *corev1.CoreV1Client, partitions []string
 	return nil
 }
 
-func markNodesAsDead(k8sClient *corev1.CoreV1Client, nodes []string) error {
+func deleteControllingPod(k8sClient *corev1.CoreV1Client, nodes []string) error {
+	for _, n := range nodes {
+		nodeName := partitionNodeName(n, hostNodeName)
+		if err := k8sClient.Pods("default").Delete(nodeName, &metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "can't delete pod")
+		}
+	}
 	return nil
 }
 
@@ -245,16 +251,18 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 }
 
 func partitionNames(nodes []v1.Node) []string {
-	names := make([]string, len(nodes))
+	names := make([]string, 0, 0)
 	for _, n := range nodes {
-		names = append(names, n.Labels["slurm.sylabs.io/partition"])
+		if l, ok := n.Labels["slurm.sylabs.io/partition"]; ok {
+			names = append(names, l)
+		}
 	}
 
 	return names
 }
 
 func notIn(s1, s2 []string) []string {
-	notIn := make([]string, 0, len(s2))
+	notIn := make([]string, 0, 0)
 	for _, e1 := range s1 {
 		if contains(e1, s2) {
 			continue
