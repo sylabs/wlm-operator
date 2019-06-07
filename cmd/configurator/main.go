@@ -30,8 +30,7 @@ var (
 
 	serviceAccount = os.Getenv("SERVICE_ACCOUNT")
 	kubeletImage   = os.Getenv("KUBELET_IMAGE")
-
-	hostNodeName = os.Getenv("HOST_NAME")
+	hostNodeName   = os.Getenv("HOST_NAME")
 )
 
 func main() {
@@ -86,10 +85,15 @@ func watchPartitions(ctx context.Context, slurmClient api.WorkloadManagerClient,
 			}
 
 			nNames := partitionNames(nodes.Items)
-			partitionToCreate := notIn(partitionsResp.Partition, nNames)
 
+			partitionToCreate := notIn(partitionsResp.Partition, nNames)
 			if err := createNodeForPartitions(k8sClient, partitionToCreate); err != nil {
 				log.Printf("Can't create partitions  %s", err)
+			}
+
+			nodesToMarkAsDead := notIn(nNames, partitionsResp.Partition)
+			if err := markNodesAsDead(k8sClient, nodesToMarkAsDead); err != nil {
+				log.Printf("Can't mark node as dead %s", err)
 			}
 		}
 
@@ -105,6 +109,10 @@ func createNodeForPartitions(k8sClient *corev1.CoreV1Client, partitions []string
 		}
 	}
 
+	return nil
+}
+
+func markNodesAsDead(k8sClient *corev1.CoreV1Client, nodes []string) error {
 	return nil
 }
 

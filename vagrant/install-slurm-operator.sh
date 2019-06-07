@@ -5,8 +5,9 @@ SINGULARITY_SLURM_OPERATOR_REPO="github.com/sylabs/slurm-operator"
 export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin
 
 cd ${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO} && make
-cat > ${HOME}/config.yml <<EOF
-partition: debug
+cat > ${HOME}/config.yaml <<EOF
+debug:
+  auto_nodes: true
 EOF
 
 sudo mkdir -p /var/run/syslurm
