@@ -33,7 +33,7 @@ EOF
 )
 
 sudo mkdir -p /etc/cni/net.d
-sudo sh -c "printf "%s" '${NETWORK_CONFIG}' >> /etc/cni/net.d/11_bridge.conflist"
+sudo sh -c "printf '%s\n' '${NETWORK_CONFIG}' >> /etc/cni/net.d/11_bridge.conflist"
 
 export SYCRI_SERVICE=$(cat <<EOF
 [Unit]
@@ -82,7 +82,7 @@ cd ${GOPATH}/src/${SINGULARITY_CRI_REPO} && make && sudo make install
 go get ${SINGULARITY_SLURM_OPERATOR_REPO}
 
 
-sudo sh -c "printf "%s\n" '${SYCRI_SERVICE}' >> /etc/systemd/system/sycri.service"
+sudo sh -c "printf '%s\n' '${SYCRI_SERVICE}' >> /etc/systemd/system/sycri.service"
 sudo systemctl start sycri
 sudo systemctl status sycri
 
