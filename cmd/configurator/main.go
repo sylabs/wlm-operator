@@ -98,6 +98,7 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup, slurmClient api.Wo
 			})
 			if err != nil {
 				log.Printf("Can't get pods %s", err)
+				continue
 			}
 			// extract partition names from k8s nodes
 			nNames := partitionNames(nodes.Items)
@@ -276,7 +277,7 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 
 // partitionNames extracts slurm partition name from k8s node labels
 func partitionNames(nodes []v1.Node) []string {
-	names := make([]string, 0, 0)
+	names := make([]string, 0)
 	for _, n := range nodes {
 		if l, ok := n.Labels["slurm.sylabs.io/partition"]; ok {
 			names = append(names, l)
@@ -288,7 +289,7 @@ func partitionNames(nodes []v1.Node) []string {
 
 // notIn returns elements from s1 which are not presented in s2
 func notIn(s1, s2 []string) []string {
-	notIn := make([]string, 0, 0)
+	notIn := make([]string, 0)
 	for _, e1 := range s1 {
 		if contains(e1, s2) {
 			continue
