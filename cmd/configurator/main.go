@@ -113,7 +113,7 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup, slurmClient api.Wo
 			// which are represent those deleted partitions
 			nodesToDelete := notIn(nNames, partitionsResp.Partition)
 			if err := deleteControllingPod(k8sClient, nodesToDelete); err != nil {
-				log.Printf("Can't mark node as dead %s", err)
+				log.Printf("Can't delete controlling pod %s", err)
 			}
 		}
 
