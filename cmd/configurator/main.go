@@ -301,7 +301,7 @@ func notIn(s1, s2 []string) []string {
 }
 
 // contains checks if elements presents in s
-func contains(e string, s []string) bool {
+func contains(s []string, e string) bool {
 	for _, e1 := range s {
 		if e == e1 {
 			return true
