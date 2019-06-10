@@ -111,7 +111,7 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup, slurmClient api.Wo
 			}
 
 			// some partitions can be deleted from SLURM, so we need to delete pods
-			// which are represent those deleted partitions
+			// which represent those deleted partitions
 			nodesToDelete := notIn(nNames, partitionsResp.Partition)
 			if err := deleteControllingPod(k8sClient, nodesToDelete); err != nil {
 				log.Printf("Can't delete controlling pod %s", err)
