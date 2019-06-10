@@ -291,7 +291,7 @@ func partitionNames(nodes []v1.Node) []string {
 func notIn(s1, s2 []string) []string {
 	notIn := make([]string, 0)
 	for _, e1 := range s1 {
-		if contains(e1, s2) {
+		if contains(s2, e1) {
 			continue
 		}
 		notIn = append(notIn, e1)
