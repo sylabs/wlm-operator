@@ -49,7 +49,7 @@ PartitionName=debug Nodes=${HOST_NAME} Default=YES MaxTime=30 State=UP MaxMemPer
 EOF
 )
 
-sudo sh -c "printf "%s\n" '${SLURM_CONFIG}' > /etc/slurm-llnl/slurm.conf"
+sudo sh -c "printf '%s\n' '${SLURM_CONFIG}' > /etc/slurm-llnl/slurm.conf"
 
 sudo chown vagrant /var/log/slurm-llnl
 sudo chown vagrant /var/lib/slurm-llnl/slurmctld
