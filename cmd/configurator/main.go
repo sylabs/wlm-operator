@@ -97,7 +97,7 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup, slurmClient api.Wo
 				LabelSelector: "type=virtual-kubelet",
 			})
 			if err != nil {
-				log.Printf("Can't get pods %s", err)
+				log.Printf("Can't get virtual nodes %s", err)
 				continue
 			}
 			// extract partition names from k8s nodes
