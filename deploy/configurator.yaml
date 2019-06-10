@@ -96,7 +96,7 @@ spec:
       serviceAccountName: virtual-kubelet
       containers:
         - name: configurator
-          image: cali4888/cfg:0.0.1
+          image: cloud.sylabs.io/library/slurm/configurator:latest
           imagePullPolicy: Always
           args:
             - --sock
@@ -114,7 +114,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.serviceAccountName
             - name: KUBELET_IMAGE
-              value: "cali4888/vk:0.0.1"
+              value: "cloud.sylabs.io/library/slurm/vk:latest"
       volumes:
         - name: syslurm-mount
           hostPath:
