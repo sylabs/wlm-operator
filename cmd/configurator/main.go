@@ -287,7 +287,7 @@ func partitionNames(nodes []v1.Node) []string {
 	return names
 }
 
-// notIn returns elements from s1 which are not presented in s2
+// notIn returns elements from s1 which are not in s2
 func notIn(s1, s2 []string) []string {
 	notIn := make([]string, 0)
 	for _, e1 := range s1 {
