@@ -29,6 +29,6 @@ ExecStart=${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO}/bin/red-box
 EOF
 )
 
-sudo sh -c "printf "%s\n" '${RED_BOX_SERVICE}' >> /etc/systemd/system/red-box.service"
+sudo sh -c "printf '%s\n' '${RED_BOX_SERVICE}' >> /etc/systemd/system/red-box.service"
 sudo systemctl start red-box
 systemctl status red-box
