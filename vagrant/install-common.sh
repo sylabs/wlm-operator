@@ -82,7 +82,7 @@ cd ${GOPATH}/src/${SINGULARITY_CRI_REPO} && make && sudo make install
 go get ${SINGULARITY_SLURM_OPERATOR_REPO}
 cd ${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO} && git checkout staging
 
-sudo sh -c "printf "%s" '${SYCRI_SERVICE}' >> /etc/systemd/system/sycri.service"
+sudo sh -c "printf "%s\n" '${SYCRI_SERVICE}' >> /etc/systemd/system/sycri.service"
 sudo systemctl start sycri
 sudo systemctl status sycri
 
