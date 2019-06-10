@@ -146,7 +146,7 @@ func deleteControllingPod(k8sClient *corev1.CoreV1Client, nodes []string) error 
 }
 
 // virtualKubeletPodTemplate returns filled pod model ready to be created in k8s.
-// Kubelet pod will create virtual node that will be responsible for handling Slurm jobs
+// Kubelet pod will create virtual node that will be responsible for handling Slurm jobs.
 func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 	return &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
