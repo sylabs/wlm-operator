@@ -37,6 +37,7 @@ rules:
       - create
       - get
       - patch
+      - list
   - apiGroups:
       - ""
     resources:
@@ -80,34 +81,42 @@ roleRef:
   name: virtual-kubelet
 ---
 apiVersion: v1
-kind: Pod
+kind: DaemonSet
 metadata:
   name: configurator
 spec:
-  serviceAccountName: virtual-kubelet
-  containers:
-    - name: configurator
-      image: cali4888/cfg:0.0.1
-      imagePullPolicy: Always
-      args:
-        - --sock
-        - "/syslurm/red-box.sock"
-      volumeMounts:
+  selector:
+    matchLabels:
+      name: configurator
+  template:
+    metadata:
+      labels:
+        name: configurator
+    spec:
+      serviceAccountName: virtual-kubelet
+      containers:
+        - name: configurator
+          image: cali4888/cfg:0.0.1
+          imagePullPolicy: Always
+          args:
+            - --sock
+            - "/syslurm/red-box.sock"
+          volumeMounts:
+            - name: syslurm-mount
+              mountPath: /syslurm
+          env:
+            - name: HOST_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: SERVICE_ACCOUNT
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
+            - name: KUBELET_IMAGE
+              value: "cali4888/vk:0.0.1"
+      volumes:
         - name: syslurm-mount
-          mountPath: /syslurm
-      env:
-        - name: HOST_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: SERVICE_ACCOUNT
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.serviceAccountName
-        - name: KUBELET_IMAGE
-          value: "cali4888/vk:0.0.1"
-  volumes:
-    - name: syslurm-mount
-      hostPath:
-        path: /var/run/syslurm
-        type: Directory
+          hostPath:
+            path: /var/run/syslurm
+            type: Directory

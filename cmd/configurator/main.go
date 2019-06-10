@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -31,10 +32,15 @@ var (
 	serviceAccount = os.Getenv("SERVICE_ACCOUNT")
 	kubeletImage   = os.Getenv("KUBELET_IMAGE")
 	hostNodeName   = os.Getenv("HOST_NAME")
+	namespace      = os.Getenv("NAMESPACE")
 )
 
 func main() {
 	flag.Parse()
+
+	if namespace == "" {
+		namespace = "default"
+	}
 
 	// getting k8s config.
 	config, err := rest.InClusterConfig()
@@ -56,41 +62,55 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go watchPartitions(ctx, slurmC, coreC)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go watchPartitions(ctx, wg, slurmC, coreC)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, unix.SIGINT, unix.SIGTERM, unix.SIGQUIT)
 
 	log.Printf("Got signal %s", <-sig)
 	cancel()
+
+	wg.Wait()
+
+	log.Println("Configurator is finished")
 }
 
-func watchPartitions(ctx context.Context, slurmClient api.WorkloadManagerClient, k8sClient *corev1.CoreV1Client) {
+func watchPartitions(ctx context.Context, wg *sync.WaitGroup, slurmClient api.WorkloadManagerClient, k8sClient *corev1.CoreV1Client) {
+	defer wg.Done()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.Tick(30 * time.Second):
+		case <-time.Tick(1 * time.Minute):
+			// getting SLURM partitions
 			partitionsResp, err := slurmClient.Partitions(context.Background(), &api.PartitionsRequest{})
 			if err != nil {
 				log.Printf("Can't get partitions %s", err)
 				continue
 			}
 
+			// gettings k8s nodes
 			nodes, err := k8sClient.Nodes().List(metav1.ListOptions{
 				LabelSelector: "type=virtual-kubelet",
 			})
 			if err != nil {
 				log.Printf("Can't get pods %s", err)
 			}
-
+			// extract partition names from k8s nodes
 			nNames := partitionNames(nodes.Items)
 
+			// check which partitions are not yet represented in k8s
 			partitionToCreate := notIn(partitionsResp.Partition, nNames)
+			// creating pods for that partitions
 			if err := createNodeForPartitions(k8sClient, partitionToCreate); err != nil {
 				log.Printf("Can't create partitions  %s", err)
 			}
 
+			// some partitions can be deleted from SLURM, so we need to delete pods
+			// which are represent those deleted partitions
 			nodesToDelete := notIn(nNames, partitionsResp.Partition)
 			if err := deleteControllingPod(k8sClient, nodesToDelete); err != nil {
 				log.Printf("Can't mark node as dead %s", err)
@@ -102,7 +122,8 @@ func watchPartitions(ctx context.Context, slurmClient api.WorkloadManagerClient,
 
 func createNodeForPartitions(k8sClient *corev1.CoreV1Client, partitions []string) error {
 	for _, p := range partitions {
-		_, err := k8sClient.Pods("default").
+		log.Printf("Creating pod for %s partition in %s namespace", p, namespace)
+		_, err := k8sClient.Pods(namespace).
 			Create(virtualKubeletPodTemplate(p, hostNodeName))
 		if err != nil {
 			return errors.Wrap(err, "can't create pod for partition")
@@ -115,13 +136,16 @@ func createNodeForPartitions(k8sClient *corev1.CoreV1Client, partitions []string
 func deleteControllingPod(k8sClient *corev1.CoreV1Client, nodes []string) error {
 	for _, n := range nodes {
 		nodeName := partitionNodeName(n, hostNodeName)
-		if err := k8sClient.Pods("default").Delete(nodeName, &metav1.DeleteOptions{}); err != nil {
+		log.Printf("Deleting pod %s in %s namespace", nodeName, namespace)
+		if err := k8sClient.Pods(namespace).Delete(nodeName, &metav1.DeleteOptions{}); err != nil {
 			return errors.Wrap(err, "can't delete pod")
 		}
 	}
 	return nil
 }
 
+// virtualKubeletPodTemplate returns filled pod model ready to be created in k8s.
+// Kubelet pod will create virtual node that will be responsible for handling Slurm jobs
 func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 	return &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -219,7 +243,7 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 			},
 			Volumes: []v1.Volume{
 				{
-					Name: "syslurm-mount",
+					Name: "syslurm-mount", // directory with red-box socket
 					VolumeSource: v1.VolumeSource{
 						HostPath: &v1.HostPathVolumeSource{
 							Path: "/var/run/syslurm",
@@ -228,7 +252,7 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 					},
 				},
 				{
-					Name: "kubelet-crt",
+					Name: "kubelet-crt", // we need certificates for pod rest api, k8s gets pods logs via rest api
 					VolumeSource: v1.VolumeSource{
 						HostPath: &v1.HostPathVolumeSource{
 							Path: "/var/lib/kubelet/pki/kubelet.crt",
@@ -250,6 +274,7 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 	}
 }
 
+// partitionNames extracts slurm partition name from k8s node labels
 func partitionNames(nodes []v1.Node) []string {
 	names := make([]string, 0, 0)
 	for _, n := range nodes {
@@ -261,6 +286,7 @@ func partitionNames(nodes []v1.Node) []string {
 	return names
 }
 
+// notIn returns elements from s1 which are not presented in s2
 func notIn(s1, s2 []string) []string {
 	notIn := make([]string, 0, 0)
 	for _, e1 := range s1 {
@@ -273,6 +299,7 @@ func notIn(s1, s2 []string) []string {
 	return notIn
 }
 
+// contains checks if elements presents in s
 func contains(e string, s []string) bool {
 	for _, e1 := range s {
 		if e == e1 {
@@ -283,6 +310,7 @@ func contains(e string, s []string) bool {
 	return false
 }
 
+// partitionNodeName forms partition name that will be used as pod and node name in k8s
 func partitionNodeName(partition, node string) string {
 	return fmt.Sprintf("slurm-%s-%s", node, partition)
 }
