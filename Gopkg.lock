@@ -82,14 +82,6 @@
   version = "v4.2.0"
 
 [[projects]]
-  digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
-  name = "github.com/fsnotify/fsnotify"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
-  version = "v1.4.7"
-
-[[projects]]
   digest = "1:81466b4218bf6adddac2572a30ac733a9255919bc2f470b4827a317bd4ee1756"
   name = "github.com/ghodss/yaml"
   packages = ["."]
@@ -484,22 +476,6 @@
   pruneopts = "NUT"
   revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
   version = "v1.3.0"
-
-[[projects]]
-  digest = "1:315a5ea24de2f3ef5f1cf8ccef4ee287ea9269284c0b6c3f0ef2ee0fd4fcffd1"
-  name = "github.com/sylabs/singularity"
-  packages = ["pkg/util/fs/proc"]
-  pruneopts = "NUT"
-  revision = "a83e020c14d6ee6af84831ff0c68acb2f176f0d4"
-  version = "v3.1.1"
-
-[[projects]]
-  digest = "1:3b691dd4595e9b08271886e7b132314c34985685ca0b86336f4d3dfe7c73f23b"
-  name = "github.com/sylabs/singularity-cri"
-  packages = ["pkg/fs"]
-  pruneopts = "NUT"
-  revision = "08547bff6dfc2b404d2a8e89f5f0039abac26948"
-  version = "v1.0.0-beta.1"
 
 [[projects]]
   digest = "1:22f696cee54865fb8e9ff91df7b633f6b8f22037a8015253c6b6a71ca82219c7"
@@ -1065,7 +1041,6 @@
     "github.com/pkg/errors",
     "github.com/spf13/cobra",
     "github.com/stretchr/testify/require",
-    "github.com/sylabs/singularity-cri/pkg/fs",
     "golang.org/x/sys/unix",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
@@ -1079,6 +1054,7 @@
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/runtime/serializer",
     "k8s.io/apimachinery/pkg/types",
+    "k8s.io/apimachinery/pkg/util/intstr",
     "k8s.io/apimachinery/pkg/util/runtime",
     "k8s.io/apimachinery/pkg/watch",
     "k8s.io/client-go/discovery",
