@@ -91,8 +91,5 @@ func config(path string) (sgrpc.Config, error) {
 
 	var c sgrpc.Config
 	err = yaml.NewDecoder(file).Decode(&c)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not decode config")
-	}
-	return c, nil
+	return c, errors.Wrapf(err, "could not decode config")
 }
