@@ -259,7 +259,7 @@ func (s *Slurm) Resources(_ context.Context, req *api.ResourcesRequest) (*api.Re
 	return response, nil
 }
 
-// Partitions returns partition names
+// Partitions returns partition names.
 func (s *Slurm) Partitions(context.Context, *api.PartitionsRequest) (*api.PartitionsResponse, error) {
 	names, err := s.client.Partitions()
 	if err != nil {
