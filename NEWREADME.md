@@ -3,7 +3,7 @@
 *SLURM operator* is an implementation for kubernetes operator which provides a possibility to submit and to track job on a SLURM cluster with the use of kubernetes advantages, such as scheduling and volumes. Kubernetes integrates with slurm as one to mane, one kubernets cluster and many SLURM clusters. Each SLURM partition (quque) is presented in Kubernetes as a dedicated node (virtual-kubelet). *SLURM operator* can automaticaly discover SLURM partition capabilites (CPU, memory, nodes, WallTime) and propogate them to k8s as node labels. Those node labes are used for k8s scheduling. So based on job resources requiremtes can k8s itself select SLURM partition on which to start a job.
 
 <p align="center">
-  <img width="640" height="400" src="/docs/login-node-integration.png">
+  <img style="width:100%;" height="400" src="/docs/login-node-integration.png">
 </p>
 
 ## Installation
