@@ -78,9 +78,10 @@ func main() {
 
 func config(path string) (sgrpc.Config, error) {
 	if path == "" {
-		// return default value for map so any read will return
-		// default value for PartitionResources
-		return nil, nil
+		// sgrpc.Config is a map under the hood, and the default config is empty.
+		// Here we return default value for map - nil. This will make any further
+		// read successful, and fetched values will be empty PartitionResources.
+		return sgrpc.Config(nil), nil
 	}
 
 	file, err := os.Open(path)
