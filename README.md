@@ -1,5 +1,7 @@
 # Slurm-operator
 
+[![CircleCI](https://circleci.com/gh/sylabs/slurm-operator.svg?style=svg&circle-token=7222176bc78c1ddf7ea4ea615d2e568334e7ec0a)](https://circleci.com/gh/sylabs/slurm-operator)
+
 **Slurm operator** is a Kubernetes operator implementation, capable of submitting and
 monitoring Slurm jobs, while using all of Kubernetes features, such as smart scheduling and volumes.
 
