@@ -80,7 +80,7 @@ roleRef:
   kind: ClusterRole
   name: virtual-kubelet
 ---
-apiVersion: v1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: configurator

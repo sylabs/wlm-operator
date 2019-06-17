@@ -5,7 +5,7 @@ metadata:
 spec:
   batch: |
     #!/bin/sh
-    #SBATCH --nodes=1 --cpus-per-task=1
+    #SBATCH --nodes=1
     #SBATCH --output cow.out
     srun singularity pull -U library://sylabsed/examples/lolcow
     srun singularity run lolcow_latest.sif
