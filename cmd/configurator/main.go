@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"time"
 
@@ -34,12 +33,6 @@ var (
 	kubeletImage   = os.Getenv("KUBELET_IMAGE")
 	hostNodeName   = os.Getenv("HOST_NAME")
 	namespace      = os.Getenv("NAMESPACE")
-
-	uidEnv = os.Getenv("VK_UID")
-	gidEnv = os.Getenv("VK_GID")
-
-	uid int64
-	gid int64
 )
 
 func main() {
@@ -47,22 +40,6 @@ func main() {
 
 	if namespace == "" {
 		namespace = "default"
-	}
-
-	if uidEnv != "" {
-		id, err := strconv.ParseInt(uidEnv, 10, 0)
-		if err != nil {
-			log.Fatalf("can't parse uid %s", err)
-		}
-		uid = id
-	}
-
-	if gidEnv != "" {
-		id, err := strconv.ParseInt(gidEnv, 10, 0)
-		if err != nil {
-			log.Fatalf("can't parse gid %s", err)
-		}
-		gid = id
 	}
 
 	// getting k8s config.
@@ -171,6 +148,9 @@ func deleteControllingPod(k8sClient *corev1.CoreV1Client, nodes []string) error 
 // virtualKubeletPodTemplate returns filled pod model ready to be created in k8s.
 // Kubelet pod will create virtual node that will be responsible for handling Slurm jobs.
 func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
+	uid := int64(os.Geteuid())
+	gid := int64(os.Getgid())
+
 	return &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: partitionNodeName(partitionName, nodeName),
