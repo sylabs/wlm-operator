@@ -18,7 +18,7 @@ clean:
 
 .PHONY: test
 test:
-	$(V)go test -v -coverpkg=./... -coverprofile=cover.out -race ./...
+	$(V)go test -v -coverprofile=cover.out -race ./...
 
 .PHONY: lint
 lint:
