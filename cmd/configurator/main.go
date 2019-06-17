@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"time"
 
@@ -33,6 +34,12 @@ var (
 	kubeletImage   = os.Getenv("KUBELET_IMAGE")
 	hostNodeName   = os.Getenv("HOST_NAME")
 	namespace      = os.Getenv("NAMESPACE")
+
+	uidEnv = os.Getenv("VK_UID")
+	gidEnv = os.Getenv("VK_GID")
+
+	uid int64
+	gid int64
 )
 
 func main() {
@@ -40,6 +47,22 @@ func main() {
 
 	if namespace == "" {
 		namespace = "default"
+	}
+
+	if uidEnv != "" {
+		id, err := strconv.ParseInt(uidEnv, 10, 0)
+		if err != nil {
+			log.Fatalf("can't parse uid %s", err)
+		}
+		uid = id
+	}
+
+	if gidEnv != "" {
+		id, err := strconv.ParseInt(gidEnv, 10, 0)
+		if err != nil {
+			log.Fatalf("can't parse gid %s", err)
+		}
+		gid = id
 	}
 
 	// getting k8s config.
@@ -270,6 +293,10 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 						},
 					},
 				},
+			},
+			SecurityContext: &v1.PodSecurityContext{
+				RunAsUser:  &uid,
+				RunAsGroup: &gid,
 			},
 		},
 	}
