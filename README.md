@@ -12,7 +12,7 @@ to Kubernetes by labeling virtual node. Those node labels will be respected duri
 job will appear only on a suitable partition with enough resources.
 
 <p align="center">
-  <img style="width:100%;" height="400" src="/docs/login-node-integration.png">
+  <img style="width:100%;" height="600" src="./docs/integration.svg">
 </p>
 
 ## Installation
