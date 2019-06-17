@@ -33,6 +33,9 @@ var (
 	kubeletImage   = os.Getenv("KUBELET_IMAGE")
 	hostNodeName   = os.Getenv("HOST_NAME")
 	namespace      = os.Getenv("NAMESPACE")
+
+	uid = int64(os.Geteuid())
+	gid = int64(os.Getgid())
 )
 
 func main() {
@@ -270,6 +273,10 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 						},
 					},
 				},
+			},
+			SecurityContext: &v1.PodSecurityContext{
+				RunAsUser:  &uid,
+				RunAsGroup: &gid,
 			},
 		},
 	}
