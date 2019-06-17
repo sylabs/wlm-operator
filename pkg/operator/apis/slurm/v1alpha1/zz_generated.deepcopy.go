@@ -110,13 +110,6 @@ func (in *SlurmJobSpec) DeepCopyInto(out *SlurmJobSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.Resources != nil {
-		in, out := &in.Resources, &out.Resources
-		*out = make(map[string]int64, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
 	if in.Results != nil {
 		in, out := &in.Results, &out.Results
 		*out = new(SlurmJobResults)

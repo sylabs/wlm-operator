@@ -45,11 +45,11 @@ SlurmctldLogFile=/var/log/slurm-llnl/slurmctld.log
 SlurmdDebug=3
 SlurmdLogFile=/var/log/slurm-llnl/slurmd.log
 NodeName=${HOST_NAME} CPUs=2 State=UNKNOWN
-PartitionName=debug Nodes=${HOST_NAME} Default=YES MaxTime=INFINITE State=UP
+PartitionName=debug Nodes=${HOST_NAME} Default=YES MaxTime=30 State=UP MaxMemPerNode=512 MaxCPUsPerNode=2 MaxNodes=1
 EOF
 )
 
-sudo sh -c "printf "%s" '${SLURM_CONFIG}' > /etc/slurm-llnl/slurm.conf"
+sudo sh -c "printf '%s\n' '${SLURM_CONFIG}' > /etc/slurm-llnl/slurm.conf"
 
 sudo chown vagrant /var/log/slurm-llnl
 sudo chown vagrant /var/lib/slurm-llnl/slurmctld

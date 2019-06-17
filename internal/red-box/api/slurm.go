@@ -20,32 +20,60 @@ import (
 	"log"
 	"time"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm"
-
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
-
 	"github.com/pkg/errors"
-
+	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
 )
 
-// Slurm implements WorkloadManagerServer
-type Slurm struct {
-	client *slurm.Client
+type (
+	// Slurm implements WorkloadManagerServer.
+	Slurm struct {
+		cfg    Config
+		client *slurm.Client
+	}
+
+	// Config is a red-box configuration for each partition available.
+	Config map[string]PartitionResources
+
+	// PartitionResources configure how red-box will see slurm partition resources.
+	// In auto mode red-box will attempt to query partition resources from slurm, but
+	// administrator can set up them manually.
+	PartitionResources struct {
+		AutoNodes      bool `yaml:"auto_nodes"`
+		AutoCPUPerNode bool `yaml:"auto_cpu_per_node"`
+		AutoMemPerNode bool `yaml:"auto_mem_per_node"`
+		AutoWallTime   bool `yaml:"auto_wall_time"`
+
+		Nodes      int64         `yaml:"nodes"`
+		CPUPerNode int64         `yaml:"cpu_per_node"`
+		MemPerNode int64         `yaml:"mem_per_node"`
+		WallTime   time.Duration `yaml:"wall_time"`
+
+		AdditionalFeatures []Feature `yaml:"additional_features"`
+	}
+
+	// Feature represents slurm partition feature.
+	Feature struct {
+		Name     string `yaml:"name"`
+		Version  string `yaml:"version"`
+		Quantity int64  `yaml:"quantity"`
+	}
+)
+
+// NewSlurm creates a new instance of Slurm.
+func NewSlurm(c *slurm.Client, cfg Config) *Slurm {
+	return &Slurm{client: c, cfg: cfg}
 }
 
-// NewSlurmAPI creates a new instance of Slurm
-func NewSlurmAPI(c *slurm.Client) *Slurm {
-	return &Slurm{client: c}
-}
-
-// SubmitJob submits job and returns id of it in case of success
-func (a *Slurm) SubmitJob(ctx context.Context, r *api.SubmitJobRequest) (*api.SubmitJobResponse, error) {
-	id, err := a.client.SBatch(r.Script)
+// SubmitJob submits job and returns id of it in case of success.
+func (s *Slurm) SubmitJob(ctx context.Context, req *api.SubmitJobRequest) (*api.SubmitJobResponse, error) {
+	// todo use client id from req
+	id, err := s.client.SBatch(req.Script, req.Partition)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't submit sbatch script")
+		return nil, errors.Wrap(err, "could not submit sbatch script")
 	}
 
 	return &api.SubmitJobResponse{
@@ -53,26 +81,26 @@ func (a *Slurm) SubmitJob(ctx context.Context, r *api.SubmitJobRequest) (*api.Su
 	}, nil
 }
 
-// CancelJob cancels job
-func (a *Slurm) CancelJob(ctx context.Context, r *api.CancelJobRequest) (*api.CancelJobResponse, error) {
-	if err := a.client.SCancel(r.JobId); err != nil {
-		return nil, errors.Wrapf(err, "can't cancel job %d", r.JobId)
+// CancelJob cancels job.
+func (s *Slurm) CancelJob(ctx context.Context, req *api.CancelJobRequest) (*api.CancelJobResponse, error) {
+	if err := s.client.SCancel(req.JobId); err != nil {
+		return nil, errors.Wrapf(err, "could not cancel job %d", req.JobId)
 	}
 
 	return &api.CancelJobResponse{}, nil
 }
 
-// JobInfo returns information about a job from 'scontrol show jobid'
-// Safe to call before job finished. After it could return an error
-func (a *Slurm) JobInfo(ctx context.Context, r *api.JobInfoRequest) (*api.JobInfoResponse, error) {
-	info, err := a.client.SJobInfo(r.JobId)
+// JobInfo returns information about a job from 'scontrol show jobid'.
+// Safe to call before job finished. After it could return an error.
+func (s *Slurm) JobInfo(ctx context.Context, req *api.JobInfoRequest) (*api.JobInfoResponse, error) {
+	info, err := s.client.SJobInfo(req.JobId)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't get job %d info", r.JobId)
+		return nil, errors.Wrapf(err, "could not get job %d info", req.JobId)
 	}
 
 	pInfo, err := mapSInfoToProtoInfo(info)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't convert slurm info into proto info")
+		return nil, errors.Wrap(err, "could not convert slurm info into proto info")
 	}
 
 	if len(pInfo) == 0 {
@@ -82,27 +110,27 @@ func (a *Slurm) JobInfo(ctx context.Context, r *api.JobInfoRequest) (*api.JobInf
 	return &api.JobInfoResponse{Info: pInfo}, nil
 }
 
-// JobSteps returns information about job steps from 'sacct'
-// Safe to call after job started. Before it could return an error
-func (a *Slurm) JobSteps(ctx context.Context, r *api.JobStepsRequest) (*api.JobStepsResponse, error) {
-	steps, err := a.client.SJobSteps(r.JobId)
+// JobSteps returns information about job steps from 'sacct'.
+// Safe to call after job started. Before it could return an error.
+func (s *Slurm) JobSteps(ctx context.Context, req *api.JobStepsRequest) (*api.JobStepsResponse, error) {
+	steps, err := s.client.SJobSteps(req.JobId)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't get job %d steps", r.JobId)
+		return nil, errors.Wrapf(err, "could not get job %d steps", req.JobId)
 	}
 
-	pSteps, err := mapSStepsToProtoSteps(steps)
+	pSteps, err := toProtoSteps(steps)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't convert slurm steps into proto steps")
+		return nil, errors.Wrap(err, "could not convert slurm steps into proto steps")
 	}
 
 	return &api.JobStepsResponse{JobSteps: pSteps}, nil
 }
 
-// OpenFile opens requested file and return chunks with bytes
-func (a *Slurm) OpenFile(r *api.OpenFileRequest, s api.WorkloadManager_OpenFileServer) error {
-	fd, err := a.client.Open(r.Path)
+// OpenFile opens requested file and return chunks with bytes.
+func (s *Slurm) OpenFile(r *api.OpenFileRequest, req api.WorkloadManager_OpenFileServer) error {
+	fd, err := s.client.Open(r.Path)
 	if err != nil {
-		return errors.Wrapf(err, "can't open file at %s", r.Path)
+		return errors.Wrapf(err, "could not open file at %s", r.Path)
 	}
 	defer fd.Close()
 
@@ -110,8 +138,8 @@ func (a *Slurm) OpenFile(r *api.OpenFileRequest, s api.WorkloadManager_OpenFileS
 	for {
 		n, err := fd.Read(buff)
 		if n > 0 {
-			if err := s.Send(&api.Chunk{Content: buff[:n]}); err != nil {
-				return errors.Wrap(err, "can't send chunk")
+			if err := req.Send(&api.Chunk{Content: buff[:n]}); err != nil {
+				return errors.Wrap(err, "could not send chunk")
 			}
 		}
 
@@ -127,19 +155,19 @@ func (a *Slurm) OpenFile(r *api.OpenFileRequest, s api.WorkloadManager_OpenFileS
 	return nil
 }
 
-// TailFile tails a file till close requested
+// TailFile tails a file till close requested.
 // To start receiving file bytes client should send a request with file path and action start,
 // to stop client should send a request with action readToEndAndClose (file path is not required)
-//  and after reaching end method will send EOF error
-func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
-	r, err := s.Recv()
+// and after reaching end method will send EOF error.
+func (s *Slurm) TailFile(req api.WorkloadManager_TailFileServer) error {
+	r, err := req.Recv()
 	if err != nil {
-		return errors.Wrap(err, "can't receive request")
+		return errors.Wrap(err, "could not receive request")
 	}
 
-	fd, err := a.client.Tail(r.Path)
+	fd, err := s.client.Tail(r.Path)
 	if err != nil {
-		return errors.Wrapf(err, "can't tail file at %s", r.Path)
+		return errors.Wrapf(err, "could not tail file at %s", r.Path)
 	}
 	defer func(p string) {
 		log.Printf("Tail file at %s finished", p)
@@ -147,10 +175,10 @@ func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 
 	requestCh := make(chan *api.TailFileRequest)
 	go func() {
-		r, err := s.Recv()
+		r, err := req.Recv()
 		if err != nil {
 			if err != io.EOF {
-				log.Printf("can't recive request err: %s", err)
+				log.Printf("could not recive request err: %s", err)
 			}
 			return
 		}
@@ -162,8 +190,8 @@ func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 
 	for {
 		select {
-		case <-s.Context().Done():
-			return s.Context().Err()
+		case <-req.Context().Done():
+			return req.Context().Err()
 		case r := <-requestCh:
 			if r.Action == api.TailAction_ReadToEndAndClose {
 				_ = fd.Close()
@@ -178,14 +206,70 @@ func (a *Slurm) TailFile(s api.WorkloadManager_TailFileServer) error {
 				continue
 			}
 
-			if err := s.Send(&api.Chunk{Content: buff[:n]}); err != nil {
-				return errors.Wrap(err, "can't send chunk")
+			if err := req.Send(&api.Chunk{Content: buff[:n]}); err != nil {
+				return errors.Wrap(err, "could not send chunk")
 			}
 		}
 	}
 }
 
-func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) {
+// Resources return available resources on slurm cluster in a requested partition.
+func (s *Slurm) Resources(_ context.Context, req *api.ResourcesRequest) (*api.ResourcesResponse, error) {
+	slurmResources, err := s.client.Resources(req.Partition)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not get resources for partition %s", req.Partition)
+	}
+
+	partitionResources := s.cfg[req.Partition]
+	response := &api.ResourcesResponse{
+		Nodes:      partitionResources.Nodes,
+		CpuPerNode: partitionResources.CPUPerNode,
+		MemPerNode: partitionResources.MemPerNode,
+		WallTime:   int64(partitionResources.WallTime.Seconds()),
+	}
+
+	for _, f := range slurmResources.Features {
+		response.Features = append(response.Features, &api.Feature{
+			Name:     f.Name,
+			Version:  f.Version,
+			Quantity: f.Quantity,
+		})
+	}
+	for _, f := range partitionResources.AdditionalFeatures {
+		response.Features = append(response.Features, &api.Feature{
+			Name:     f.Name,
+			Version:  f.Version,
+			Quantity: f.Quantity,
+		})
+	}
+
+	if partitionResources.AutoNodes || response.Nodes == 0 {
+		response.Nodes = slurmResources.Nodes
+	}
+	if partitionResources.AutoCPUPerNode || response.CpuPerNode == 0 {
+		response.CpuPerNode = slurmResources.CPUPerNode
+	}
+	if partitionResources.AutoMemPerNode || response.MemPerNode == 0 {
+		response.MemPerNode = slurmResources.MemPerNode
+	}
+	if partitionResources.AutoWallTime || response.WallTime == 0 {
+		response.WallTime = int64(slurmResources.WallTime.Seconds())
+	}
+
+	return response, nil
+}
+
+// Partitions returns partition names.
+func (s *Slurm) Partitions(context.Context, *api.PartitionsRequest) (*api.PartitionsResponse, error) {
+	names, err := s.client.Partitions()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get partition names")
+	}
+
+	return &api.PartitionsResponse{Partition: names}, nil
+}
+
+func toProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) {
 	pSteps := make([]*api.JobStepInfo, len(ss))
 
 	for i, s := range ss {
@@ -193,7 +277,7 @@ func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) 
 		if s.StartedAt != nil {
 			pt, err := ptypes.TimestampProto(*s.StartedAt)
 			if err != nil {
-				return nil, errors.Wrap(err, "can't convert started go time to proto time")
+				return nil, errors.Wrap(err, "could not convert started go time to proto time")
 			}
 
 			startedAt = pt
@@ -203,7 +287,7 @@ func mapSStepsToProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) 
 		if s.FinishedAt != nil {
 			pt, err := ptypes.TimestampProto(*s.FinishedAt)
 			if err != nil {
-				return nil, errors.Wrap(err, "can't convert finished go time to proto time")
+				return nil, errors.Wrap(err, "could not convert finished go time to proto time")
 			}
 
 			finishedAt = pt
@@ -234,7 +318,7 @@ func mapSInfoToProtoInfo(si []*slurm.JobInfo) ([]*api.JobInfo, error) {
 		if inf.SubmitTime != nil {
 			pt, err := ptypes.TimestampProto(*inf.SubmitTime)
 			if err != nil {
-				return nil, errors.Wrap(err, "can't convert submit go time to proto time")
+				return nil, errors.Wrap(err, "could not convert submit go time to proto time")
 			}
 
 			submitTime = pt
@@ -244,7 +328,7 @@ func mapSInfoToProtoInfo(si []*slurm.JobInfo) ([]*api.JobInfo, error) {
 		if inf.StartTime != nil {
 			pt, err := ptypes.TimestampProto(*inf.StartTime)
 			if err != nil {
-				return nil, errors.Wrap(err, "can't convert start go time to proto time")
+				return nil, errors.Wrap(err, "could not convert start go time to proto time")
 			}
 
 			startTime = pt

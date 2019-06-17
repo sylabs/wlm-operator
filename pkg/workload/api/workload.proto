@@ -38,11 +38,21 @@ service WorkloadManager {
     // OpenFile this call will watch file content changes and stream
     // new chunks continuously.
     rpc TailFile (stream TailFileRequest) returns (stream Chunk);
+    // Resources returns partition resources
+    // nodes, cpu, mem, wall-time and available features
+    rpc Resources (ResourcesRequest) returns (ResourcesResponse);
+
+    // Partitions returns a list of available partitions.
+    rpc Partitions (PartitionsRequest) returns (PartitionsResponse);
 }
 
 message SubmitJobRequest {
     // Bash script that will be submitted to a workload manager.
     string script = 1;
+    // Partition where job should be submitted.
+    string partition = 2;
+    // ID of a client who submitted this job.
+    string client_id = 3;
 }
 
 message SubmitJobResponse {
@@ -78,12 +88,35 @@ message JobStepsResponse {
     repeated JobStepInfo job_steps = 1;
 }
 
-
 message OpenFileRequest {
     // Path to file to open.
     string path = 1;
 }
 
+message ResourcesRequest {
+    // Partition which resources should be returned.
+    string partition = 1;
+}
+
+message ResourcesResponse {
+    // Number of nodes in the partition.
+    int64 nodes = 1;
+    // Number of cpus on each node.
+    int64 cpuPerNode = 2;
+    // Amount of memory on each node.
+    int64 memPerNode = 3;
+    // Wall time setting for the partition.
+    int64 wallTime = 4;
+    // Set of features of the partition.
+    repeated Feature features = 5;
+}
+
+message PartitionsRequest {
+}
+
+message PartitionsResponse {
+    repeated string partition = 1;
+}
 
 enum TailAction {
     Start = 0;
@@ -100,7 +133,10 @@ enum JobStatus {
     COMPLETED = 0;
     CANCELLED = 1;
     FAILED = 2;
-    UNKNOWN = 3;
+    TIMEOUT = 3;
+    PENDING = 4;
+
+    UNKNOWN = 10;
 }
 
 // JobInfo represents compete information about a single job.
@@ -160,4 +196,10 @@ message JobStepInfo {
 // Chunk is an arbitrary amount of bytes.
 message Chunk {
     bytes content = 1;
+}
+
+message Feature {
+    string name = 1;
+    string version = 2;
+    int64 quantity = 3;
 }

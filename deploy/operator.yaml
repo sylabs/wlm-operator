@@ -15,9 +15,8 @@ spec:
       serviceAccountName: slurm-operator
       containers:
         - name: slurm-operator
-          image: cloud.sylabs.io/library/slurm/operator:latest
+          image: cloud.sylabs.io/library/slurm/operator:staging
           imagePullPolicy: Always
-          args: ["-jc-uid", "1000","-jc-uid", "1000"]
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

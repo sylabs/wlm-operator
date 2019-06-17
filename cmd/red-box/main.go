@@ -23,38 +23,43 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/sylabs/slurm-operator/pkg/slurm"
-
+	"github.com/davecgh/go-spew/spew"
+	"github.com/pkg/errors"
 	sgrpc "github.com/sylabs/slurm-operator/internal/red-box/api"
+	"github.com/sylabs/slurm-operator/pkg/slurm"
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
-
 	"golang.org/x/sys/unix"
-
 	"google.golang.org/grpc"
+	"gopkg.in/yaml.v2"
 )
 
 func main() {
+	configPath := flag.String("config", "", "path to a red-box config")
 	sock := flag.String("socket", "/var/run/syslurm/red-box.sock", "unix socket to serve slurm API")
 	flag.Parse()
+
+	config, err := config(*configPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	spew.Dump(config)
 
 	ln, err := net.Listen("unix", *sock)
 	if err != nil {
 		log.Fatalf("Could not listen unix: %v", err)
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	s := grpc.NewServer()
-
 	c, err := slurm.NewClient()
 	if err != nil {
 		log.Fatalf("Could not create slurm client: %s", err)
 	}
 
-	a := sgrpc.NewSlurmAPI(c)
+	s := grpc.NewServer()
+	a := sgrpc.NewSlurm(c, config)
 	api.RegisterWorkloadManagerServer(s, a)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
@@ -69,4 +74,23 @@ func main() {
 		log.Fatalf("Could not serve requests: %v", err)
 	}
 	wg.Wait()
+}
+
+func config(path string) (sgrpc.Config, error) {
+	if path == "" {
+		// sgrpc.Config is a map under the hood, and the default config is empty.
+		// Here we return default value for map - nil. This will make any further
+		// read successful, and fetched values will be empty PartitionResources.
+		return sgrpc.Config(nil), nil
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not open config file")
+	}
+	defer file.Close()
+
+	var c sgrpc.Config
+	err = yaml.NewDecoder(file).Decode(&c)
+	return c, errors.Wrapf(err, "could not decode config")
 }

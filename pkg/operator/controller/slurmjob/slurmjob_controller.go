@@ -16,14 +16,12 @@ package slurmjob
 
 import (
 	"context"
-	"fmt"
+	"os"
 
 	"github.com/golang/glog"
 	slurmv1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,13 +46,12 @@ type Reconciler struct {
 }
 
 // NewReconciler returns a new SlurmJob controller.
-func NewReconciler(mgr manager.Manager, jcImage string, jcUID, jcGID int64) *Reconciler {
+func NewReconciler(mgr manager.Manager) *Reconciler {
 	r := &Reconciler{
-		client:  mgr.GetClient(),
-		scheme:  mgr.GetScheme(),
-		jcUID:   jcUID,
-		jcGID:   jcGID,
-		jcImage: jcImage,
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		jcUID:  int64(os.Getuid()),
+		jcGID:  int64(os.Getgid()),
 	}
 	return r
 }
@@ -108,7 +105,11 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	}
 
 	// Translate SlurmJob to Pod
-	sjPod := r.newPodForSJ(sj)
+	sjPod, err := r.newPodForSJ(sj)
+	if err != nil {
+		glog.Errorf("Could not translate slurm job into pod: %v", err)
+		return reconcile.Result{}, err
+	}
 
 	// Set SlurmJob instance as the owner and controller
 	err = controllerutil.SetControllerReference(sj, sjPod, r.scheme)
@@ -145,122 +146,4 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
-}
-
-// newPodForSJ returns a job-companion pod for the slurm job.
-func (r *Reconciler) newPodForSJ(sj *slurmv1alpha1.SlurmJob) *corev1.Pod {
-	labels := map[string]string{
-		"slurm-job": sj.Name,
-	}
-
-	// since we are running only slurm jobs, we need to be
-	// sure that pod will be allocated only on nodes with slurm support
-	selectorLabels := map[string]string{
-		"slurm.sylabs.io/workload-manager": "slurm",
-	}
-	for k, v := range sj.Spec.NodeSelector {
-		selectorLabels[k] = v
-	}
-
-	var resourceRequest corev1.ResourceList
-	for k, v := range sj.Spec.Resources {
-		if resourceRequest == nil {
-			resourceRequest = make(map[corev1.ResourceName]resource.Quantity)
-		}
-
-		q := resource.NewQuantity(v, resource.DecimalSI)
-		resourceRequest[corev1.ResourceName(k)] = *q
-	}
-	args := []string{
-		fmt.Sprintf("--batch=%s", sj.Spec.Batch),
-	}
-
-	if sj.Spec.Results != nil {
-		args = append(args, fmt.Sprintf("--cr-mount=%s", "/collect"))
-		if sj.Spec.Results.From != "" {
-			args = append(args, fmt.Sprintf("--file-to-collect=%s", sj.Spec.Results.From))
-		}
-	}
-
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      sj.Name + "-job",
-			Namespace: sj.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			SecurityContext: &corev1.PodSecurityContext{
-				RunAsUser:  &r.jcUID,
-				RunAsGroup: &r.jcGID,
-			},
-			Containers: []corev1.Container{
-				{
-					Name:            "jt1",
-					Image:           r.jcImage,
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Args:            args,
-					Resources: corev1.ResourceRequirements{
-						Requests: resourceRequest,
-						Limits:   resourceRequest,
-					},
-					Env: []corev1.EnvVar{
-						{
-							Name: "JOB_NAME",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "metadata.name",
-								},
-							},
-						}},
-					VolumeMounts: getVolumesMount(sj),
-				},
-			},
-			Volumes:       getVolumes(sj),
-			NodeSelector:  selectorLabels,
-			HostNetwork:   true,
-			RestartPolicy: corev1.RestartPolicyNever,
-		},
-	}
-}
-
-func getVolumes(cr *slurmv1alpha1.SlurmJob) []corev1.Volume {
-	var volumes []corev1.Volume
-
-	volumes = append(volumes,
-		corev1.Volume{
-			Name: "red-box-sock",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/var/run/syslurm/red-box.sock",
-					Type: &[]corev1.HostPathType{corev1.HostPathSocket}[0],
-				},
-			},
-		},
-	)
-
-	if cr.Spec.Results != nil {
-		volumes = append(volumes, cr.Spec.Results.Mount)
-	}
-
-	return volumes
-}
-
-func getVolumesMount(cr *slurmv1alpha1.SlurmJob) []corev1.VolumeMount {
-	var vms []corev1.VolumeMount
-	// default SLRUM config which have to exist on every k8s node. The config is managed and created by RD
-	vms = append(vms,
-		corev1.VolumeMount{
-			Name:      "red-box-sock",
-			MountPath: "/red-box.sock",
-		},
-	)
-
-	if cr.Spec.Results != nil {
-		vms = append(vms, corev1.VolumeMount{
-			Name:      cr.Spec.Results.Mount.Name,
-			MountPath: "/collect",
-		})
-	}
-
-	return vms
 }
