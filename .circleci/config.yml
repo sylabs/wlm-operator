@@ -167,7 +167,6 @@ workflows:
           filters:
             tags:
               only: /.*/
-          required:
+          requires:
             - build
-            - release_binaries
 
