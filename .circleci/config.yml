@@ -138,7 +138,7 @@ jobs:
       - run:
           name: Release binaries
           command: |
-            echo $(git describe --tags)
+            printenv
             GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG make release_binaries
 
 workflows:
