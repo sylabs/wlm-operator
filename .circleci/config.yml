@@ -23,7 +23,7 @@ jobs:
           name: Build red-box
           command: make
       - persist_to_workspace:
-          root: /tmp/bin
+          root: /tmp
           paths:
             - bin/red-box
 
