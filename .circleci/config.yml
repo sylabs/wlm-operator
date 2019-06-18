@@ -25,7 +25,7 @@ jobs:
       - persist_to_workspace:
           root: /go
           paths:
-            - bin/red-box
+            - src/github.com/sylabs/slurm-operator/bin/red-box
 
   test:
     docker:
