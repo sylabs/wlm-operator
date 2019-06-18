@@ -191,7 +191,7 @@ func parseResources(partitionInfo string) (*Resources, error) {
 
 // parsePartitionsNames extracts names from scontrol show partitions response.
 func parsePartitionsNames(raw string) []string {
-	const partitionName = "PartitionName"
+	const partitionNameF = "PartitionName"
 
 	partitions := strings.Split(strings.TrimSpace(raw), "\n\n")
 	names := make([]string, len(partitions))
@@ -199,7 +199,7 @@ func parsePartitionsNames(raw string) []string {
 	for i, p := range partitions {
 		for _, f := range strings.Fields(p) {
 			if s := strings.Split(f, "="); len(s) == 2 {
-				if s[0] == partitionName {
+				if s[0] == partitionNameF {
 					names[i] = s[1]
 				}
 			}
