@@ -165,6 +165,8 @@ workflows:
             - lint
       - release_binaries:
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^v.*/
           requires:
