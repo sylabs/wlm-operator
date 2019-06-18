@@ -11,17 +11,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"golang.org/x/sys/unix"
-
-	"google.golang.org/grpc"
-
 	"github.com/sylabs/slurm-operator/pkg/workload/api"
-
+	"golang.org/x/sys/unix"
+	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 )
@@ -80,7 +75,9 @@ func main() {
 	log.Println("Configurator is finished")
 }
 
-func watchPartitions(ctx context.Context, wg *sync.WaitGroup, slurmClient api.WorkloadManagerClient, k8sClient *corev1.CoreV1Client) {
+func watchPartitions(ctx context.Context, wg *sync.WaitGroup,
+	slurm api.WorkloadManagerClient, k8s *corev1.CoreV1Client) {
+
 	defer wg.Done()
 
 	for {
@@ -89,14 +86,14 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup, slurmClient api.Wo
 			return
 		case <-time.Tick(1 * time.Minute):
 			// getting SLURM partitions
-			partitionsResp, err := slurmClient.Partitions(context.Background(), &api.PartitionsRequest{})
+			partitionsResp, err := slurm.Partitions(context.Background(), &api.PartitionsRequest{})
 			if err != nil {
 				log.Printf("Can't get partitions %s", err)
 				continue
 			}
 
 			// gettings k8s nodes
-			nodes, err := k8sClient.Nodes().List(metav1.ListOptions{
+			nodes, err := k8s.Nodes().List(metav1.ListOptions{
 				LabelSelector: "type=virtual-kubelet",
 			})
 			if err != nil {
@@ -109,40 +106,39 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup, slurmClient api.Wo
 			// check which partitions are not yet represented in k8s
 			partitionToCreate := notIn(partitionsResp.Partition, nNames)
 			// creating pods for that partitions
-			if err := createNodeForPartitions(k8sClient, partitionToCreate); err != nil {
+			if err := createNodeForPartitions(k8s, partitionToCreate); err != nil {
 				log.Printf("Can't create partitions  %s", err)
 			}
 
 			// some partitions can be deleted from SLURM, so we need to delete pods
 			// which represent those deleted partitions
 			nodesToDelete := notIn(nNames, partitionsResp.Partition)
-			if err := deleteControllingPod(k8sClient, nodesToDelete); err != nil {
+			if err := deleteControllingPod(k8s, nodesToDelete); err != nil {
 				log.Printf("Can't delete controlling pod %s", err)
 			}
 		}
-
 	}
 }
 
-func createNodeForPartitions(k8sClient *corev1.CoreV1Client, partitions []string) error {
+func createNodeForPartitions(podsGetter corev1.PodsGetter, partitions []string) error {
 	for _, p := range partitions {
 		log.Printf("Creating pod for %s partition in %s namespace", p, namespace)
-		_, err := k8sClient.Pods(namespace).
-			Create(virtualKubeletPodTemplate(p, hostNodeName))
+		_, err := podsGetter.Pods(namespace).Create(virtualKubeletPodTemplate(p, hostNodeName))
 		if err != nil {
-			return errors.Wrap(err, "can't create pod for partition")
+			return errors.Wrapf(err, "could not create pod for %s partition", p)
 		}
 	}
 
 	return nil
 }
 
-func deleteControllingPod(k8sClient *corev1.CoreV1Client, nodes []string) error {
+func deleteControllingPod(podsGetter corev1.PodsGetter, nodes []string) error {
 	for _, n := range nodes {
 		nodeName := partitionNodeName(n, hostNodeName)
 		log.Printf("Deleting pod %s in %s namespace", nodeName, namespace)
-		if err := k8sClient.Pods(namespace).Delete(nodeName, &metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "can't delete pod")
+		err := podsGetter.Pods(namespace).Delete(nodeName, &metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "could not delete pod %s", nodeName)
 		}
 	}
 	return nil
