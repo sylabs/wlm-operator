@@ -53,7 +53,6 @@ gen:
 
 .PHONY: release_binaries
 release_binaries:
-	@echo ${RELEASE_TAG}
 	$(V)go get -u github.com/itchio/gothub
 	$(V)gothub upload --user sylabs \
 	--repo slurm-operator \
