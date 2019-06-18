@@ -165,10 +165,6 @@ workflows:
             - lint
     release_binaries:
       jobs:
-        - get_source
-        - build:
-            - required:
-                - get_source
         - release_binaries:
             filters:
               branches:
