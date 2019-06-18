@@ -166,7 +166,7 @@ workflows:
       - release-binaries:
           filters:
             tags:
-              only:/.*/
+              only: /.*/
           required:
             - build
             - release_binaries
