@@ -167,7 +167,8 @@ workflows:
           filters:
             tags:
               only: /.*/
-          ignore: /.*/
+            branches:
+              ignore: /.*/
           requires:
             - build
 
