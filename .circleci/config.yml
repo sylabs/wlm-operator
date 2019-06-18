@@ -143,18 +143,32 @@ workflows:
   version: 2
   build_test_publish:
     jobs:
-      - get_source
+      - get_source:
+          filters:
+            tags:
+              only: /.*/
       - build:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - get_source
       - test:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - get_source
       - lint:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - get_source
       - publish:
           filters:
+            tags:
+              only: /.*/
             branches:
               only:
                 - master
