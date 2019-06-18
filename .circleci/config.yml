@@ -163,11 +163,17 @@ workflows:
             - build
             - test
             - lint
-      - release_binaries:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-          requires:
-            - build
+    release_binaries:
+      jobs:
+        - get_source
+        - build:
+            - required:
+                - get_source
+        - release_binaries:
+            filters:
+              branches:
+                ignore: /.*/
+              tags:
+                only: /.*/
+            requires:
+              - build
