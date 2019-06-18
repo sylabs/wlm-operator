@@ -18,10 +18,14 @@ jobs:
     working_directory: /go/src/github.com/sylabs/slurm-operator
     steps:
       - attach_workspace:
-          at: ~/go
+          at: /go
       - run:
           name: Build red-box
           command: make
+      - persist_to_workspace:
+          root: /tmp/bin
+          paths:
+            - bin/red-box
 
   test:
     docker:
@@ -29,7 +33,7 @@ jobs:
     working_directory: /go/src/github.com/sylabs/slurm-operator
     steps:
       - attach_workspace:
-          at: ~/go
+          at: /go
       - run:
           name: Unit tests
           command: make test
@@ -40,7 +44,7 @@ jobs:
     working_directory: /go/src/github.com/sylabs/slurm-operator
     steps:
       - attach_workspace:
-          at: ~/go
+          at: /go
       - run:
           name: Install golangci-lint v1.15
           command: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
@@ -134,12 +138,14 @@ jobs:
     working_directory: /go/src/github.com/sylabs/slurm-operator
     steps:
       - attach_workspace:
-          at: ~/go
+          at: /go
+      - attach_workspace:
+          at: /tmp/bin
       - run:
           name: Release binaries
           command: |
             ls
-            GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG make release_binaries
+            GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG BINARY_PATH=/tmp/bin/red-box make release_binaries
 
 workflows:
   version: 2
