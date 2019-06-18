@@ -50,3 +50,13 @@ dep:
 .PHONY: gen
 gen:
 	$(V)go generate generate.go
+
+.PHONY: release_binaries
+release_binaries:
+	$(V)go get -u github.com/itchio/gothub
+	$(V)gothub upload --user sylabs \
+	--repo slurm-operator \
+	--tag ${RELEASE_TAG} \
+	--name "red-box" \
+	--file ${BINARY_PATH}
+
