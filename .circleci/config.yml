@@ -166,10 +166,7 @@ workflows:
       - release_binaries:
           filters:
             tags:
-              only: /^v1.*/
-            branches:
-              only:
-                - master
+              only: /^v.*/
           requires:
             - build
 
