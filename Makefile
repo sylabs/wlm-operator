@@ -58,5 +58,5 @@ release_binaries:
 	--repo slurm-operator \
 	--tag ${RELEASE_TAG} \
 	--name "red-box" \
-	--file bin/red-box
+	--file "bin/red-box"
 
