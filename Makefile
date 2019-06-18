@@ -22,16 +22,7 @@ test:
 
 .PHONY: lint
 lint:
-	$(V)golangci-lint run --disable-all \
-	--enable=gofmt \
-	--enable=goimports \
-	--enable=vet \
-	--enable=misspell \
-	--enable=maligned \
-	--enable=deadcode \
-	--enable=ineffassign \
-	--enable=golint \
-	--deadline=3m ./...
+	$(V)golangci-lint run
 
 .PHONY: push
 push: TAG=latest
