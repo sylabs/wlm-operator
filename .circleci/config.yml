@@ -23,9 +23,9 @@ jobs:
           name: Build red-box
           command: make
       - persist_to_workspace:
-          root: /tmp
+          root: /go
           paths:
-            - bin/red-box
+            - build/red-box
 
   test:
     docker:
@@ -145,7 +145,7 @@ jobs:
           name: Release binaries
           command: |
             ls
-            GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG BINARY_PATH=/tmp/bin/red-box make release_binaries
+            GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG BINARY_PATH=/go/build/red-box make release_binaries
 
 workflows:
   version: 2
