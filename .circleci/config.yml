@@ -137,7 +137,7 @@ jobs:
           at: /go
       - run:
           name: Release binaries
-          command: GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG make release-binaries
+          command: GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG make release_binaries
 
 workflows:
   version: 2
