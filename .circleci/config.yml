@@ -125,9 +125,6 @@ workflows:
       - test:
           requires:
             - get_source
-      - lint:
-          requires:
-            - get_source
       - publish:
           filters:
             branches:
@@ -137,4 +134,3 @@ workflows:
           requires:
             - build
             - test
-            - lint
