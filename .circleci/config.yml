@@ -138,8 +138,7 @@ jobs:
       - run:
           name: Release binaries
           command: |
-            echo $(ls bin)
-            echo $(ls)
+            ls
             GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG make release_binaries
 
 workflows:
@@ -185,7 +184,7 @@ workflows:
             tags:
               only: /.*/
             branches:
-              ignore: /.*/
+              only: /.*/
           requires:
             - build
 
