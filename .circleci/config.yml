@@ -136,9 +136,6 @@ jobs:
       - attach_workspace:
           at: /go
       - run:
-          name: Build red-box
-          command: make
-      - run:
           name: Release binaries
           command: GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG make release-binaries
 
@@ -170,4 +167,7 @@ workflows:
           filters:
             tags:
               only:/.*/
+          required:
+            - build
+            - release_binaries
 
