@@ -139,8 +139,6 @@ jobs:
     steps:
       - attach_workspace:
           at: /go
-      - attach_workspace:
-          at: /tmp/bin
       - run:
           name: Release binaries
           command: |
