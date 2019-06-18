@@ -128,6 +128,20 @@ jobs:
             chmod +x push.sh
             ./push.sh
 
+  release_binaries:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/sylabs/slurm-operator
+    steps:
+      - attach_workspace:
+          at: /go
+      - run:
+          name: Build red-box
+          command: make
+      - run:
+          name: Release binaries
+          command: GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG make release-binaries
+
 workflows:
   version: 2
   build_test_publish:
@@ -152,3 +166,8 @@ workflows:
             - build
             - test
             - lint
+      - release-binaries:
+          filters:
+            tags:
+              only:/.*/
+
