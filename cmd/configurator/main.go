@@ -76,7 +76,7 @@ func main() {
 }
 
 func watchPartitions(ctx context.Context, wg *sync.WaitGroup,
-	slurm api.WorkloadManagerClient, k8s *corev1.CoreV1Client) {
+	slurmClient api.WorkloadManagerClient, k8sClient *corev1.CoreV1Client) {
 
 	defer wg.Done()
 
@@ -86,14 +86,14 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup,
 			return
 		case <-time.Tick(1 * time.Minute):
 			// getting SLURM partitions
-			partitionsResp, err := slurm.Partitions(context.Background(), &api.PartitionsRequest{})
+			partitionsResp, err := slurmClient.Partitions(context.Background(), &api.PartitionsRequest{})
 			if err != nil {
 				log.Printf("Can't get partitions %s", err)
 				continue
 			}
 
 			// gettings k8s nodes
-			nodes, err := k8s.Nodes().List(metav1.ListOptions{
+			nodes, err := k8sClient.Nodes().List(metav1.ListOptions{
 				LabelSelector: "type=virtual-kubelet",
 			})
 			if err != nil {
@@ -106,14 +106,14 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup,
 			// check which partitions are not yet represented in k8s
 			partitionToCreate := notIn(partitionsResp.Partition, nNames)
 			// creating pods for that partitions
-			if err := createNodeForPartitions(k8s, partitionToCreate); err != nil {
+			if err := createNodeForPartitions(k8sClient, partitionToCreate); err != nil {
 				log.Printf("Can't create partitions  %s", err)
 			}
 
 			// some partitions can be deleted from SLURM, so we need to delete pods
 			// which represent those deleted partitions
 			nodesToDelete := notIn(nNames, partitionsResp.Partition)
-			if err := deleteControllingPod(k8s, nodesToDelete); err != nil {
+			if err := deleteControllingPod(k8sClient, nodesToDelete); err != nil {
 				log.Printf("Can't delete controlling pod %s", err)
 			}
 		}
