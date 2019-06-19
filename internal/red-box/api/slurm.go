@@ -188,6 +188,9 @@ func (s *Slurm) TailFile(req api.WorkloadManager_TailFileServer) error {
 
 	buff := make([]byte, 128)
 
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-req.Context().Done():
@@ -196,7 +199,7 @@ func (s *Slurm) TailFile(req api.WorkloadManager_TailFileServer) error {
 			if r.Action == api.TailAction_ReadToEndAndClose {
 				_ = fd.Close()
 			}
-		case <-time.Tick(100 * time.Millisecond):
+		case <-ticker.C:
 			n, err := fd.Read(buff)
 			if err != nil && n == 0 {
 				return err

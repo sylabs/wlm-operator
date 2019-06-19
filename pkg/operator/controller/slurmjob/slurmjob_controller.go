@@ -37,9 +37,8 @@ import (
 type Reconciler struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client  client.Client
-	scheme  *runtime.Scheme
-	jcImage string
+	client client.Client
+	scheme *runtime.Scheme
 
 	jcUID int64
 	jcGID int64

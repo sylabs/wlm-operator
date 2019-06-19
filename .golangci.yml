@@ -1,0 +1,57 @@
+run:
+  deadline: 3m
+
+linters:
+  enable-all: true
+  disable:
+    - depguard
+    - gochecknoglobals
+    - gochecknoinits
+    - prealloc
+    - errcheck
+
+linters-settings:
+  govet:
+    settings:
+      printf:
+        funcs:
+          - (github.com/golang/glog.Verbose).Infof
+          - github.com/golang/glog.Infof
+          - github.com/golang/glog.Warningf
+          - github.com/golang/glog.Errorf
+          - github.com/golang/glog.Fatalf
+          - github.com/golang/glog.Exitf
+  golint:
+    # minimal confidence for issues, default is 0.8
+    min-confidence: 0
+  gocyclo:
+    # minimal code complexity to report, 30 by default (but we recommend 10-20)
+    min-complexity: 20
+
+  lll:
+    tab-width: 4
+  prealloc:
+    simple: true
+
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - errcheck
+        - dupl
+        - gosec
+        - lll
+        - scopelint
+
+#    - path: pkg/server/runtime/streaming.go
+#      linters:
+#        - gocyclo
+
+    - path: generate.go
+      linters:
+        - lll
+
+  max-issues-per-linter: 0
+  max-same-issues: 0

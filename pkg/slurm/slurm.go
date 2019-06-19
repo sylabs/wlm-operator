@@ -245,13 +245,7 @@ func (*Client) Partitions() ([]string, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get partition info")
 	}
-
-	partitions, err := parsePartitionsNames(string(out))
-	if err != nil {
-		return nil, errors.Wrap(err, "could not parse partitions")
-	}
-
-	return partitions, nil
+	return parsePartitionsNames(string(out)), nil
 }
 
 func jobInfoFromScontrolResponse(jobInfo string) ([]*JobInfo, error) {

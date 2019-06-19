@@ -28,22 +28,15 @@ import (
 // nodes, time, mem, ntasks and/or (n)tasks-per-node.
 // A zero value is returned if corresponding value is not provided.
 func extractBatchResources(script string) (*slurm.Resources, error) {
-	const (
-		sbatchHeader     = "#SBATCH"
-		timeLimit        = "--time"
-		timeLimitShort   = "-t"
-		nodes            = "--nodes"
-		nodesShort       = "-N"
-		mem              = "--mem"
-		tasksPerNode     = "--ntasks-per-node"
-		cpusPerTask      = "--cpus-per-task"
-		cpusPerTaskShort = "-c"
-	)
+	const sbatchHeader = "#SBATCH"
 
+	var err error
 	var res slurm.Resources
+
 	s := bufio.NewScanner(strings.NewReader(script))
 	for s.Scan() {
 		line := s.Text()
+		// skip empty lines and shebang
 		if line == "" || strings.HasPrefix(line, "#!") {
 			continue
 		}
@@ -66,54 +59,72 @@ func extractBatchResources(script string) (*slurm.Resources, error) {
 				value = params[j+1]
 				j++
 			}
-
-			switch param {
-			case timeLimit, timeLimitShort:
-				duration, err := slurm.ParseDuration(value)
-				if err != nil && err != slurm.ErrDurationIsUnlimited {
-					return nil, errors.Wrapf(err, "could not parse time limit")
-				}
-				if duration != nil {
-					res.WallTime = *duration
-				}
-			case nodes, nodesShort:
-				i := strings.IndexByte(value, '-')
-				// we use min nodes value only
-				if i != -1 {
-					value = value[:i]
-				}
-				nodes, err := strconv.ParseInt(value, 10, 0)
-				if err != nil {
-					return nil, errors.Wrapf(err, "could not parse amount of nodes")
-				}
-				res.Nodes = nodes
-			case mem:
-				// suffixes are not supported yet
-				mem, err := strconv.ParseInt(value, 10, 0)
-				if err != nil {
-					return nil, errors.Wrapf(err, "could not parse memory")
-				}
-				res.MemPerNode = mem
-			case cpusPerTask, cpusPerTaskShort:
-				cpus, err := strconv.ParseInt(value, 10, 0)
-				if err != nil {
-					return nil, errors.Wrapf(err, "could not parse cpus per node")
-				}
-				if res.CPUPerNode == 0 {
-					res.CPUPerNode = 1
-				}
-				res.CPUPerNode *= cpus
-			case tasksPerNode:
-				tasks, err := strconv.ParseInt(value, 10, 0)
-				if err != nil {
-					return nil, errors.Wrapf(err, "could not parse tasks per node")
-				}
-				if res.CPUPerNode == 0 {
-					res.CPUPerNode = 1
-				}
-				res.CPUPerNode *= tasks
+			res, err = applySbatchParam(res, param, value)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
 	return &res, nil
+}
+
+func applySbatchParam(res slurm.Resources, param, value string) (slurm.Resources, error) {
+	const (
+		timeLimit        = "--time"
+		timeLimitShort   = "-t"
+		nodes            = "--nodes"
+		nodesShort       = "-N"
+		mem              = "--mem"
+		tasksPerNode     = "--ntasks-per-node"
+		cpusPerTask      = "--cpus-per-task"
+		cpusPerTaskShort = "-c"
+	)
+
+	switch param {
+	case timeLimit, timeLimitShort:
+		duration, err := slurm.ParseDuration(value)
+		if err != nil && err != slurm.ErrDurationIsUnlimited {
+			return slurm.Resources{}, errors.Wrapf(err, "could not parse time limit")
+		}
+		if duration != nil {
+			res.WallTime = *duration
+		}
+	case nodes, nodesShort:
+		i := strings.IndexByte(value, '-')
+		// we use min nodes value only
+		if i != -1 {
+			value = value[:i]
+		}
+		nodes, err := strconv.ParseInt(value, 10, 0)
+		if err != nil {
+			return slurm.Resources{}, errors.Wrapf(err, "could not parse amount of nodes")
+		}
+		res.Nodes = nodes
+	case mem:
+		// suffixes are not supported yet
+		mem, err := strconv.ParseInt(value, 10, 0)
+		if err != nil {
+			return slurm.Resources{}, errors.Wrapf(err, "could not parse memory")
+		}
+		res.MemPerNode = mem
+	case cpusPerTask, cpusPerTaskShort:
+		cpus, err := strconv.ParseInt(value, 10, 0)
+		if err != nil {
+			return slurm.Resources{}, errors.Wrapf(err, "could not parse cpus per node")
+		}
+		if res.CPUPerNode == 0 {
+			res.CPUPerNode = 1
+		}
+		res.CPUPerNode *= cpus
+	case tasksPerNode:
+		tasks, err := strconv.ParseInt(value, 10, 0)
+		if err != nil {
+			return slurm.Resources{}, errors.Wrapf(err, "could not parse tasks per node")
+		}
+		if res.CPUPerNode == 0 {
+			res.CPUPerNode = 1
+		}
+		res.CPUPerNode *= tasks
+	}
+	return res, nil
 }

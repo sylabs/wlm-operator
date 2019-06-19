@@ -307,8 +307,7 @@ func Test_parsePartitionsNames(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parsePartitionsNames(tt.in)
-			require.NoError(t, err)
+			got := parsePartitionsNames(tt.in)
 			require.EqualValues(t, tt.want, got)
 		})
 	}
