@@ -149,12 +149,6 @@ workflows:
               only: /.*/
           requires:
             - get_source
-      - lint:
-          filters:
-            tags:
-              only: /.*/
-          requires:
-            - get_source
       - publish:
           filters:
             tags:
@@ -166,7 +160,6 @@ workflows:
           requires:
             - build
             - test
-            - lint
       - release_binaries:
           filters:
             tags:
