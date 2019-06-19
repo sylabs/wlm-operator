@@ -84,7 +84,7 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup,
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.Tick(1 * time.Minute):
+		case <-time.Tick(10 * time.Second):
 			// getting SLURM partitions
 			partitionsResp, err := slurmClient.Partitions(context.Background(), &api.PartitionsRequest{})
 			if err != nil {
