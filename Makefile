@@ -3,12 +3,27 @@ V := @
 
 BIN_DIR := ./bin
 RED_BOX := $(BIN_DIR)/red-box
+CONFIGURATOR_CMD := $(BIN_DIR)/configurator
+OPERATOR_CMD := $(BIN_DIR)/operator
+RESULTS_CMD := $(BIN_DIR)/results
 
-all: $(RED_BOX)
+all: $(RED_BOX) $(CONFIGURATOR_CMD) $(OPERATOR_CMD) $(RESULTS_CMD)
 
 $(RED_BOX):
 	@echo " GO" $@
 	$(V)go build -o $(RED_BOX) ./cmd/red-box
+
+$(CONFIGURATOR_CMD):
+	@echo " GO" $@
+	$(V)go build -o $(CONFIGURATOR_CMD) ./cmd/configurator
+
+$(OPERATOR_CMD):
+	@echo " GO" $@
+	$(V)go build -o $(OPERATOR_CMD) ./cmd/operator
+
+$(RESULTS_CMD):
+	@echo " GO" $@
+	$(V)go build -o $(RESULTS_CMD) ./cmd/results
 
 .PHONY: clean
 clean:
