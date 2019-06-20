@@ -26,6 +26,7 @@ var (
 
 	serviceAccount = os.Getenv("SERVICE_ACCOUNT")
 	kubeletImage   = os.Getenv("KUBELET_IMAGE")
+	resultsImage   = os.Getenv("RESULTS_IMAGE")
 	hostNodeName   = os.Getenv("HOST_NAME")
 	namespace      = os.Getenv("NAMESPACE")
 
@@ -224,6 +225,10 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 						{
 							Name:  "APISERVER_KEY_LOCATION",
 							Value: "/kubelet.key",
+						},
+						{
+							Name:  "RESULTS_IMAGE",
+							Value: resultsImage,
 						},
 					},
 					VolumeMounts: []v1.VolumeMount{

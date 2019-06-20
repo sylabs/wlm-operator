@@ -115,6 +115,8 @@ spec:
                   fieldPath: spec.serviceAccountName
             - name: KUBELET_IMAGE
               value: "cloud.sylabs.io/library/slurm/vk:latest"
+            - name: RESULTS_IMAGE
+              value: "cloud.sylabs.io/library/slurm/results:latest"
       volumes:
         - name: syslurm-mount
           hostPath:
