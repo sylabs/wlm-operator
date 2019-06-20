@@ -80,7 +80,7 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup,
 
 	defer wg.Done()
 
-	t := time.Tick(10 * time.Second)
+	t := time.Tick(30 * time.Second)
 	for {
 		select {
 		case <-ctx.Done():
