@@ -36,6 +36,8 @@ import (
 )
 
 var (
+	version = "unknown"
+
 	redBoxSock = flag.String("sock", "", "path to red-box socket")
 
 	serviceAccount = os.Getenv("SERVICE_ACCOUNT")
@@ -49,6 +51,8 @@ var (
 )
 
 func main() {
+	fmt.Printf("version: %s\n", version)
+
 	flag.Parse()
 
 	if namespace == "" {

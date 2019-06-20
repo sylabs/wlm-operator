@@ -35,6 +35,8 @@ import (
 
 // Change below variables to serve metrics on different host or port.
 var (
+	version = "unknown"
+
 	metricsHost       = "0.0.0.0"
 	metricsPort int32 = 8383
 )
@@ -46,6 +48,8 @@ func printVersion() {
 }
 
 func main() {
+	fmt.Printf("version: %s\n", version)
+
 	// hack to disable logging to file
 	_ = flag.Set("logtostderr", "true")
 	flag.Parse()

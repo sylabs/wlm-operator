@@ -16,6 +16,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -33,7 +34,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var version = "unknown"
+
 func main() {
+	fmt.Printf("version: %s\n", version)
+
 	configPath := flag.String("config", "", "path to a red-box config")
 	sock := flag.String("socket", "/var/run/syslurm/red-box.sock", "unix socket to serve slurm API")
 	flag.Parse()
