@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 	"runtime"
 
 	"github.com/golang/glog"
@@ -49,10 +48,7 @@ func printVersion() {
 }
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "version" {
-		fmt.Println(version)
-		return
-	}
+	fmt.Printf("version: %s\n", version)
 
 	// hack to disable logging to file
 	_ = flag.Set("logtostderr", "true")

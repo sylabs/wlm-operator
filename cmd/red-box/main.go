@@ -37,10 +37,7 @@ import (
 var version = "unknown"
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "version" {
-		fmt.Println(version)
-		return
-	}
+	fmt.Printf("version: %s\n", version)
 
 	configPath := flag.String("config", "", "path to a red-box config")
 	sock := flag.String("socket", "/var/run/syslurm/red-box.sock", "unix socket to serve slurm API")
