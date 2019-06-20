@@ -102,7 +102,7 @@ jobs:
               TAG=${CIRCLE_BRANCH}
             fi
 
-            if ["${CIRCLE_TAG}" != ""]
+            if [ "${CIRCLE_TAG}" != "" ]
             then
               TAG=${CIRCLE_TAG}
             fi
