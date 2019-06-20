@@ -10,7 +10,7 @@ Stage: builder
 	export HOME=/root
 	export GOPATH=/go
 
-    LDFLAGS = -ldflags "-X main.version=`(git describe  --dirty --always 2>/dev/null || echo "unknown") \
+    export LDFLAGS=-ldflags "-X main.version=`(git describe  --dirty --always 2>/dev/null || echo "unknown") \
                   	| sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`"
 
 	apk update
