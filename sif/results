@@ -10,13 +10,12 @@ Stage: builder
 	export HOME=/root
 	export GOPATH=/go
 
-    export LDFLAGS='-ldflags "-X main.version=`(git describe  --dirty --always 2>/dev/null || echo "unknown") \
-                  	| sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`"'
-
 	apk update
 	apk add git && apk add ca-certificates
 	cd /usr/local/go/src/github.com/sylabs/slurm-operator
-	CGO_ENABLED=0 go build ${LDFLAGS} -o main cmd/results/main.go
+	CGO_ENABLED=0 go build -ldflags "-X main.version=`(git describe  --dirty --always 2>/dev/null || echo "unknown") \
+        	                        | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`" \
+        	                        -o main cmd/results/main.go
 
 Bootstrap: library
 From: library/default/busybox:1.28
