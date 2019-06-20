@@ -4,11 +4,14 @@ V := @
 BIN_DIR := ./bin
 RED_BOX := $(BIN_DIR)/red-box
 
+LDFLAGS = -ldflags "-X main.version=`(git describe  --dirty --always 2>/dev/null || echo "unknown") \
+          		| sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`"
+
 all: $(RED_BOX)
 
 $(RED_BOX):
 	@echo " GO" $@
-	$(V)go build -o $(RED_BOX) ./cmd/red-box
+	$(V)go build ${LDFLAGS} -o $(RED_BOX) ./cmd/red-box
 
 .PHONY: clean
 clean:

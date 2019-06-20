@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/golang/glog"
@@ -35,6 +36,8 @@ import (
 
 // Change below variables to serve metrics on different host or port.
 var (
+	version = "unknown"
+
 	metricsHost       = "0.0.0.0"
 	metricsPort int32 = 8383
 )
@@ -46,6 +49,11 @@ func printVersion() {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "version" {
+		fmt.Println(version)
+		return
+	}
+
 	// hack to disable logging to file
 	_ = flag.Set("logtostderr", "true")
 	flag.Parse()

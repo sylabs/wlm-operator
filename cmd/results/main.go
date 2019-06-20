@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -28,6 +29,8 @@ import (
 )
 
 var (
+	version = "unknown"
+
 	from = flag.String("from", "", "specify file name to collect")
 	to   = flag.String("to", "", "specify directory where to put file")
 
@@ -35,6 +38,11 @@ var (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "version" {
+		fmt.Println(version)
+		return
+	}
+
 	flag.Parse()
 
 	if *from == "" {
