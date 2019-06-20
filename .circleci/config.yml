@@ -102,6 +102,11 @@ jobs:
               TAG=${CIRCLE_BRANCH}
             fi
 
+            if ["${CIRCLE_TAG}" != ""]
+            then
+              TAG=${CIRCLE_TAG}
+            fi
+
             cd $GOPATH/src/github.com/sylabs/slurm-operator
             cat > push.sh <<EOF
             #!/usr/bin/expect -f
@@ -152,7 +157,7 @@ workflows:
       - publish:
           filters:
             tags:
-              ignore: /.*/
+              only: /.*/
             branches:
               only:
                 - master
