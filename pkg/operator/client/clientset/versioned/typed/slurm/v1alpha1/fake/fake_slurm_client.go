@@ -17,7 +17,7 @@
 package fake
 
 import (
-	v1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1"
+	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

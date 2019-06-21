@@ -24,7 +24,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/sylabs/slurm-operator/pkg/workload/api"
+	"github.com/sylabs/wlm-operator/pkg/workload/api"
 	"google.golang.org/grpc"
 )
 

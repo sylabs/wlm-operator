@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1"
+	"github.com/sylabs/wlm-operator/pkg/operator/apis/slurm/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 

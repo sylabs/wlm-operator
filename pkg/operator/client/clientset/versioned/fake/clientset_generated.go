@@ -17,9 +17,9 @@
 package fake
 
 import (
-	clientset "github.com/sylabs/slurm-operator/pkg/operator/client/clientset/versioned"
-	slurmv1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1"
-	fakeslurmv1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1/fake"
+	clientset "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned"
+	slurmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1"
+	fakeslurmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

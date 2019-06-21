@@ -4,18 +4,18 @@ jobs:
   get_source:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/slurm-operator
+    working_directory: /go/src/github.com/sylabs/wlm-operator
     steps:
       - checkout
       - persist_to_workspace:
           root: /go
           paths:
-            - src/github.com/sylabs/slurm-operator
+            - src/github.com/sylabs/wlm-operator
 
   build:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/slurm-operator
+    working_directory: /go/src/github.com/sylabs/wlm-operator
     steps:
       - attach_workspace:
           at: /go
@@ -25,12 +25,12 @@ jobs:
       - persist_to_workspace:
           root: /go
           paths:
-            - src/github.com/sylabs/slurm-operator/bin/red-box
+            - src/github.com/sylabs/wlm-operator/bin/red-box
 
   test:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/slurm-operator
+    working_directory: /go/src/github.com/sylabs/wlm-operator
     steps:
       - attach_workspace:
           at: /go
@@ -107,7 +107,7 @@ jobs:
               TAG=${CIRCLE_TAG}
             fi
 
-            cd $GOPATH/src/github.com/sylabs/slurm-operator
+            cd $GOPATH/src/github.com/sylabs/wlm-operator
             cat > push.sh <<EOF
             #!/usr/bin/expect -f
             set timeout -1
@@ -126,7 +126,7 @@ jobs:
   release_binaries:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/slurm-operator
+    working_directory: /go/src/github.com/sylabs/wlm-operator
     steps:
       - attach_workspace:
           at: /go

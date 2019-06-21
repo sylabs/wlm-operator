@@ -19,10 +19,10 @@ package v1alpha1
 import (
 	time "time"
 
-	slurmv1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/apis/slurm/v1alpha1"
-	versioned "github.com/sylabs/slurm-operator/pkg/operator/client/clientset/versioned"
-	internalinterfaces "github.com/sylabs/slurm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/client/listers/slurm/v1alpha1"
+	slurmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/slurm/v1alpha1"
+	versioned "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned"
+	internalinterfaces "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/listers/slurm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
