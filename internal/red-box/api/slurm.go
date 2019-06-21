@@ -29,6 +29,8 @@ import (
 	"github.com/sylabs/wlm-operator/pkg/workload/api"
 )
 
+var uid = int64(os.Getuid())
+
 type (
 	// Slurm implements WorkloadManagerServer.
 	Slurm struct {
@@ -285,7 +287,7 @@ func (s *Slurm) WorkloadInfo(context.Context, *api.WorkloadInfoRequest) (*api.Wo
 	return &api.WorkloadInfoResponse{
 		Name:    wlmName,
 		Version: sVersion,
-		Uid:     int64(os.Getuid()),
+		Uid:     uid,
 	}, nil
 }
 
