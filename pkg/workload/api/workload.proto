@@ -44,6 +44,9 @@ service WorkloadManager {
 
     // Partitions returns a list of available partitions.
     rpc Partitions (PartitionsRequest) returns (PartitionsResponse);
+
+    // WorkloadInfo provides info about workload (name, version, red-box uid)
+    rpc WorkloadInfo (WorkloadInfoRequest) returns (WorkloadInfoResponse);
 }
 
 message SubmitJobRequest {
@@ -116,6 +119,15 @@ message PartitionsRequest {
 
 message PartitionsResponse {
     repeated string partition = 1;
+}
+
+message WorkloadInfoRequest {
+}
+
+message WorkloadInfoResponse {
+    string name = 1;
+    string version = 2;
+    int64 uid = 3;
 }
 
 enum TailAction {

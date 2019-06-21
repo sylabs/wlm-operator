@@ -34,6 +34,7 @@ const (
 	scancelBinaryName  = "scancel"
 	scontrolBinaryName = "scontrol"
 	sacctBinaryName    = "sacct"
+	sinfoBinaryName    = "sinfo"
 
 	submitTime = "SubmitTime"
 	startTime  = "StartTime"
@@ -246,6 +247,22 @@ func (*Client) Partitions() ([]string, error) {
 		return nil, errors.Wrap(err, "could not get partition info")
 	}
 	return parsePartitionsNames(string(out)), nil
+}
+
+// Version returns slurm version
+func (*Client) Version() (string, error) {
+	cmd := exec.Command(sinfoBinaryName, "-V")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", errors.Wrap(err, "could not get slurm info")
+	}
+
+	s := strings.Split(string(out), " ")
+	if len(s) != 2 {
+		return "", errors.Wrapf(err, "could not parse sinfo response %s", string(out))
+	}
+
+	return s[1], nil
 }
 
 func jobInfoFromScontrolResponse(jobInfo string) ([]*JobInfo, error) {
