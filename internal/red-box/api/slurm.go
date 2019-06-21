@@ -273,7 +273,7 @@ func (s *Slurm) Partitions(context.Context, *api.PartitionsRequest) (*api.Partit
 	return &api.PartitionsResponse{Partition: names}, nil
 }
 
-// WorkloadInfo returns wlm info (name, version ,red-box uid)
+// WorkloadInfo returns wlm info (name, version, red-box uid)
 func (s *Slurm) WorkloadInfo(context.Context, *api.WorkloadInfoRequest) (*api.WorkloadInfoResponse, error) {
 	const wlmName = "slurm"
 
