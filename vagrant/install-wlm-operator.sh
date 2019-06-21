@@ -31,4 +31,4 @@ EOF
 
 sudo sh -c "printf '%s\n' '${RED_BOX_SERVICE}' >> /etc/systemd/system/red-box.service"
 sudo systemctl start red-box
-systemctl status red-box
+sudo systemctl status red-box
