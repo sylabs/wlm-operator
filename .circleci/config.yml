@@ -75,7 +75,7 @@ jobs:
           command: |
             mkdir $HOME/.singularity
             touch $HOME/.singularity/remote.yaml
-            echo $SYLABS_TOKEN > token
+            echo $E2E_AUTH_TOKEN > token
             singularity remote login --tokenfile token SylabsCloud
             singularity keys pull $SYLABS_KEY_FINGERPRINT
             echo $SYLABS_KEY_BASE64 | sed 's/ //g' | base64 -d - > key
@@ -155,6 +155,7 @@ workflows:
           requires:
             - get_source
       - publish:
+          context: scs-production
           filters:
             tags:
               only: /.*/
