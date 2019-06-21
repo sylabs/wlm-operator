@@ -111,7 +111,13 @@ type (
 // NewClient returns new local client.
 func NewClient() (*Client, error) {
 	var missing []string
-	for _, bin := range []string{sacctBinaryName, sbatchBinaryName, scancelBinaryName, scontrolBinaryName} {
+	for _, bin := range []string{
+		sacctBinaryName,
+		sbatchBinaryName,
+		scancelBinaryName,
+		scontrolBinaryName,
+		sinfoBinaryName,
+	} {
 		_, err := exec.LookPath(bin)
 		if err != nil {
 			missing = append(missing, bin)
