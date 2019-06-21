@@ -14,7 +14,7 @@ form.
 
 # Contributing
 
-When contributing to [sylabs/slurm-operator](https://github.com/sylabs/slurm-operator), it 
+When contributing to [sylabs/wlm-operator](https://github.com/sylabs/wlm-operator), it 
 is important to properly communicate the gist of the contribution. If it is a simple code or 
 editorial fix, simply explaining this within the GitHub Pull Request (PR) will suffice. But 
 if this is a larger fix or Enhancement, you are advised to first discuss the change

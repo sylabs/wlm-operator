@@ -24,8 +24,8 @@ import (
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
-	"github.com/sylabs/slurm-operator/pkg/slurm"
-	"github.com/sylabs/slurm-operator/pkg/workload/api"
+	"github.com/sylabs/wlm-operator/pkg/slurm"
+	"github.com/sylabs/wlm-operator/pkg/workload/api"
 )
 
 type (

@@ -27,10 +27,10 @@ Vagrant.configure("2") do |config|
          preserve_order: true,
          path: "install-master.sh",
          privileged: false
-        master.vm.provision "slurm-operator-master",
+        master.vm.provision "wlm-operator-master",
          type:"shell",
          preserve_order: true,
-         path: "install-slurm-operator-master.sh",
+         path: "install-wlm-operator-master.sh",
          privileged: false
     end
 
@@ -55,10 +55,10 @@ Vagrant.configure("2") do |config|
          preserve_order: true,
          path: "install-slurm.sh",
          privileged: false
-        node.vm.provision "slurm-operator",
+        node.vm.provision "wlm-operator",
          type:"shell",
          preserve_order: true,
-         path: "install-slurm-operator.sh",
+         path: "install-wlm-operator.sh",
          privileged: false
     end
   end

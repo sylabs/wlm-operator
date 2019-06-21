@@ -52,7 +52,7 @@ EOF
 
 SINGULARITY_REPO="github.com/sylabs/singularity"
 SINGULARITY_CRI_REPO="github.com/sylabs/singularity-cri"
-SINGULARITY_SLURM_OPERATOR_REPO="github.com/sylabs/slurm-operator"
+SINGULARITY_WLM_OPERATOR_REPO="github.com/sylabs/wlm-operator"
 GOPATH="${HOME}/go"
 
 export DEBIAN_FRONTEND=noninteractive
@@ -79,7 +79,7 @@ cd ${GOPATH}/src/${SINGULARITY_REPO} && ./mconfig && cd ./builddir &&  make && s
 go get ${SINGULARITY_CRI_REPO}
 cd ${GOPATH}/src/${SINGULARITY_CRI_REPO} && make && sudo make install
 
-go get ${SINGULARITY_SLURM_OPERATOR_REPO}
+go get ${SINGULARITY_WLM_OPERATOR_REPO}
 
 sudo sh -c "printf '%s\n' '${SYCRI_SERVICE}' >> /etc/systemd/system/sycri.service"
 sudo systemctl start sycri

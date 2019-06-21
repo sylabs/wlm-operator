@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: slurm-operator
+  name: wlm-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: slurm-operator
+      name: wlm-operator
   template:
     metadata:
       labels:
-        name: slurm-operator
+        name: wlm-operator
     spec:
-      serviceAccountName: slurm-operator
+      serviceAccountName: wlm-operator
       containers:
-        - name: slurm-operator
+        - name: wlm-operator
           image: cloud.sylabs.io/library/slurm/operator:latest
           imagePullPolicy: Always
           env:
@@ -27,7 +27,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "slurm-operator"
+              value: "wlm-operator"
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000

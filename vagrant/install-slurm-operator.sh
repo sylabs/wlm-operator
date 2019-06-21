@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 GOPATH="${HOME}/go"
-SINGULARITY_SLURM_OPERATOR_REPO="github.com/sylabs/slurm-operator"
+SINGULARITY_WLM_OPERATOR_REPO="github.com/sylabs/wlm-operator"
 export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin
 
-cd ${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO} && make
+cd ${GOPATH}/src/${SINGULARITY_WLM_OPERATOR_REPO} && make
 cat > ${HOME}/config.yaml <<EOF
 debug:
   auto_nodes: true
@@ -25,7 +25,7 @@ RestartSec=30
 User=vagrant
 Group=vagrant
 WorkingDirectory=${HOME}
-ExecStart=${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO}/bin/red-box
+ExecStart=${GOPATH}/src/${SINGULARITY_WLM_OPERATOR_REPO}/bin/red-box
 EOF
 )
 

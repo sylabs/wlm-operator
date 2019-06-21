@@ -26,9 +26,9 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
-	sgrpc "github.com/sylabs/slurm-operator/internal/red-box/api"
-	"github.com/sylabs/slurm-operator/pkg/slurm"
-	"github.com/sylabs/slurm-operator/pkg/workload/api"
+	sgrpc "github.com/sylabs/wlm-operator/internal/red-box/api"
+	"github.com/sylabs/wlm-operator/pkg/slurm"
+	"github.com/sylabs/wlm-operator/pkg/workload/api"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"

@@ -19,7 +19,7 @@ package internalinterfaces
 import (
 	time "time"
 
-	versioned "github.com/sylabs/slurm-operator/pkg/operator/client/clientset/versioned"
+	versioned "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	cache "k8s.io/client-go/tools/cache"

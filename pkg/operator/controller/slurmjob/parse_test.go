@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/sylabs/slurm-operator/pkg/slurm"
+	"github.com/sylabs/wlm-operator/pkg/slurm"
 )
 
 func TestExtractBatchResources(t *testing.T) {

@@ -17,7 +17,7 @@
 package versioned
 
 import (
-	slurmv1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1"
+	slurmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

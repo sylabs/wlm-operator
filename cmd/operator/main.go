@@ -25,8 +25,8 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
-	"github.com/sylabs/slurm-operator/pkg/operator/apis"
-	"github.com/sylabs/slurm-operator/pkg/operator/controller/slurmjob"
+	"github.com/sylabs/wlm-operator/pkg/operator/apis"
+	"github.com/sylabs/wlm-operator/pkg/operator/controller/slurmjob"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -103,7 +103,7 @@ func main() {
 		glog.Infof("Failed to expose metrics port: %v", err)
 	}
 
-	glog.Info("Starting slurm-operator")
+	glog.Info("Starting wlm-operator")
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {

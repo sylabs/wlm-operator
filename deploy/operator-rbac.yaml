@@ -1,20 +1,20 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: slurm-operator
+  name: wlm-operator
 subjects:
   - kind: ServiceAccount
-    name: slurm-operator
+    name: wlm-operator
     namespace: default
 roleRef:
   kind: ClusterRole
-  name: slurm-operator
+  name: wlm-operator
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: slurm-operator
+  name: wlm-operator
 rules:
   - apiGroups:
       - ""
@@ -60,4 +60,4 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: slurm-operator
+  name: wlm-operator

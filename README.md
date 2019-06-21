@@ -1,6 +1,6 @@
 # Slurm-operator
 
-[![CircleCI](https://circleci.com/gh/sylabs/slurm-operator.svg?style=svg&circle-token=7222176bc78c1ddf7ea4ea615d2e568334e7ec0a)](https://circleci.com/gh/sylabs/slurm-operator)
+[![CircleCI](https://circleci.com/gh/sylabs/wlm-operator.svg?style=svg&circle-token=7222176bc78c1ddf7ea4ea615d2e568334e7ec0a)](https://circleci.com/gh/sylabs/wlm-operator)
 
 **Slurm operator** is a Kubernetes operator implementation, capable of submitting and
 monitoring Slurm jobs, while using all of Kubernetes features, such as smart scheduling and volumes.
@@ -39,12 +39,12 @@ of that user. Make sure the user has execute permissions for the following Slurm
 
 3. Pull the repo.
 ```bash
-go get -d github.com/sylabs/slurm-operator
+go get -d github.com/sylabs/wlm-operator
 ```
 
 4. Build and start *red-box* – a gRPC proxy between Kubernetes and a Slurm cluster.
 ```bash
-cd $GOPATH/github.com/sylabs/slurm-operator && make
+cd $GOPATH/github.com/sylabs/wlm-operator && make
 ```
 Use dedicated user from step 2 to run red-box, e.g. set up `User` in systemd red-box.service.
 By default red-box listens on `/var/run/syslurm/red-box.sock`, so you have to make sure the user has
@@ -205,7 +205,7 @@ partition3:
 
 ## Vagrant
 
-If you want to try slurm-operator locally before updating your production cluster, use vagrant that will automatically
+If you want to try wlm-operator locally before updating your production cluster, use vagrant that will automatically
 install and configure all necessary software:
 
 ```bash
