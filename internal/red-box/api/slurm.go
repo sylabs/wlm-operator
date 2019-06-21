@@ -18,6 +18,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"os"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -31,6 +32,7 @@ import (
 type (
 	// Slurm implements WorkloadManagerServer.
 	Slurm struct {
+		uid    int64
 		cfg    Config
 		client *slurm.Client
 	}
@@ -65,7 +67,7 @@ type (
 
 // NewSlurm creates a new instance of Slurm.
 func NewSlurm(c *slurm.Client, cfg Config) *Slurm {
-	return &Slurm{client: c, cfg: cfg}
+	return &Slurm{client: c, cfg: cfg, uid: int64(os.Geteuid())}
 }
 
 // SubmitJob submits job and returns id of it in case of success.
@@ -270,6 +272,22 @@ func (s *Slurm) Partitions(context.Context, *api.PartitionsRequest) (*api.Partit
 	}
 
 	return &api.PartitionsResponse{Partition: names}, nil
+}
+
+// WorkloadInfo returns wlm info (name, version, red-box uid)
+func (s *Slurm) WorkloadInfo(context.Context, *api.WorkloadInfoRequest) (*api.WorkloadInfoResponse, error) {
+	const wlmName = "slurm"
+
+	sVersion, err := s.client.Version()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get slurm version")
+	}
+
+	return &api.WorkloadInfoResponse{
+		Name:    wlmName,
+		Version: sVersion,
+		Uid:     s.uid,
+	}, nil
 }
 
 func toProtoSteps(ss []*slurm.JobStepInfo) ([]*api.JobStepInfo, error) {
