@@ -17,8 +17,8 @@
 package slurm
 
 import (
-	internalinterfaces "github.com/sylabs/slurm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/sylabs/slurm-operator/pkg/operator/client/informers/externalversions/slurm/v1alpha1"
+	internalinterfaces "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/slurm/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

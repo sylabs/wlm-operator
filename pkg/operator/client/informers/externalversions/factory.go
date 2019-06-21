@@ -21,9 +21,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/sylabs/slurm-operator/pkg/operator/client/clientset/versioned"
-	internalinterfaces "github.com/sylabs/slurm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
-	slurm "github.com/sylabs/slurm-operator/pkg/operator/client/informers/externalversions/slurm"
+	versioned "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned"
+	internalinterfaces "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
+	slurm "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/slurm"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

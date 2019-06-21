@@ -49,7 +49,7 @@ gen:
 release_binaries:
 	$(V)go get -u github.com/itchio/gothub
 	$(V)gothub upload --user sylabs \
-	--repo slurm-operator \
+	--repo wlm-operator \
 	--tag ${RELEASE_TAG} \
 	--name "red-box" \
 	--file ${BINARY_PATH}

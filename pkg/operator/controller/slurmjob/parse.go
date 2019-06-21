@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/slurm-operator/pkg/slurm"
+	"github.com/sylabs/wlm-operator/pkg/slurm"
 )
 
 // extractBatchResources extracts resources that should be satisfied for a slurm

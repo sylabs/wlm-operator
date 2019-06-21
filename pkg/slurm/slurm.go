@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/slurm-operator/pkg/tail"
+	"github.com/sylabs/wlm-operator/pkg/tail"
 )
 
 const (

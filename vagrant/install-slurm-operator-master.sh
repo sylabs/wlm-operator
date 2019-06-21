@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 GOPATH="${HOME}/go"
-SINGULARITY_SLURM_OPERATOR_REPO="github.com/sylabs/slurm-operator"
+SINGULARITY_WLM_OPERATOR_REPO="github.com/sylabs/wlm-operator"
 
-kubectl apply -f ${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO}/deploy/crds/slurm_v1alpha1_slurmjob.yaml
-kubectl apply -f ${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO}/deploy/operator-rbac.yaml
-kubectl apply -f ${GOPATH}/src/${SINGULARITY_SLURM_OPERATOR_REPO}/deploy/operator.yaml
+kubectl apply -f ${GOPATH}/src/${SINGULARITY_WLM_OPERATOR_REPO}/deploy/crds/slurm_v1alpha1_slurmjob.yaml
+kubectl apply -f ${GOPATH}/src/${SINGULARITY_WLM_OPERATOR_REPO}/deploy/operator-rbac.yaml
+kubectl apply -f ${GOPATH}/src/${SINGULARITY_WLM_OPERATOR_REPO}/deploy/operator.yaml

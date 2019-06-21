@@ -17,7 +17,7 @@
 package v1alpha1
 
 import (
-	internalinterfaces "github.com/sylabs/slurm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
+	internalinterfaces "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.
