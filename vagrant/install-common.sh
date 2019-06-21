@@ -56,10 +56,9 @@ SINGULARITY_CRI_REPO="https://github.com/sylabs/singularity-cri"
 SINGULARITY_WLM_OPERATOR_REPO="github.com/sylabs/wlm-operator"
 GOPATH="${HOME}/go"
 
+export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update
 sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev libseccomp-dev pkg-config squashfs-tools
-sudo dpkg-reconfigure libc6
-DEBIAN_FRONTEND=noninteractive sudo dpkg --configure libssl1.1
 
 export VERSION=1.12.6 OS=linux ARCH=amd64
 
@@ -79,7 +78,7 @@ cd ${HOME}/singularity && ./mconfig && cd ./builddir &&  make && sudo make insta
 git clone ${SINGULARITY_CRI_REPO} ${HOME}/singularity-cri
 cd ${HOME}/singularity-cri && make && sudo make install
 
-go get -d ${SINGULARITY_WLM_OPERATOR_REPO}
+git clone https://${SINGULARITY_WLM_OPERATOR_REPO} ${GOPATH}/src/${SINGULARITY_WLM_OPERATOR_REPO}
 
 sudo sh -c "printf '%s\n' '${SYCRI_SERVICE}' >> /etc/systemd/system/sycri.service"
 sudo systemctl start sycri
