@@ -29,8 +29,6 @@ import (
 	"github.com/sylabs/wlm-operator/pkg/workload/api"
 )
 
-const wlmName = "slurm"
-
 type (
 	// Slurm implements WorkloadManagerServer.
 	Slurm struct {
@@ -277,6 +275,8 @@ func (s *Slurm) Partitions(context.Context, *api.PartitionsRequest) (*api.Partit
 
 // WorkloadInfo returns wlm info (name, version ,red-box uid)
 func (s *Slurm) WorkloadInfo(context.Context, *api.WorkloadInfoRequest) (*api.WorkloadInfoResponse, error) {
+	const wlmName = "slurm"
+
 	sVersion, err := s.client.Version()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get slurm version")
