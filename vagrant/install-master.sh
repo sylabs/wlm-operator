@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-sudo kubeadm init --cri-socket="/var/run/singularity.sock" --ignore-preflight-errors=all --apiserver-advertise-address="192.168.60.10" --apiserver-cert-extra-sans="192.168.60.10"  --node-name k8s-master --pod-network-cidr=10.244.0.0/16
+sudo kubeadm init --cri-socket="/var/run/singularity.sock" \
+				  --ignore-preflight-errors=all \
+				  --apiserver-advertise-address="192.168.60.10" \
+				  --apiserver-cert-extra-sans="192.168.60.10"  \
+				  --node-name k8s-master --pod-network-cidr=10.244.0.0/16
 
 mkdir -p /home/vagrant/.kube
 sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config

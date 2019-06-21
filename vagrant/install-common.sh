@@ -37,7 +37,7 @@ sudo sh -c "printf '%s\n' '${NETWORK_CONFIG}' >> /etc/cni/net.d/11_bridge.confli
 
 export SYCRI_SERVICE=$(cat <<EOF
 [Unit]
-Description=Singularity-CRI daemon
+Description=Singularity-CRI
 StartLimitIntervalSec=0
 
 [Service]
@@ -46,7 +46,7 @@ Restart=always
 RestartSec=30
 User=root
 Group=root
-ExecStart=/home/vagrant/singularity-cri/bin/sycri
+ExecStart=${HOME}/singularity-cri/bin/sycri
 EOF
 )
 
@@ -57,8 +57,8 @@ SINGULARITY_WLM_OPERATOR_REPO="github.com/sylabs/wlm-operator"
 GOPATH="${HOME}/go"
 
 export DEBIAN_FRONTEND=noninteractive
-sudo apt-get update
-sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev libseccomp-dev pkg-config squashfs-tools
+sudo -Eapt-get update
+sudo -E apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev libseccomp-dev pkg-config squashfs-tools
 
 export VERSION=1.12.6 OS=linux ARCH=amd64
 
@@ -91,7 +91,7 @@ sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
 sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
-sudo apt-get install -y kubelet kubeadm kubectl
+sudo -E apt-get install -y kubelet kubeadm kubectl
 
 sudo modprobe br_netfilter
 sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
