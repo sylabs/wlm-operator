@@ -155,6 +155,7 @@ workflows:
           requires:
             - get_source
       - publish:
+          context: scs-production
           filters:
             tags:
               only: /.*/
@@ -165,8 +166,6 @@ workflows:
           requires:
             - build
             - test
-          context:
-            - scs-production
       - release_binaries:
           filters:
             tags:
