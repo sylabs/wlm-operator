@@ -50,8 +50,8 @@ EOF
 )
 
 
-SINGULARITY_REPO="github.com/sylabs/singularity"
-SINGULARITY_CRI_REPO="github.com/sylabs/singularity-cri"
+SINGULARITY_REPO="https://github.com/sylabs/singularity"
+SINGULARITY_CRI_REPO="https://github.com/sylabs/singularity-cri"
 SINGULARITY_WLM_OPERATOR_REPO="github.com/sylabs/wlm-operator"
 GOPATH="${HOME}/go"
 
@@ -73,11 +73,11 @@ mkdir ${HOME}/go
 
 export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin
 
-go get ${SINGULARITY_REPO}
-cd ${GOPATH}/src/${SINGULARITY_REPO} && ./mconfig && cd ./builddir &&  make && sudo make install
+git clone ${SINGULARITY_REPO} ${HOME}/singularity
+cd ${HOME}/singularity && ./mconfig && cd ./builddir &&  make && sudo make install
 
-go get ${SINGULARITY_CRI_REPO}
-cd ${GOPATH}/src/${SINGULARITY_CRI_REPO} && make && sudo make install
+git clone ${SINGULARITY_CRI_REPO} ${HOME}/singularity-cri
+cd ${HOME}/singularity-cri && make && sudo make install
 
 go get ${SINGULARITY_WLM_OPERATOR_REPO}
 
