@@ -57,7 +57,7 @@ SINGULARITY_WLM_OPERATOR_REPO="github.com/sylabs/wlm-operator"
 GOPATH="${HOME}/go"
 
 export DEBIAN_FRONTEND=noninteractive
-sudo -Eapt-get update
+sudo -E apt-get update
 sudo -E apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev libseccomp-dev pkg-config squashfs-tools
 
 export VERSION=1.12.6 OS=linux ARCH=amd64
