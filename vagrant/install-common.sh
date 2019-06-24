@@ -93,6 +93,16 @@ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
 sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
 sudo -E apt-get install -y kubelet kubeadm kubectl
 
+
+sudo touch /etc/crictl.yaml
+sudo chown vagrant:vagrant /etc/crictl.yaml
+cat >> /etc/crictl.yaml << EOF
+runtime-endpoint: unix:///var/run/singularity.sock
+image-endpoint: unix:///var/run/singularity.sock
+timeout: 10
+debug: false
+EOF
+
 sudo modprobe br_netfilter
 sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
 sudo sysctl -w net.ipv4.ip_forward=1
