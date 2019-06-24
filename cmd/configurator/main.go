@@ -182,7 +182,7 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 						"--nodename",
 						partitionNodeName(partitionName, nodeName),
 						"--provider",
-						"slurm",
+						"wlm",
 						"--startup-timeout",
 						"10s",
 					},
