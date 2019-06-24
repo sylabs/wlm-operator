@@ -19,7 +19,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/slurm/v1alpha1"
+	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -50,9 +50,9 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=slurm.sylabs.io, Version=v1alpha1
+	// Group=wlm.sylabs.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("slurmjobs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Slurm().V1alpha1().SlurmJobs().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Wlm().V1alpha1().SlurmJobs().Informer()}, nil
 
 	}
 

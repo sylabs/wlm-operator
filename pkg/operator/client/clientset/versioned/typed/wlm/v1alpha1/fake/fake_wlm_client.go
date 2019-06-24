@@ -17,22 +17,22 @@
 package fake
 
 import (
-	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1"
+	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/wlm/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeSlurmV1alpha1 struct {
+type FakeWlmV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeSlurmV1alpha1) SlurmJobs(namespace string) v1alpha1.SlurmJobInterface {
+func (c *FakeWlmV1alpha1) SlurmJobs(namespace string) v1alpha1.SlurmJobInterface {
 	return &FakeSlurmJobs{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeSlurmV1alpha1) RESTClient() rest.Interface {
+func (c *FakeWlmV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

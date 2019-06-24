@@ -19,10 +19,10 @@ package v1alpha1
 import (
 	time "time"
 
-	slurmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/slurm/v1alpha1"
+	wlmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
 	versioned "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned"
 	internalinterfaces "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/listers/slurm/v1alpha1"
+	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/listers/wlm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -59,16 +59,16 @@ func NewFilteredSlurmJobInformer(client versioned.Interface, namespace string, r
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SlurmV1alpha1().SlurmJobs(namespace).List(options)
+				return client.WlmV1alpha1().SlurmJobs(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SlurmV1alpha1().SlurmJobs(namespace).Watch(options)
+				return client.WlmV1alpha1().SlurmJobs(namespace).Watch(options)
 			},
 		},
-		&slurmv1alpha1.SlurmJob{},
+		&wlmv1alpha1.SlurmJob{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,7 +79,7 @@ func (f *slurmJobInformer) defaultInformer(client versioned.Interface, resyncPer
 }
 
 func (f *slurmJobInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&slurmv1alpha1.SlurmJob{}, f.defaultInformer)
+	return f.factory.InformerFor(&wlmv1alpha1.SlurmJob{}, f.defaultInformer)
 }
 
 func (f *slurmJobInformer) Lister() v1alpha1.SlurmJobLister {

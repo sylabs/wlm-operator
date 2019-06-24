@@ -17,7 +17,7 @@
 package fake
 
 import (
-	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/slurm/v1alpha1"
+	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -28,13 +28,13 @@ import (
 
 // FakeSlurmJobs implements SlurmJobInterface
 type FakeSlurmJobs struct {
-	Fake *FakeSlurmV1alpha1
+	Fake *FakeWlmV1alpha1
 	ns   string
 }
 
-var slurmjobsResource = schema.GroupVersionResource{Group: "slurm.sylabs.io", Version: "v1alpha1", Resource: "slurmjobs"}
+var slurmjobsResource = schema.GroupVersionResource{Group: "wlm.sylabs.io", Version: "v1alpha1", Resource: "slurmjobs"}
 
-var slurmjobsKind = schema.GroupVersionKind{Group: "slurm.sylabs.io", Version: "v1alpha1", Kind: "SlurmJob"}
+var slurmjobsKind = schema.GroupVersionKind{Group: "wlm.sylabs.io", Version: "v1alpha1", Kind: "SlurmJob"}
 
 // Get takes name of the slurmJob, and returns the corresponding slurmJob object, and an error if there is any.
 func (c *FakeSlurmJobs) Get(name string, options v1.GetOptions) (result *v1alpha1.SlurmJob, err error) {

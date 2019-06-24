@@ -23,7 +23,7 @@ import (
 
 	versioned "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned"
 	internalinterfaces "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/internalinterfaces"
-	slurm "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/slurm"
+	wlm "github.com/sylabs/wlm-operator/pkg/operator/client/informers/externalversions/wlm"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -170,9 +170,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Slurm() slurm.Interface
+	Wlm() wlm.Interface
 }
 
-func (f *sharedInformerFactory) Slurm() slurm.Interface {
-	return slurm.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Wlm() wlm.Interface {
+	return wlm.New(f, f.namespace, f.tweakListOptions)
 }
