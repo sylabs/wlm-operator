@@ -38,6 +38,7 @@ rules:
       - get
       - patch
       - list
+      - delete
   - apiGroups:
       - ""
     resources:
