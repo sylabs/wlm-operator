@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/sylabs/wlm-operator/pkg/operator/apis/slurm/v1alpha1"
+	"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -64,7 +64,7 @@ srun rm lolcow_latest.sif
 							{
 								MatchExpressions: []corev1.NodeSelectorRequirement{
 									{
-										Key:      "slurm.sylabs.io/wall-time",
+										Key:      "wlm.sylabs.io/wall-time",
 										Operator: "Gt",
 										Values:   []string{"299"},
 									},
@@ -96,7 +96,7 @@ srun rm lolcow_latest.sif
 							{
 								MatchExpressions: []corev1.NodeSelectorRequirement{
 									{
-										Key:      "slurm.sylabs.io/nodes",
+										Key:      "wlm.sylabs.io/nodes",
 										Operator: "Gt",
 										Values:   []string{"6"},
 									},
@@ -128,7 +128,7 @@ srun rm lolcow_latest.sif
 							{
 								MatchExpressions: []corev1.NodeSelectorRequirement{
 									{
-										Key:      "slurm.sylabs.io/mem-per-node",
+										Key:      "wlm.sylabs.io/mem-per-node",
 										Operator: "Gt",
 										Values:   []string{"120059"},
 									},
@@ -160,7 +160,7 @@ srun rm lolcow_latest.sif
 							{
 								MatchExpressions: []corev1.NodeSelectorRequirement{
 									{
-										Key:      "slurm.sylabs.io/cpu-per-node",
+										Key:      "wlm.sylabs.io/cpu-per-node",
 										Operator: "Gt",
 										Values:   []string{"7"},
 									},
@@ -196,22 +196,22 @@ srun rm lolcow_latest.sif
 							{
 								MatchExpressions: []corev1.NodeSelectorRequirement{
 									{
-										Key:      "slurm.sylabs.io/nodes",
+										Key:      "wlm.sylabs.io/nodes",
 										Operator: "Gt",
 										Values:   []string{"6"},
 									},
 									{
-										Key:      "slurm.sylabs.io/wall-time",
+										Key:      "wlm.sylabs.io/wall-time",
 										Operator: "Gt",
 										Values:   []string{"86699"},
 									},
 									{
-										Key:      "slurm.sylabs.io/mem-per-node",
+										Key:      "wlm.sylabs.io/mem-per-node",
 										Operator: "Gt",
 										Values:   []string{"120059"},
 									},
 									{
-										Key:      "slurm.sylabs.io/cpu-per-node",
+										Key:      "wlm.sylabs.io/cpu-per-node",
 										Operator: "Gt",
 										Values:   []string{"15"},
 									},

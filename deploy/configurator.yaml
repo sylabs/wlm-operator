@@ -38,6 +38,7 @@ rules:
       - get
       - patch
       - list
+      - delete
   - apiGroups:
       - ""
     resources:
@@ -61,7 +62,7 @@ rules:
       - patch
   - apiGroups:
       - ""
-      - slurm.sylabs.io
+      - wlm.sylabs.io
     resources:
       - slurmjobs
     verbs:

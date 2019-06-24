@@ -19,7 +19,7 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	slurmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/slurm/v1alpha1"
+	wlmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -65,7 +65,7 @@ func (r *Reconciler) AddToManager(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to primary resource SlurmJob
-	err = c.Watch(&source.Kind{Type: &slurmv1alpha1.SlurmJob{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &wlmv1alpha1.SlurmJob{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (r *Reconciler) AddToManager(mgr manager.Manager) error {
 	// Watch for changes to secondary resource Pods and requeue the owner SlurmJob
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &slurmv1alpha1.SlurmJob{},
+		OwnerType:    &wlmv1alpha1.SlurmJob{},
 	})
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	glog.Infof("Received reconcile request: %v", req)
 
 	// Fetch the SlurmJob instance
-	sj := &slurmv1alpha1.SlurmJob{}
+	sj := &wlmv1alpha1.SlurmJob{}
 	err := r.client.Get(context.Background(), req.NamespacedName, sj)
 	if err != nil {
 		if errors.IsNotFound(err) {

@@ -1,4 +1,4 @@
-apiVersion: slurm.sylabs.io/v1alpha1
+apiVersion: wlm.sylabs.io/v1alpha1
 kind: SlurmJob
 metadata:
   name: cow
@@ -11,7 +11,7 @@ spec:
     srun singularity run lolcow_latest.sif
     srun rm lolcow_latest.sif
   nodeSelector:
-    slurm.sylabs.io/containers: singularity
+    wlm.sylabs.io/containers: singularity
   results:
     from: cow.out
     mount:

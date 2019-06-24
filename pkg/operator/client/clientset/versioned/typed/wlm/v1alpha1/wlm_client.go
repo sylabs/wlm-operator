@@ -17,28 +17,28 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/slurm/v1alpha1"
+	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
 	"github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/scheme"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )
 
-type SlurmV1alpha1Interface interface {
+type WlmV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	SlurmJobsGetter
 }
 
-// SlurmV1alpha1Client is used to interact with features provided by the slurm.sylabs.io group.
-type SlurmV1alpha1Client struct {
+// WlmV1alpha1Client is used to interact with features provided by the wlm.sylabs.io group.
+type WlmV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *SlurmV1alpha1Client) SlurmJobs(namespace string) SlurmJobInterface {
+func (c *WlmV1alpha1Client) SlurmJobs(namespace string) SlurmJobInterface {
 	return newSlurmJobs(c, namespace)
 }
 
-// NewForConfig creates a new SlurmV1alpha1Client for the given config.
-func NewForConfig(c *rest.Config) (*SlurmV1alpha1Client, error) {
+// NewForConfig creates a new WlmV1alpha1Client for the given config.
+func NewForConfig(c *rest.Config) (*WlmV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -47,12 +47,12 @@ func NewForConfig(c *rest.Config) (*SlurmV1alpha1Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SlurmV1alpha1Client{client}, nil
+	return &WlmV1alpha1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new SlurmV1alpha1Client for the given config and
+// NewForConfigOrDie creates a new WlmV1alpha1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *SlurmV1alpha1Client {
+func NewForConfigOrDie(c *rest.Config) *WlmV1alpha1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -60,9 +60,9 @@ func NewForConfigOrDie(c *rest.Config) *SlurmV1alpha1Client {
 	return client
 }
 
-// New creates a new SlurmV1alpha1Client for the given RESTClient.
-func New(c rest.Interface) *SlurmV1alpha1Client {
-	return &SlurmV1alpha1Client{c}
+// New creates a new WlmV1alpha1Client for the given RESTClient.
+func New(c rest.Interface) *WlmV1alpha1Client {
+	return &WlmV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -80,7 +80,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *SlurmV1alpha1Client) RESTClient() rest.Interface {
+func (c *WlmV1alpha1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

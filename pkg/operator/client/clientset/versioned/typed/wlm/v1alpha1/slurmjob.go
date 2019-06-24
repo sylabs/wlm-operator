@@ -19,7 +19,7 @@ package v1alpha1
 import (
 	"time"
 
-	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/slurm/v1alpha1"
+	v1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
 	scheme "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -54,7 +54,7 @@ type slurmJobs struct {
 }
 
 // newSlurmJobs returns a SlurmJobs
-func newSlurmJobs(c *SlurmV1alpha1Client, namespace string) *slurmJobs {
+func newSlurmJobs(c *WlmV1alpha1Client, namespace string) *slurmJobs {
 	return &slurmJobs{
 		client: c.RESTClient(),
 		ns:     namespace,

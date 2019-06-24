@@ -18,8 +18,8 @@ package fake
 
 import (
 	clientset "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned"
-	slurmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1"
-	fakeslurmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/slurm/v1alpha1/fake"
+	wlmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/wlm/v1alpha1"
+	fakewlmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/client/clientset/versioned/typed/wlm/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -69,12 +69,12 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// SlurmV1alpha1 retrieves the SlurmV1alpha1Client
-func (c *Clientset) SlurmV1alpha1() slurmv1alpha1.SlurmV1alpha1Interface {
-	return &fakeslurmv1alpha1.FakeSlurmV1alpha1{Fake: &c.Fake}
+// WlmV1alpha1 retrieves the WlmV1alpha1Client
+func (c *Clientset) WlmV1alpha1() wlmv1alpha1.WlmV1alpha1Interface {
+	return &fakewlmv1alpha1.FakeWlmV1alpha1{Fake: &c.Fake}
 }
 
-// Slurm retrieves the SlurmV1alpha1Client
-func (c *Clientset) Slurm() slurmv1alpha1.SlurmV1alpha1Interface {
-	return &fakeslurmv1alpha1.FakeSlurmV1alpha1{Fake: &c.Fake}
+// Wlm retrieves the WlmV1alpha1Client
+func (c *Clientset) Wlm() wlmv1alpha1.WlmV1alpha1Interface {
+	return &fakewlmv1alpha1.FakeWlmV1alpha1{Fake: &c.Fake}
 }

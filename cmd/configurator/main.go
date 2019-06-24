@@ -306,7 +306,7 @@ func virtualKubeletPodTemplate(partitionName, nodeName string) *v1.Pod {
 func partitionNames(nodes []v1.Node) []string {
 	names := make([]string, 0)
 	for _, n := range nodes {
-		if l, ok := n.Labels["slurm.sylabs.io/partition"]; ok {
+		if l, ok := n.Labels["wlm.sylabs.io/partition"]; ok {
 			names = append(names, l)
 		}
 	}
