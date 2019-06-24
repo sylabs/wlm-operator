@@ -51,7 +51,7 @@ rules:
       - get
       - create
   - apiGroups:
-      - slurm.sylabs.io
+      - wlm.sylabs.io
     resources:
       - '*'
     verbs:

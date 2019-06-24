@@ -4,7 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: slurmjobs.slurm.sylabs.io
+  name: slurmjobs.wlm.sylabs.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .metadata.creationTimestamp
@@ -14,7 +14,7 @@ spec:
     description: status of the kind
     name: Status
     type: string
-  group: slurm.sylabs.io
+  group: wlm.sylabs.io
   names:
     kind: SlurmJob
     plural: slurmjobs
