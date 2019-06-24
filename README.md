@@ -73,7 +73,7 @@ The most convenient way to submit them is using YAML files, take a look at [basi
 We will walk thought basic example how to submit jobs to Slurm in Vagrant.
 
 ```yaml
-apiVersion: slurm.sylabs.io/v1alpha1
+apiVersion: wlm.sylabs.io/v1alpha1
 kind: SlurmJob
 metadata:
   name: cow
@@ -86,7 +86,7 @@ spec:
     srun singularity run lolcow_latest.sif
     srun rm lolcow_latest.sif
   nodeSelector:
-    slurm.sylabs.io/containers: singularity
+    wlm.sylabs.io/containers: singularity
   results:
     from: cow.out
     mount:
@@ -111,7 +111,7 @@ from configurator (see `runAsUser` in [configurator.yaml](./deploy/configurator.
 After that you can submit cow job:
 ```bash
 $ kubectl apply -f examples/cow.yaml 
-slurmjob.slurm.sylabs.io "cow" created
+slurmjob.wlm.sylabs.io "cow" created
 
 $ kubectl get slurmjob
 NAME   AGE   STATUS

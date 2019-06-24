@@ -1,4 +1,4 @@
-apiVersion: slurm.sylabs.io/v1alpha1
+apiVersion: wlm.sylabs.io/v1alpha1
 kind: SlurmJob
 metadata:
   name: fox
@@ -22,7 +22,7 @@ spec:
     rm -rf fox-result
     rm -rf fox
   nodeSelector:
-    slurm.sylabs.io/containers: singularity
+    wlm.sylabs.io/containers: singularity
   results:
     from: fox-result.tar.gz
     mount:

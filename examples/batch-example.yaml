@@ -1,4 +1,4 @@
-apiVersion: slurm.sylabs.io/v1alpha1
+apiVersion: wlm.sylabs.io/v1alpha1
 kind: SlurmJob
 metadata:
   name: slurm-batch-example
@@ -9,4 +9,4 @@ spec:
     srun sleep 5
     srun hostname
   nodeSelector:
-    slurm.sylabs.io/cuda: 10
+    wlm.sylabs.io/cuda: 10
