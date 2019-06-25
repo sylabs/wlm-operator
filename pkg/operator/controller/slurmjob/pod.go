@@ -115,7 +115,7 @@ func tolerationsForSj(_ *wlmv1alpha1.SlurmJob) []corev1.Toleration {
 		{
 			Key:      "virtual-kubelet.io/provider",
 			Operator: corev1.TolerationOpEqual,
-			Value:    "slurm",
+			Value:    "wlm",
 			Effect:   corev1.TaintEffectNoSchedule,
 		},
 	}
