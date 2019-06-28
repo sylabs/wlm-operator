@@ -26,6 +26,7 @@ import (
 type WlmV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	SlurmJobsGetter
+	WlmJobsGetter
 }
 
 // WlmV1alpha1Client is used to interact with features provided by the wlm.sylabs.io group.
@@ -35,6 +36,10 @@ type WlmV1alpha1Client struct {
 
 func (c *WlmV1alpha1Client) SlurmJobs(namespace string) SlurmJobInterface {
 	return newSlurmJobs(c, namespace)
+}
+
+func (c *WlmV1alpha1Client) WlmJobs(namespace string) WlmJobInterface {
+	return newWlmJobs(c, namespace)
 }
 
 // NewForConfig creates a new WlmV1alpha1Client for the given config.

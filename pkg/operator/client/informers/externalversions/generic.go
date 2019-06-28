@@ -53,6 +53,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=wlm.sylabs.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("slurmjobs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Wlm().V1alpha1().SlurmJobs().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("wlmjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Wlm().V1alpha1().WlmJobs().Informer()}, nil
 
 	}
 

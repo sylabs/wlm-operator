@@ -24,6 +24,8 @@ import (
 type Interface interface {
 	// SlurmJobs returns a SlurmJobInformer.
 	SlurmJobs() SlurmJobInformer
+	// WlmJobs returns a WlmJobInformer.
+	WlmJobs() WlmJobInformer
 }
 
 type version struct {
@@ -40,4 +42,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // SlurmJobs returns a SlurmJobInformer.
 func (v *version) SlurmJobs() SlurmJobInformer {
 	return &slurmJobInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// WlmJobs returns a WlmJobInformer.
+func (v *version) WlmJobs() WlmJobInformer {
+	return &wlmJobInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
