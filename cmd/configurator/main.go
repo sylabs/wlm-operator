@@ -38,7 +38,8 @@ import (
 var (
 	version = "unknown"
 
-	redBoxSock = flag.String("sock", "", "path to red-box socket")
+	redBoxSock     = flag.String("sock", "", "path to red-box socket")
+	updateInterval = flag.Duration("update-interval", 30*time.Second, "how often configurator checks state")
 
 	serviceAccount = os.Getenv("SERVICE_ACCOUNT")
 	kubeletImage   = os.Getenv("KUBELET_IMAGE")
@@ -99,12 +100,13 @@ func watchPartitions(ctx context.Context, wg *sync.WaitGroup,
 
 	defer wg.Done()
 
-	t := time.Tick(30 * time.Second)
+	t := time.NewTicker(*updateInterval)
+	defer t.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-t:
+		case <-t.C:
 			// getting SLURM partitions
 			partitionsResp, err := slurmClient.Partitions(context.Background(), &api.PartitionsRequest{})
 			if err != nil {
