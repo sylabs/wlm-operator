@@ -24,10 +24,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var errAffinityIsNotRequired = errors.New("affinity selectors is not required")
+
 // newPodForSJ returns a job-companion pod for the slurm job.
 func (r *Reconciler) newPodForSJ(sj *wlmv1alpha1.SlurmJob) (*corev1.Pod, error) {
 	affinity, err := affinityForSj(sj)
-	if err != nil {
+	if err != nil && err != errAffinityIsNotRequired {
 		return nil, errors.Wrap(err, "could not form slurm job pod affinity")
 	}
 
@@ -89,6 +91,11 @@ func affinityForSj(sj *wlmv1alpha1.SlurmJob) (*corev1.Affinity, error) {
 			Values:   []string{strconv.FormatInt(requiredResources.CPUPerNode-1, 10)},
 		})
 	}
+
+	if len(nodeMatch) == 0 {
+		return nil, errAffinityIsNotRequired
+	}
+
 	return &corev1.Affinity{
 		NodeAffinity: &corev1.NodeAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
