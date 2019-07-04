@@ -1,17 +1,19 @@
-# Slurm-operator
+# WLM-operator
 
 [![CircleCI](https://circleci.com/gh/sylabs/wlm-operator.svg?style=svg&circle-token=7222176bc78c1ddf7ea4ea615d2e568334e7ec0a)](https://circleci.com/gh/sylabs/wlm-operator)
 
-**Slurm operator** is a Kubernetes operator implementation, capable of submitting and
-monitoring Slurm jobs, while using all of Kubernetes features, such as smart scheduling and volumes.
+**WLM operator** is a Kubernetes operator implementation, capable of submitting and
+monitoring WLM jobs, while using all of Kubernetes features, such as smart scheduling and volumes.
 
-Slurm operator connects Kubernetes node with a whole Slurm cluster, which enables multi-cluster scheduling.
-In other words, Kubernetes integrates with Slurm as one to many.
+WLM operator connects Kubernetes node with a whole WLM cluster, which enables multi-cluster scheduling.
+In other words, Kubernetes integrates with WLM as one to many.
 
-Each Slurm partition(queue) is represented as a dedicated virtual node in Kubernetes. Slurm operator
-can automatically discover Slurm partition resources(CPUs, memory, nodes, wall-time) and propagates them
+Each WLM partition(queue) is represented as a dedicated virtual node in Kubernetes. WLM operator
+can automatically discover WLM partition resources(CPUs, memory, nodes, wall-time) and propagates them
 to Kubernetes by labeling virtual node. Those node labels will be respected during Slurm job scheduling so that a
 job will appear only on a suitable partition with enough resources.
+
+Right now WLM-operator supports only SLURM clusters. But it's easy to add a support for another WLM. For it you need to implement a [GRPc server](https://github.com/sylabs/wlm-operator/blob/master/pkg/workload/api/workload.proto). You can use [current SLURM implementation](https://github.com/sylabs/wlm-operator/blob/master/internal/red-box/api/slurm.go) as a reference.
 
 <p align="center">
   <img style="width:100%;" height="600" src="./docs/integration.svg">
@@ -201,7 +203,7 @@ partition3:
       version: 2080ti-cuda-7.0
       quantity: 20
 ```
- 
+
 
 ## Vagrant
 
