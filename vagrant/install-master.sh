@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-sudo kubeadm init --cri-socket="/var/run/singularity.sock" \
+sudo kubeadm init --cri-socket="unix:///var/run/singularity.sock" \
 				  --ignore-preflight-errors=all \
 				  --apiserver-advertise-address="192.168.60.10" \
 				  --apiserver-cert-extra-sans="192.168.60.10"  \
@@ -9,6 +9,7 @@ sudo kubeadm init --cri-socket="/var/run/singularity.sock" \
 mkdir -p /home/vagrant/.kube
 sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
 sudo chown vagrant:vagrant /home/vagrant/.kube/config
+cp /home/vagrant/.kube/config /sync/etc/config
 
 IPADDR=`ifconfig eth1 | grep inet | awk '{print $2}'| cut -f2 -d:`
 echo 'Environment="KUBELET_EXTRA_ARGS=--node-ip='${IPADDR}'"' | sudo tee -a /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
@@ -19,4 +20,4 @@ sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 
 export JOIN_COMMAND=$(kubeadm token create --print-join-command)
-printf "%s --ignore-preflight-errors=all --cri-socket=\"/var/run/singularity.sock\"\n" "${JOIN_COMMAND}" > /sync/etc/join.sh
+cat '${JOIN_COMMAND} --ignore-preflight-errors=all --cri-socket="unix:///var/run/singularity.sock"\n' > /sync/etc/join.sh

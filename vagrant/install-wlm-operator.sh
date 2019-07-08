@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 
-GOPATH="${HOME}/go"
-SINGULARITY_WLM_OPERATOR_REPO="github.com/sylabs/wlm-operator"
-export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin
-
-cd ${GOPATH}/src/${SINGULARITY_WLM_OPERATOR_REPO} && make
+make -C wlm-operator
 cat > ${HOME}/config.yaml <<EOF
 debug:
   auto_nodes: true
@@ -13,7 +9,7 @@ EOF
 sudo mkdir -p /var/run/syslurm
 sudo chown vagrant /var/run/syslurm
 
-export RED_BOX_SERVICE=$(cat <<EOF
+sudo sh -c 'cat  > /etc/systemd/system/red-box.service <<EOF
 [Unit]
 Description=Slurm operator red-box
 StartLimitIntervalSec=0
@@ -26,9 +22,6 @@ User=vagrant
 Group=vagrant
 WorkingDirectory=${HOME}
 ExecStart=${GOPATH}/src/${SINGULARITY_WLM_OPERATOR_REPO}/bin/red-box
-EOF
-)
-
-sudo sh -c "printf '%s\n' '${RED_BOX_SERVICE}' >> /etc/systemd/system/red-box.service"
+EOF'
 sudo systemctl start red-box
 sudo systemctl status red-box

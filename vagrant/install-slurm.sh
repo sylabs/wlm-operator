@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
 export DEBIAN_FRONTEND=noninteractive
-HOST_NAME=$(hostname)
-
 sudo -E apt-get install -y munge
 sudo -E apt-get install -y slurm-wlm slurm-wlm-basic-plugins
 
-SLURM_CONFIG=$(cat <<EOF
+export HOST_NAME=$(hostname)
+sudo sh -c 'cat > /etc/slurm-llnl/slurm.conf <<EOF
 ControlMachine=${HOST_NAME}
 AuthType=auth/munge
 CacheGroups=0
@@ -47,9 +46,7 @@ SlurmdDebug=3
 SlurmdLogFile=/var/log/slurm-llnl/slurmd.log
 NodeName=${HOST_NAME} CPUs=2 State=UNKNOWN
 PartitionName=debug Nodes=${HOST_NAME} Default=YES MaxTime=30 State=UP MaxMemPerNode=512 MaxCPUsPerNode=2 MaxNodes=1
-EOF
-)
-sudo sh -c "printf '%s\n' '${SLURM_CONFIG}' > /etc/slurm-llnl/slurm.conf"
+EOF'
 
 sudo chown vagrant /var/log/slurm-llnl
 sudo chown vagrant /var/lib/slurm-llnl/slurmctld
