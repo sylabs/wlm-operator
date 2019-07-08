@@ -45,10 +45,6 @@ issues:
         - lll
         - scopelint
 
-#    - path: pkg/server/runtime/streaming.go
-#      linters:
-#        - gocyclo
-
     - path: generate.go
       linters:
         - lll

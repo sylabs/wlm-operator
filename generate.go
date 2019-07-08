@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:golint
+//+build tools
+
 package wlm_operator
 
 //go:generate go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go crd --output-dir deploy/crds --apis-path pkg/operator/apis

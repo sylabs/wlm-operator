@@ -14,16 +14,6 @@ const (
 	eAry
 )
 
-var (
-	// SupportNegativeIndices decides whether to support non-standard practice of
-	// allowing negative indices to mean indices starting at the end of an array.
-	// Default to true.
-	SupportNegativeIndices bool = true
-	// AccumulatedCopySizeLimit limits the total size increase in bytes caused by
-	// "copy" operations in a patch.
-	AccumulatedCopySizeLimit int64 = 0
-)
-
 type lazyNode struct {
 	raw   *json.RawMessage
 	doc   partialDoc
@@ -69,20 +59,6 @@ func (n *lazyNode) UnmarshalJSON(data []byte) error {
 	n.raw = &dest
 	n.which = eRaw
 	return nil
-}
-
-func deepCopy(src *lazyNode) (*lazyNode, int, error) {
-	if src == nil {
-		return nil, 0, nil
-	}
-	a, err := src.MarshalJSON()
-	if err != nil {
-		return nil, 0, err
-	}
-	sz := len(a)
-	ra := make(json.RawMessage, sz)
-	copy(ra, a)
-	return newLazyNode(&ra), sz, nil
 }
 
 func (n *lazyNode) intoDoc() (*partialDoc, error) {
@@ -260,7 +236,7 @@ func (o operation) path() string {
 }
 
 func (o operation) from() string {
-	if obj, ok := o["from"]; ok && obj != nil {
+	if obj, ok := o["from"]; ok && obj != nil{
 		var op string
 
 		err := json.Unmarshal(*obj, &op)
@@ -366,14 +342,35 @@ func (d *partialDoc) remove(key string) error {
 	return nil
 }
 
-// set should only be used to implement the "replace" operation, so "key" must
-// be an already existing index in "d".
 func (d *partialArray) set(key string, val *lazyNode) error {
+	if key == "-" {
+		*d = append(*d, val)
+		return nil
+	}
+
 	idx, err := strconv.Atoi(key)
 	if err != nil {
 		return err
 	}
-	(*d)[idx] = val
+
+	sz := len(*d)
+	if idx+1 > sz {
+		sz = idx + 1
+	}
+
+	ary := make([]*lazyNode, sz)
+
+	cur := *d
+
+	copy(ary, cur)
+
+	if idx >= len(ary) {
+		return fmt.Errorf("Unable to access invalid index: %d", idx)
+	}
+
+	ary[idx] = val
+
+	*d = ary
 	return nil
 }
 
@@ -388,26 +385,17 @@ func (d *partialArray) add(key string, val *lazyNode) error {
 		return err
 	}
 
-	sz := len(*d) + 1
-
-	ary := make([]*lazyNode, sz)
+	ary := make([]*lazyNode, len(*d)+1)
 
 	cur := *d
 
-	if idx >= len(ary) {
+	if idx < -len(ary) || idx >= len(ary) {
 		return fmt.Errorf("Unable to access invalid index: %d", idx)
 	}
 
-	if SupportNegativeIndices {
-		if idx < -len(ary) {
-			return fmt.Errorf("Unable to access invalid index: %d", idx)
-		}
-
-		if idx < 0 {
-			idx += len(ary)
-		}
+	if idx < 0 {
+		idx += len(ary)
 	}
-
 	copy(ary[0:idx], cur[0:idx])
 	ary[idx] = val
 	copy(ary[idx+1:], cur[idx:])
@@ -438,18 +426,11 @@ func (d *partialArray) remove(key string) error {
 
 	cur := *d
 
-	if idx >= len(cur) {
-		return fmt.Errorf("Unable to access invalid index: %d", idx)
+	if idx < -len(cur) || idx >= len(cur) {
+		return fmt.Errorf("Unable to remove invalid index: %d", idx)
 	}
-
-	if SupportNegativeIndices {
-		if idx < -len(cur) {
-			return fmt.Errorf("Unable to access invalid index: %d", idx)
-		}
-
-		if idx < 0 {
-			idx += len(cur)
-		}
+	if idx < 0 {
+		idx += len(cur)
 	}
 
 	ary := make([]*lazyNode, len(cur)-1)
@@ -530,7 +511,7 @@ func (p Patch) move(doc *container, op operation) error {
 		return fmt.Errorf("jsonpatch move operation does not apply: doc is missing destination path: %s", path)
 	}
 
-	return con.add(key, val)
+	return con.set(key, val)
 }
 
 func (p Patch) test(doc *container, op operation) error {
@@ -553,8 +534,6 @@ func (p Patch) test(doc *container, op operation) error {
 			return nil
 		}
 		return fmt.Errorf("Testing value %s failed", path)
-	} else if op.value() == nil {
-		return fmt.Errorf("Testing value %s failed", path)
 	}
 
 	if val.equal(op.value()) {
@@ -564,7 +543,7 @@ func (p Patch) test(doc *container, op operation) error {
 	return fmt.Errorf("Testing value %s failed", path)
 }
 
-func (p Patch) copy(doc *container, op operation, accumulatedCopySize *int64) error {
+func (p Patch) copy(doc *container, op operation) error {
 	from := op.from()
 
 	con, key := findObject(doc, from)
@@ -586,16 +565,7 @@ func (p Patch) copy(doc *container, op operation, accumulatedCopySize *int64) er
 		return fmt.Errorf("jsonpatch copy operation does not apply: doc is missing destination path: %s", path)
 	}
 
-	valCopy, sz, err := deepCopy(val)
-	if err != nil {
-		return err
-	}
-	(*accumulatedCopySize) += int64(sz)
-	if AccumulatedCopySizeLimit > 0 && *accumulatedCopySize > AccumulatedCopySizeLimit {
-		return NewAccumulatedCopySizeError(AccumulatedCopySizeLimit, *accumulatedCopySize)
-	}
-
-	return con.add(key, valCopy)
+	return con.set(key, val)
 }
 
 // Equal indicates if 2 JSON documents have the same structural equality.
@@ -648,8 +618,6 @@ func (p Patch) ApplyIndent(doc []byte, indent string) ([]byte, error) {
 
 	err = nil
 
-	var accumulatedCopySize int64
-
 	for _, op := range p {
 		switch op.kind() {
 		case "add":
@@ -663,7 +631,7 @@ func (p Patch) ApplyIndent(doc []byte, indent string) ([]byte, error) {
 		case "test":
 			err = p.test(&pd, op)
 		case "copy":
-			err = p.copy(&pd, op, &accumulatedCopySize)
+			err = p.copy(&pd, op)
 		default:
 			err = fmt.Errorf("Unexpected kind: %s", op.kind())
 		}

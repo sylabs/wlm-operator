@@ -21,6 +21,10 @@ Right now WLM-operator supports only SLURM clusters. But it's easy to add a supp
 
 ## Installation
 
+Since wlm-operator is now built with [go modules](https://github.com/golang/go/wiki/Modules)
+there is no need to create standard [go workspace](https://golang.org/doc/code.html). If you still
+prefer keeping source code under `GOPATH` make sure `GO111MODULE` is set. 
+
 ### Prerequisites
 
 - Go 1.11+
@@ -39,14 +43,14 @@ Slurm login host. Make sure you set up NoSchedule taint so that no random pod wi
 of that user. Make sure the user has execute permissions for the following Slurm binaries:`sbatch`,
 `scancel`, `sacct` and `scontol`.
 
-3. Pull the repo.
+3. Clone the repo.
 ```bash
-go get -d github.com/sylabs/wlm-operator
+git clone https://github.com/sylabs/wlm-operator
 ```
 
 4. Build and start *red-box* – a gRPC proxy between Kubernetes and a Slurm cluster.
 ```bash
-cd $GOPATH/github.com/sylabs/wlm-operator && make
+cd wlm-operator && make
 ```
 Use dedicated user from step 2 to run red-box, e.g. set up `User` in systemd red-box.service.
 By default red-box listens on `/var/run/syslurm/red-box.sock`, so you have to make sure the user has
