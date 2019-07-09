@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+export GOPATH=${HOME}/go
+export PATH=${PATH}:/usr/local/go/bin:${GOPATH}/bin
+
 make -C wlm-operator
 cat > ${HOME}/config.yaml <<EOF
 debug:

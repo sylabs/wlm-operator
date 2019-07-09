@@ -11,7 +11,7 @@ sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
 sudo chown vagrant:vagrant /home/vagrant/.kube/config
 cp /home/vagrant/.kube/config /sync/etc/config
 
-expot IPADDR=$(ifconfig eth1 | grep inet | awk '{print $2}'| cut -f2 -d:)
+export IPADDR=$(ifconfig eth1 | grep inet | awk '{print $2}'| cut -f2 -d:)
 sudo -E sh -c 'cat > /test.conf <<EOF
 Environment="KUBELET_EXTRA_ARGS=--node-ip=${IPADDR}"
 EOF'
