@@ -21,7 +21,8 @@ RestartSec=30
 User=vagrant
 Group=vagrant
 WorkingDirectory=${HOME}
-ExecStart=${GOPATH}/src/${SINGULARITY_WLM_OPERATOR_REPO}/bin/red-box
+ExecStart=${HOME}/wlm-operator/bin/red-box
 EOF'
+
 sudo systemctl start red-box
 sudo systemctl status red-box

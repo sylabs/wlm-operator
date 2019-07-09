@@ -4,8 +4,10 @@ export DEBIAN_FRONTEND=noninteractive
 sudo -E apt-get install -y munge
 sudo -E apt-get install -y slurm-wlm slurm-wlm-basic-plugins
 
-export HOST_NAME=$(hostname)
-sudo sh -c 'cat > /etc/slurm-llnl/slurm.conf <<EOF
+HOST_NAME=$(hostname)
+export HOST_NAME
+
+sudo -E sh -c 'cat > /etc/slurm-llnl/slurm.conf <<EOF
 ControlMachine=${HOST_NAME}
 AuthType=auth/munge
 CacheGroups=0

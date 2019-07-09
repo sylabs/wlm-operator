@@ -12,7 +12,7 @@ sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
 rm /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
 
 # configure environment
-export GOPATH="${HOME}/go"
+export GOPATH=${HOME}/go
 export PATH=${PATH}:/usr/local/go/bin:${GOPATH}/bin
 mkdir ${GOPATH}
 
@@ -96,7 +96,7 @@ sudo -E apt-get install -y kubelet kubeadm kubectl
 # configure crictl
 sudo touch /etc/crictl.yaml
 sudo chown vagrant:vagrant /etc/crictl.yaml
-cat >> /etc/crictl.yaml << EOF
+cat > /etc/crictl.yaml << EOF
 runtime-endpoint: unix:///var/run/singularity.sock
 image-endpoint: unix:///var/run/singularity.sock
 timeout: 10
