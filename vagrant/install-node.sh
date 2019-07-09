@@ -2,7 +2,7 @@
 
 sudo chmod +x /sync/etc/join.sh 
 sudo /sync/etc/join.sh
-cp /sync/etc/config .kube
+mkdir .kube && cp /sync/etc/config .kube/config
 
 export IPADDR=$(ifconfig eth1 | grep inet | awk '{print $2}'| cut -f2 -d:)
 sudo -E sh -c 'cat > /test.conf <<EOF
