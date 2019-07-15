@@ -14,6 +14,9 @@
 package wlmjob
 
 import (
+	"fmt"
+
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	wlmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
 	"github.com/sylabs/wlm-operator/pkg/operator/controller"
@@ -36,7 +39,7 @@ func (r *Reconciler) newPodForWJ(wj *wlmv1alpha1.WlmJob) (*corev1.Pod, error) {
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      wj.Name + "-wlm-job",
+			Name:      fmt.Sprintf(wj.Name+"-wlm-job-%s", uuid.New()),
 			Namespace: wj.Namespace,
 		},
 		Spec: corev1.PodSpec{
