@@ -56,15 +56,27 @@ spec:
                 wallTime:
                   format: int64
                   type: integer
+              type: object
+            results:
+              description: Results may be specified for an optional results collection
+                step. When specified, after job is completed all results will be downloaded
+                from WLM cluster with respect to this configuration.
+              properties:
+                from:
+                  description: From is a path to the results to be collected from
+                    a Slurm cluster.
+                  type: string
+                mount:
+                  description: Mount is a directory where job results will be stored.
+                    After results collection all job generated files can be found
+                    in Mount/<SlurmJob.Name> directory.
+                  type: object
               required:
-              - nodes
-              - cpuPerNode
-              - memPerNode
-              - wallTime
+              - mount
+              - from
               type: object
           required:
           - image
-          - resources
           type: object
         status:
           properties:

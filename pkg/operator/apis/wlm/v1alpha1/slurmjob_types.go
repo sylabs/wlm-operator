@@ -41,7 +41,7 @@ type SlurmJobSpec struct {
 	// Results may be specified for an optional results collection step.
 	// When specified, after job is completed all results will be downloaded from Slurm
 	// cluster with respect to this configuration.
-	Results *SlurmJobResults `json:"results,omitempty"`
+	Results *JobResults `json:"results,omitempty"`
 }
 
 // SlurmJobStatus defines the observed state of a SlurmJob.
@@ -55,9 +55,9 @@ type SlurmJobStatus struct {
 	Status string `json:"status"`
 }
 
-// SlurmJobResults is a schema for results collection.
+// JobResults is a schema for results collection.
 // +k8s:openapi-gen=true
-type SlurmJobResults struct {
+type JobResults struct {
 	// Mount is a directory where job results will be stored.
 	// After results collection all job generated files can be found in Mount/<SlurmJob.Name> directory.
 	Mount v1.Volume `json:"mount"`

@@ -61,14 +61,18 @@ type WlmJobList struct {
 // +k8s:openapi-gen=true
 type WlmJobSpec struct {
 	Image     string       `json:"image"`
-	Resources WlmResources `json:"resources"`
+	Resources WlmResources `json:"resources,omitempty"`
+	// Results may be specified for an optional results collection step.
+	// When specified, after job is completed all results will be downloaded from WLM
+	// cluster with respect to this configuration.
+	Results *JobResults `json:"results,omitempty"`
 }
 
 // WlmResources is a schema for wlm resources.
 // +k8s:openapi-gen=true
 type WlmResources struct {
-	Nodes      int64         `json:"nodes"`
-	CpuPerNode int64         `json:"cpuPerNode"`
-	MemPerNode int64         `json:"memPerNode"`
-	WallTime   time.Duration `json:"wallTime"`
+	Nodes      int64         `json:"nodes,omitempty"`
+	CpuPerNode int64         `json:"cpuPerNode,omitempty"`
+	MemPerNode int64         `json:"memPerNode,omitempty"`
+	WallTime   time.Duration `json:"wallTime,omitempty"`
 }

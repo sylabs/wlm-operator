@@ -27,14 +27,42 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJob":        schema_operator_apis_wlm_v1alpha1_SlurmJob(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobResults": schema_operator_apis_wlm_v1alpha1_SlurmJobResults(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobSpec":    schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobStatus":  schema_operator_apis_wlm_v1alpha1_SlurmJobStatus(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJob":          schema_operator_apis_wlm_v1alpha1_WlmJob(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobSpec":      schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobStatus":    schema_operator_apis_wlm_v1alpha1_WlmJobStatus(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources":    schema_operator_apis_wlm_v1alpha1_WlmResources(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults":     schema_operator_apis_wlm_v1alpha1_JobResults(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJob":       schema_operator_apis_wlm_v1alpha1_SlurmJob(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobSpec":   schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobStatus": schema_operator_apis_wlm_v1alpha1_SlurmJobStatus(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJob":         schema_operator_apis_wlm_v1alpha1_WlmJob(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobSpec":     schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobStatus":   schema_operator_apis_wlm_v1alpha1_WlmJobStatus(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources":   schema_operator_apis_wlm_v1alpha1_WlmResources(ref),
+	}
+}
+
+func schema_operator_apis_wlm_v1alpha1_JobResults(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "JobResults is a schema for results collection.",
+				Properties: map[string]spec.Schema{
+					"mount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Mount is a directory where job results will be stored. After results collection all job generated files can be found in Mount/<SlurmJob.Name> directory.",
+							Ref:         ref("k8s.io/api/core/v1.Volume"),
+						},
+					},
+					"from": {
+						SchemaProps: spec.SchemaProps{
+							Description: "From is a path to the results to be collected from a Slurm cluster.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"mount", "from"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -81,34 +109,6 @@ func schema_operator_apis_wlm_v1alpha1_SlurmJob(ref common.ReferenceCallback) co
 	}
 }
 
-func schema_operator_apis_wlm_v1alpha1_SlurmJobResults(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "SlurmJobResults is a schema for results collection.",
-				Properties: map[string]spec.Schema{
-					"mount": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Mount is a directory where job results will be stored. After results collection all job generated files can be found in Mount/<SlurmJob.Name> directory.",
-							Ref:         ref("k8s.io/api/core/v1.Volume"),
-						},
-					},
-					"from": {
-						SchemaProps: spec.SchemaProps{
-							Description: "From is a path to the results to be collected from a Slurm cluster.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"mount", "from"},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.Volume"},
-	}
-}
-
 func schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -139,7 +139,7 @@ func schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallback
 					"results": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Results may be specified for an optional results collection step. When specified, after job is completed all results will be downloaded from Slurm cluster with respect to this configuration.",
-							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobResults"),
+							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults"),
 						},
 					},
 				},
@@ -147,7 +147,7 @@ func schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobResults"},
+			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults"},
 	}
 }
 
@@ -232,12 +232,18 @@ func schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref common.ReferenceCallback) 
 							Ref: ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"),
 						},
 					},
+					"results": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Results may be specified for an optional results collection step. When specified, after job is completed all results will be downloaded from WLM cluster with respect to this configuration.",
+							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults"),
+						},
+					},
 				},
-				Required: []string{"image", "resources"},
+				Required: []string{"image"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"},
+			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults", "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"},
 	}
 }
 
@@ -293,7 +299,6 @@ func schema_operator_apis_wlm_v1alpha1_WlmResources(ref common.ReferenceCallback
 						},
 					},
 				},
-				Required: []string{"nodes", "cpuPerNode", "memPerNode", "wallTime"},
 			},
 		},
 		Dependencies: []string{},
