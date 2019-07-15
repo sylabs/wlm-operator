@@ -15,8 +15,7 @@
 package slurmjob
 
 import (
-	"strconv"
-	"time"
+	"github.com/sylabs/wlm-operator/pkg/operator/controller"
 
 	"github.com/pkg/errors"
 	wlmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
@@ -62,47 +61,8 @@ func affinityForSj(sj *wlmv1alpha1.SlurmJob) (*corev1.Affinity, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "could not extract required resources")
 	}
-	var nodeMatch []corev1.NodeSelectorRequirement
-	if requiredResources.Nodes != 0 {
-		nodeMatch = append(nodeMatch, corev1.NodeSelectorRequirement{
-			Key:      "wlm.sylabs.io/nodes",
-			Operator: "Gt",
-			Values:   []string{strconv.FormatInt(requiredResources.Nodes-1, 10)},
-		})
-	}
-	if requiredResources.WallTime != 0 {
-		nodeMatch = append(nodeMatch, corev1.NodeSelectorRequirement{
-			Key:      "wlm.sylabs.io/wall-time",
-			Operator: "Gt",
-			Values:   []string{strconv.FormatInt(int64(requiredResources.WallTime/time.Second)-1, 10)},
-		})
-	}
-	if requiredResources.MemPerNode != 0 {
-		nodeMatch = append(nodeMatch, corev1.NodeSelectorRequirement{
-			Key:      "wlm.sylabs.io/mem-per-node",
-			Operator: "Gt",
-			Values:   []string{strconv.FormatInt(requiredResources.MemPerNode-1, 10)},
-		})
-	}
-	if requiredResources.CPUPerNode != 0 {
-		nodeMatch = append(nodeMatch, corev1.NodeSelectorRequirement{
-			Key:      "wlm.sylabs.io/cpu-per-node",
-			Operator: "Gt",
-			Values:   []string{strconv.FormatInt(requiredResources.CPUPerNode-1, 10)},
-		})
-	}
 
-	if len(nodeMatch) == 0 {
-		return nil, errAffinityIsNotRequired
-	}
-
-	return &corev1.Affinity{
-		NodeAffinity: &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{{MatchExpressions: nodeMatch}},
-			},
-		},
-	}, nil
+	return controller.AffinityForResources(*requiredResources)
 }
 
 func nodeSelectorForSj(sj *wlmv1alpha1.SlurmJob) map[string]string {

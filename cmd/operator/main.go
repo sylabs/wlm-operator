@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/sylabs/wlm-operator/pkg/operator/controller/wlmjob"
 	"runtime"
 
 	"github.com/golang/glog"
@@ -94,7 +95,12 @@ func main() {
 
 	sj := slurmjob.NewReconciler(mgr)
 	if err := sj.AddToManager(mgr); err != nil {
-		glog.Fatalf("Failed to add controller to manager: %v", err)
+		glog.Fatalf("Failed to add slurm job controller to manager: %v", err)
+	}
+
+	wj := wlmjob.NewReconciler(mgr)
+	if err := wj.AddToManager(mgr); err != nil {
+		glog.Fatalf("Failed to add wlm job controller to manager: %v", err)
 	}
 
 	// Create Service object to expose the metrics port.
