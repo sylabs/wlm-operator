@@ -52,6 +52,8 @@ func (r *Reconciler) newPodForWJ(wj *wlmv1alpha1.WlmJob) (*corev1.Pod, error) {
 			},
 			RestartPolicy: corev1.RestartPolicyNever,
 			Affinity:      affinity,
+			Tolerations:   controller.DefaultTolerations,
+			NodeSelector:  controller.DefaultNodeSelectors,
 		},
 	}, nil
 }

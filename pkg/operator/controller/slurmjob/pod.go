@@ -43,7 +43,7 @@ func (r *Reconciler) newPodForSJ(sj *wlmv1alpha1.SlurmJob) (*corev1.Pod, error) 
 				RunAsUser:  &r.jcUID,
 				RunAsGroup: &r.jcGID,
 			},
-			Tolerations: tolerationsForSj(sj),
+			Tolerations: controller.DefaultTolerations,
 			Containers: []corev1.Container{
 				{
 					Name:  "jt1",
@@ -66,24 +66,14 @@ func affinityForSj(sj *wlmv1alpha1.SlurmJob) (*corev1.Affinity, error) {
 }
 
 func nodeSelectorForSj(sj *wlmv1alpha1.SlurmJob) map[string]string {
-	// since we are running only slurm jobs, we need to be
-	// sure that pod will be allocated only on nodes with slurm support
-	nodeSelector := map[string]string{
-		"type": "virtual-kubelet",
+	nodeSelector := make(map[string]string)
+
+	for k, v := range controller.DefaultNodeSelectors {
+		nodeSelector[k] = v
 	}
+
 	for k, v := range sj.Spec.NodeSelector {
 		nodeSelector[k] = v
 	}
 	return nodeSelector
-}
-
-func tolerationsForSj(_ *wlmv1alpha1.SlurmJob) []corev1.Toleration {
-	return []corev1.Toleration{
-		{
-			Key:      "virtual-kubelet.io/provider",
-			Operator: corev1.TolerationOpEqual,
-			Value:    "wlm",
-			Effect:   corev1.TaintEffectNoSchedule,
-		},
-	}
 }
