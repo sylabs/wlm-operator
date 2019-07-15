@@ -11,21 +11,21 @@ all: $(RED_BOX)
 
 $(RED_BOX):
 	@echo " GO" $@
-	$(V)go build ${LDFLAGS} -o $(RED_BOX) ./cmd/red-box
+	$(V)go build -mod vendor ${LDFLAGS} -o $(RED_BOX) ./cmd/red-box
 
 .PHONY: clean
 clean:
 	@echo " CLEAN"
-	$(V)go clean
+	$(V)go clean -mod vendor
 	$(V)rm -rf $(BIN_DIR)
 
 .PHONY: test
 test:
-	$(V)go test -v -coverprofile=cover.out -race ./...
+	$(V)go test -mod vendor -v -coverprofile=cover.out -race ./...
 
 .PHONY: lint
 lint:
-	$(V)golangci-lint run
+	$(V)golangci-lint run --config .golangci.local.yml
 
 .PHONY: push
 push: TAG=latest
@@ -39,7 +39,8 @@ push:
 
 .PHONY: dep
 dep:
-	$(V)dep ensure --vendor-only
+	$(V)go mod tidy
+	$(V)go mod vendor
 
 .PHONY: gen
 gen:

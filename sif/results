@@ -3,17 +3,16 @@ From: golang:alpine
 Stage: builder
 
 %files
-	. /usr/local/go/src/github.com/sylabs/wlm-operator
+	. /root/wlm-operator
 
 %post
 	export PATH=$PATH:/usr/local/go/bin
 	export HOME=/root
-	export GOPATH=/go
 
 	apk update
 	apk add git && apk add ca-certificates
-	cd /usr/local/go/src/github.com/sylabs/wlm-operator
-	CGO_ENABLED=0 go build -ldflags "-X main.version=`(git describe  --dirty --always 2>/dev/null || echo "unknown") \
+	cd /root/wlm-operator
+	CGO_ENABLED=0 go build -mod vendor -ldflags "-X main.version=`(git describe  --dirty --always 2>/dev/null || echo "unknown") \
         	                        | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`" \
         	                        -o main cmd/results/main.go
 
@@ -24,7 +23,7 @@ Stage: two
 %files from builder
 	/etc/ssl/certs/ca-certificates.crt
 	/etc/passwd
-	/usr/local/go/src/github.com/sylabs/wlm-operator/main /
+	/root/wlm-operator/main /
 
 %runscript
 	exec ./main "$@"

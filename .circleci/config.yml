@@ -4,45 +4,43 @@ jobs:
   get_source:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/wlm-operator
     steps:
-      - checkout
+      - checkout:
+          path: wlm-operator
       - persist_to_workspace:
-          root: /go
+          root: .
           paths:
-            - src/github.com/sylabs/wlm-operator
+            - wlm-operator
 
   build:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/wlm-operator
     steps:
       - attach_workspace:
-          at: /go
+          at: .
       - run:
           name: Build red-box
-          command: make
+          command: make -C wlm-operator
       - persist_to_workspace:
-          root: /go
+          root: wlm-operator
           paths:
-            - src/github.com/sylabs/wlm-operator/bin/red-box
+            - bin/red-box
 
   test:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/wlm-operator
     steps:
       - attach_workspace:
-          at: /go
+          at: .
       - run:
           name: Unit tests
-          command: make test
+          command: make -C wlm-operator test
 
   publish:
     machine: true
     steps:
       - attach_workspace:
-          at: ~/go
+          at: .
       - run:
           name: Setup environment
           command: |
@@ -65,8 +63,8 @@ jobs:
       - run:
           name: Install singularity
           command: |
-            git clone https://github.com/sylabs/singularity.git $GOPATH/src/github.com/sylabs/singularity
-            cd $GOPATH/src/github.com/sylabs/singularity
+            git clone https://github.com/sylabs/singularity.git
+            cd singularity
             ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir
             sudo make -C ./builddir install
@@ -107,7 +105,7 @@ jobs:
               TAG=${CIRCLE_TAG}
             fi
 
-            cd $GOPATH/src/github.com/sylabs/wlm-operator
+            cd wlm-operator
             cat > push.sh <<EOF
             #!/usr/bin/expect -f
             set timeout -1
@@ -126,13 +124,12 @@ jobs:
   release_binaries:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/sylabs/wlm-operator
     steps:
       - attach_workspace:
-          at: /go
+          at: .
       - run:
           name: Release binaries
-          command: GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG BINARY_PATH=bin/red-box make release_binaries
+          command: GITHUB_TOKEN=$SYLABS_GITHUB_TOKEN RELEASE_TAG=$CIRCLE_TAG BINARY_PATH=bin/red-box make -C wlm-operator release_binaries
 
 workflows:
   version: 2
