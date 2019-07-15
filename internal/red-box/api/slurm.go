@@ -16,6 +16,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -79,6 +80,25 @@ func (s *Slurm) SubmitJob(ctx context.Context, req *api.SubmitJobRequest) (*api.
 	}
 
 	return &api.SubmitJobResponse{
+		JobId: id,
+	}, nil
+}
+
+func (s *Slurm) SubmitJobContainer(ctx context.Context, r *api.SubmitJobContainerRequest) (*api.SubmitJobContainerResponse, error) {
+	script := `
+	#!/bin/sh
+    srun singularity pull -U --name test123.sif %s
+    srun singularity run test123.sif
+    srun rm test123.sif
+	`
+	script = fmt.Sprintf(script, r.ImageName)
+
+	id, err := s.client.SBatch(script, r.Partition)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not submit sbatch script")
+	}
+
+	return &api.SubmitJobContainerResponse{
 		JobId: id,
 	}, nil
 }

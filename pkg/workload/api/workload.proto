@@ -23,6 +23,9 @@ service WorkloadManager {
     // SubmitJob submits new job to the workload manager and
     // returns job id that can be used to track job status.
     rpc SubmitJob (SubmitJobRequest) returns (SubmitJobResponse);
+    // SubmitJobContainer submits new job to the workload manager and
+    // returns job id that can be used to track job status.
+    rpc SubmitJobContainer (SubmitJobContainerRequest) returns (SubmitJobContainerResponse);
     // CancelJob cancels job by job id.
     rpc CancelJob (CancelJobRequest) returns (CancelJobResponse);
     // JobInfo returns complete information about a particular job.
@@ -128,6 +131,28 @@ message WorkloadInfoResponse {
     string name = 1;
     string version = 2;
     int64 uid = 3;
+}
+
+message SubmitJobContainerRequest {
+    // Job image name
+    string imageName = 1;
+    // Number of nodes in the partition.
+    int64 nodes = 2;
+    // Number of cpus on each node.
+    int64 cpuPerNode = 3;
+    // Amount of memory on each node.
+    int64 memPerNode = 4;
+    // Wall time setting for the partition.
+    int64 wallTime = 5;
+    // Partition where job should be submitted.
+    string partition = 6;
+    // ID of a client who submitted this job.
+    string client_id = 7;
+}
+
+message SubmitJobContainerResponse {
+    // Job ID to track submitted job.
+    int64 job_id = 1;
 }
 
 enum TailAction {
