@@ -15,9 +15,6 @@
 package slurmjob
 
 import (
-	"fmt"
-
-	"github.com/google/uuid"
 	"github.com/sylabs/wlm-operator/pkg/operator/controller"
 
 	"github.com/pkg/errors"
@@ -37,7 +34,7 @@ func (r *Reconciler) newPodForSJ(sj *wlmv1alpha1.SlurmJob) (*corev1.Pod, error) 
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf(sj.Name+"-job-%s", uuid.New()),
+			Name:      sj.Name + "-job-%s",
 			Namespace: sj.Namespace,
 		},
 		Spec: corev1.PodSpec{
