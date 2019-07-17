@@ -23,3 +23,4 @@ bin/
 
 .vagrant
 vagrant/etc/join.sh
+vagrant/etc/config
