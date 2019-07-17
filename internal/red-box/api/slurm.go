@@ -85,9 +85,8 @@ func (s *Slurm) SubmitJob(ctx context.Context, req *api.SubmitJobRequest) (*api.
 }
 
 func (s *Slurm) SubmitJobContainer(ctx context.Context, r *api.SubmitJobContainerRequest) (*api.SubmitJobContainerResponse, error) {
-	script := `
-	#!/bin/sh
-    srun singularity pull -U --name test123.sif %s
+	script := `#!/bin/sh
+	srun singularity pull -U --name test123.sif %s
     srun singularity run test123.sif
     srun rm test123.sif
 	`
