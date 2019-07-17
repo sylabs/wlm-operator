@@ -60,8 +60,17 @@ type WlmJobList struct {
 // WlmJobSpec defines the desired state of WlmJob
 // +k8s:openapi-gen=true
 type WlmJobSpec struct {
-	Image     string       `json:"image"`
+	// Image name to start as a job
+	Image string `json:"image"`
+
+	// Resources describes required for a job resources
 	Resources WlmResources `json:"resources,omitempty"`
+
+	// NodeSelector is a selector which must be true for the SlurmJob to fit on a node.
+	// Selector which must match a node's labels for the SlurmJob to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
 	// Results may be specified for an optional results collection step.
 	// When specified, after job is completed all results will be downloaded from WLM
 	// cluster with respect to this configuration.
