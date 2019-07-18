@@ -20,6 +20,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -90,6 +91,10 @@ func (s *Slurm) SubmitJobContainer(ctx context.Context, r *api.SubmitJobContaine
     srun singularity run test123.sif
     srun rm test123.sif
 	`
+	if strings.HasPrefix(r.ImageName, "file://") {
+		script = `#!/bin/sh
+		srun singularity run %s`
+	}
 	script = fmt.Sprintf(script, r.ImageName)
 
 	id, err := s.client.SBatch(script, r.Partition)
