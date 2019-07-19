@@ -66,8 +66,8 @@ type WlmJobSpec struct {
 	// Resources describes required for a job resources
 	Resources WlmResources `json:"resources,omitempty"`
 
-	// NodeSelector is a selector which must be true for the SlurmJob to fit on a node.
-	// Selector which must match a node's labels for the SlurmJob to be scheduled on that node.
+	// NodeSelector is a selector which must be true for the WlmJob to fit on a node.
+	// Selector which must match a node's labels for the WlmJob to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 

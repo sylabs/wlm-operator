@@ -223,13 +223,29 @@ func schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref common.ReferenceCallback) 
 				Properties: map[string]spec.Schema{
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Image name to start as a job",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"resources": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"),
+							Description: "Resources describes required for a job resources",
+							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"),
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the WlmJob to fit on a node. Selector which must match a node's labels for the WlmJob to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
 						},
 					},
 					"results": {

@@ -209,6 +209,13 @@ func (in *WlmJobList) DeepCopyObject() runtime.Object {
 func (in *WlmJobSpec) DeepCopyInto(out *WlmJobSpec) {
 	*out = *in
 	out.Resources = in.Resources
+	if in.NodeSelector != nil {
+		in, out := &in.NodeSelector, &out.NodeSelector
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Results != nil {
 		in, out := &in.Results, &out.Results
 		*out = new(JobResults)

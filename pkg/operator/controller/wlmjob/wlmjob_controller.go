@@ -80,8 +80,8 @@ func (r *Reconciler) AddToManager(mgr manager.Manager) error {
 	return nil
 }
 
-// Reconcile reads that state of the cluster for a SlurmJob object and makes changes
-// based on the state read and what is in the SlurmJob.Spec.
+// Reconcile reads that state of the cluster for a WlmJob object and makes changes
+// based on the state read and what is in the WlmJob.Spec.
 func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	glog.Infof("Received reconcile request: %v", req)
 
@@ -95,7 +95,7 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
-		glog.Errorf("Could not get slurm job: %v", err)
+		glog.Errorf("Could not get wlm job: %v", err)
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
@@ -103,7 +103,7 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	// Translate WlmJob to Pod
 	sjPod, err := r.newPodForWJ(wj)
 	if err != nil {
-		glog.Errorf("Could not translate slurm job into pod: %v", err)
+		glog.Errorf("Could not translate wlm job into pod: %v", err)
 		return reconcile.Result{}, err
 	}
 
@@ -124,7 +124,7 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 			return reconcile.Result{}, nil
 		}
 
-		glog.Infof("Creating new pod %q for slurm job %q", sjPod.Name, wj.Name)
+		glog.Infof("Creating new pod %q for wlm job %q", sjPod.Name, wj.Name)
 		err = r.client.Create(context.Background(), sjPod)
 		if err != nil {
 			glog.Errorf("Could not create new pod: %v", err)
@@ -133,12 +133,12 @@ func (r *Reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		return reconcile.Result{}, nil
 	}
 
-	glog.Infof("Updating slurm job %q", wj.Name)
+	glog.Infof("Updating wlm job %q", wj.Name)
 	// Otherwise smth has changed, need to update things
 	wj.Status.Status = string(wjCurrentPod.Status.Phase)
 	err = r.client.Status().Update(context.Background(), wj)
 	if err != nil {
-		glog.Errorf("Could not update slurm job: %v", err)
+		glog.Errorf("Could not update wlm job: %v", err)
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil

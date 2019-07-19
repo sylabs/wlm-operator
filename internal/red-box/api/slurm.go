@@ -23,12 +23,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"github.com/sylabs/wlm-operator/pkg/slurm"
 	"github.com/sylabs/wlm-operator/pkg/workload/api"
+)
+
+const (
+	pullAndRunBatchScriptT = `#!/bin/sh
+	srun singularity pull -U --name %[2]s %[1]s
+    srun singularity run %[2]s
+    srun rm %[2]s`
+	runBatchScriptT = `#!/bin/sh
+		srun singularity run %s`
 )
 
 type (
@@ -85,17 +96,15 @@ func (s *Slurm) SubmitJob(ctx context.Context, req *api.SubmitJobRequest) (*api.
 	}, nil
 }
 
+// SubmitJobContainer starts a container from the provided image name inside a sbatch script.
 func (s *Slurm) SubmitJobContainer(ctx context.Context, r *api.SubmitJobContainerRequest) (*api.SubmitJobContainerResponse, error) {
-	script := `#!/bin/sh
-	srun singularity pull -U --name test123.sif %s
-    srun singularity run test123.sif
-    srun rm test123.sif
-	`
+	script := ""
+	// checks if sif is located somewhere on the host machine
 	if strings.HasPrefix(r.ImageName, "file://") {
-		script = `#!/bin/sh
-		srun singularity run %s`
+		script = fmt.Sprintf(runBatchScriptT, r.ImageName)
+	} else {
+		script = fmt.Sprintf(pullAndRunBatchScriptT, r.ImageName, uuid.New())
 	}
-	script = fmt.Sprintf(script, r.ImageName)
 
 	id, err := s.client.SBatch(script, r.Partition)
 	if err != nil {
