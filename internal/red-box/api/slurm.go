@@ -39,7 +39,7 @@ const (
 	srun singularity run %[2]s
 	srun rm %[2]s`
 	runBatchScriptT = `#!/bin/sh
-		srun singularity run %s`
+	srun singularity run %s`
 )
 
 type (
@@ -101,7 +101,8 @@ func (s *Slurm) SubmitJobContainer(ctx context.Context, r *api.SubmitJobContaine
 	script := ""
 	// checks if sif is located somewhere on the host machine
 	if strings.HasPrefix(r.ImageName, "file://") {
-		script = fmt.Sprintf(runBatchScriptT, r.ImageName)
+		image := strings.TrimPrefix(r.ImageName, "file://")
+		script = fmt.Sprintf(runBatchScriptT, image)
 	} else {
 		script = fmt.Sprintf(pullAndRunBatchScriptT, r.ImageName, uuid.New())
 	}
