@@ -15,6 +15,8 @@
 package wlmjob
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	wlmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
 	"github.com/sylabs/wlm-operator/pkg/operator/controller"
@@ -28,7 +30,7 @@ func (r *Reconciler) newPodForWJ(wj *wlmv1alpha1.WlmJob) (*corev1.Pod, error) {
 		Nodes:      wj.Spec.Resources.Nodes,
 		MemPerNode: wj.Spec.Resources.MemPerNode,
 		CPUPerNode: wj.Spec.Resources.CpuPerNode,
-		WallTime:   wj.Spec.Resources.WallTime,
+		WallTime:   time.Duration(wj.Spec.Resources.WallTime) * time.Second,
 	}
 	affinity, err := controller.AffinityForResources(res)
 	if err != nil && err != controller.ErrAffinityIsNotRequired {

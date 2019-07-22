@@ -15,8 +15,6 @@
 package v1alpha1
 
 import (
-	"time"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,8 +78,9 @@ type WlmJobSpec struct {
 // WlmResources is a schema for wlm resources.
 // +k8s:openapi-gen=true
 type WlmResources struct {
-	Nodes      int64         `json:"nodes,omitempty"`
-	CpuPerNode int64         `json:"cpuPerNode,omitempty"`
-	MemPerNode int64         `json:"memPerNode,omitempty"`
-	WallTime   time.Duration `json:"wallTime,omitempty"`
+	Nodes      int64 `json:"nodes,omitempty"`
+	CpuPerNode int64 `json:"cpuPerNode,omitempty"`
+	MemPerNode int64 `json:"memPerNode,omitempty"`
+	// WallTime in seconds
+	WallTime int64 `json:"wallTime,omitempty"`
 }

@@ -310,8 +310,9 @@ func schema_operator_apis_wlm_v1alpha1_WlmResources(ref common.ReferenceCallback
 					},
 					"wallTime": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int64",
+							Description: "WallTime in seconds",
+							Type:        []string{"integer"},
+							Format:      "int64",
 						},
 					},
 				},
