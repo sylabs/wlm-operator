@@ -15,7 +15,6 @@
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -53,17 +52,6 @@ type SlurmJobStatus struct {
 
 	// Status reflects job status, e.g running, succeeded.
 	Status string `json:"status"`
-}
-
-// JobResults is a schema for results collection.
-// +k8s:openapi-gen=true
-type JobResults struct {
-	// Mount is a directory where job results will be stored.
-	// After results collection all job generated files can be found in Mount/<SlurmJob.Name> directory.
-	Mount v1.Volume `json:"mount"`
-
-	// From is a path to the results to be collected from a Slurm cluster.
-	From string `json:"from"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
