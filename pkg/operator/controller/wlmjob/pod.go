@@ -29,7 +29,7 @@ func (r *Reconciler) newPodForWJ(wj *wlmv1alpha1.WlmJob) (*corev1.Pod, error) {
 	res := controller.Resources{
 		Nodes:      wj.Spec.Resources.Nodes,
 		MemPerNode: wj.Spec.Resources.MemPerNode,
-		CPUPerNode: wj.Spec.Resources.CpuPerNode,
+		CPUPerNode: wj.Spec.Resources.CPUPerNode,
 		WallTime:   time.Duration(wj.Spec.Resources.WallTime) * time.Second,
 	}
 	affinity, err := controller.AffinityForResources(res)

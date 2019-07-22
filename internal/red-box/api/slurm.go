@@ -36,8 +36,8 @@ import (
 const (
 	pullAndRunBatchScriptT = `#!/bin/sh
 	srun singularity pull -U --name %[2]s %[1]s
-    srun singularity run %[2]s
-    srun rm %[2]s`
+	srun singularity run %[2]s
+	srun rm %[2]s`
 	runBatchScriptT = `#!/bin/sh
 		srun singularity run %s`
 )

@@ -79,8 +79,8 @@ type WlmJobSpec struct {
 // +k8s:openapi-gen=true
 type WlmResources struct {
 	Nodes      int64 `json:"nodes,omitempty"`
-	CpuPerNode int64 `json:"cpuPerNode,omitempty"`
+	CPUPerNode int64 `json:"cpuPerNode,omitempty"`
 	MemPerNode int64 `json:"memPerNode,omitempty"`
-	// WallTime in seconds
+	// WallTime in seconds.
 	WallTime int64 `json:"wallTime,omitempty"`
 }

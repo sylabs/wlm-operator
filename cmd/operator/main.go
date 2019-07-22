@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/sylabs/wlm-operator/pkg/operator/controller/wlmjob"
 	"runtime"
 
 	"github.com/golang/glog"
@@ -28,6 +27,7 @@ import (
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/sylabs/wlm-operator/pkg/operator/apis"
 	"github.com/sylabs/wlm-operator/pkg/operator/controller/slurmjob"
+	"github.com/sylabs/wlm-operator/pkg/operator/controller/wlmjob"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
