@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-// Reconciler reconciles a WlmJob object
+// Reconciler reconciles a WlmJob object.
 type Reconciler struct {
 	client client.Client
 	scheme *runtime.Scheme

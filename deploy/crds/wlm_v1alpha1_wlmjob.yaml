@@ -41,7 +41,7 @@ spec:
         spec:
           properties:
             image:
-              description: Image name to start as a job
+              description: Image name to start as a job.
               type: string
             nodeSelector:
               description: 'NodeSelector is a selector which must be true for the
@@ -49,7 +49,7 @@ spec:
                 for the WlmJob to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.'
               type: object
             resources:
-              description: Resources describes required for a job resources
+              description: Resources describes required resources for a job.
               properties:
                 cpuPerNode:
                   format: int64
@@ -61,7 +61,7 @@ spec:
                   format: int64
                   type: integer
                 wallTime:
-                  description: WallTime in seconds
+                  description: WallTime in seconds.
                   format: int64
                   type: integer
               type: object
