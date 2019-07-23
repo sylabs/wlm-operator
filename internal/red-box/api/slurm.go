@@ -33,15 +33,6 @@ import (
 	"github.com/sylabs/wlm-operator/pkg/workload/api"
 )
 
-const (
-	pullAndRunBatchScriptT = `#!/bin/sh
-	srun singularity pull -U --name "%[2]s" "%[1]s"
-	srun singularity run "%[2]s"
-	srun rm "%[2]s"`
-	runBatchScriptT = `#!/bin/sh
-	srun singularity run "%s"`
-)
-
 type (
 	// Slurm implements WorkloadManagerServer.
 	Slurm struct {
@@ -98,14 +89,7 @@ func (s *Slurm) SubmitJob(ctx context.Context, req *api.SubmitJobRequest) (*api.
 
 // SubmitJobContainer starts a container from the provided image name inside a sbatch script.
 func (s *Slurm) SubmitJobContainer(ctx context.Context, r *api.SubmitJobContainerRequest) (*api.SubmitJobContainerResponse, error) {
-	script := ""
-	// checks if sif is located somewhere on the host machine
-	if strings.HasPrefix(r.ImageName, "file://") {
-		image := strings.TrimPrefix(r.ImageName, "file://")
-		script = fmt.Sprintf(runBatchScriptT, image)
-	} else {
-		script = fmt.Sprintf(pullAndRunBatchScriptT, r.ImageName, uuid.New())
-	}
+	script := buildSLURMScript(r)
 
 	id, err := s.client.SBatch(script, r.Partition)
 	if err != nil {
@@ -427,4 +411,27 @@ func mapSInfoToProtoInfo(si []*slurm.JobInfo) ([]*api.JobInfo, error) {
 	}
 
 	return pInfs, nil
+}
+
+func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
+	const (
+		runT  = `srun singularity run "%s"`
+		pullT = `srun singularity pull -U --name "%s" "%s"`
+		rmT   = `srun rm "%s"`
+	)
+
+	lines := []string{"#!/bin/bash"}
+
+	// checks if sif is located somewhere on the host machine
+	if strings.HasPrefix(r.ImageName, "file://") {
+		image := strings.TrimPrefix(r.ImageName, "file://")
+		lines = append(lines, fmt.Sprintf(runT, image))
+	} else {
+		id := uuid.New().String()
+		lines = append(lines, fmt.Sprintf(pullT, id, r.ImageName))
+		lines = append(lines, fmt.Sprintf(runT, id))
+		lines = append(lines, fmt.Sprintf(rmT, id))
+	}
+
+	return strings.Join(lines, "\n")
 }
