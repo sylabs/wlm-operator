@@ -418,9 +418,30 @@ func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
 		runT  = `srun singularity run "%s"`
 		pullT = `srun singularity pull -U --name "%s" "%s"`
 		rmT   = `srun rm "%s"`
+
+		timeT       = `#SBATCH --time=0:%d` //seconds
+		memT        = `#SBATCH --mem=%d`    //mbs
+		nodesT      = `#SBATCH --nodes=%d`
+		cpuPerTaskT = `#SBATCH --cpus-per-task=%d`
 	)
 
 	lines := []string{"#!/bin/bash"}
+
+	if r.WallTime != 0 {
+		lines = append(lines, fmt.Sprintf(timeT, r.WallTime))
+	}
+
+	if r.MemPerNode != 0 {
+		lines = append(lines, fmt.Sprintf(memT, r.MemPerNode))
+	}
+
+	if r.Nodes != 0 {
+		lines = append(lines, fmt.Sprintf(nodesT, r.Nodes))
+	}
+
+	if r.CpuPerNode != 0 {
+		lines = append(lines, fmt.Sprintf(cpuPerTaskT, r.CpuPerNode))
+	}
 
 	// checks if sif is located somewhere on the host machine
 	if strings.HasPrefix(r.ImageName, "file://") {
