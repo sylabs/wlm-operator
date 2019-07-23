@@ -55,13 +55,13 @@ type WlmJobList struct {
 	Items           []WlmJob `json:"items"`
 }
 
-// WlmJobSpec defines the desired state of WlmJob
+// WlmJobSpec defines the desired state of WlmJob.
 // +k8s:openapi-gen=true
 type WlmJobSpec struct {
-	// Image name to start as a job
+	// Image name to start as a job.
 	Image string `json:"image"`
 
-	// Resources describes required for a job resources
+	// Resources describes required resources for a job.
 	Resources WlmResources `json:"resources,omitempty"`
 
 	// NodeSelector is a selector which must be true for the WlmJob to fit on a node.

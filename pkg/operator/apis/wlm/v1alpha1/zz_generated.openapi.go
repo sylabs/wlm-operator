@@ -219,18 +219,18 @@ func schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref common.ReferenceCallback) 
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "WlmJobSpec defines the desired state of WlmJob",
+				Description: "WlmJobSpec defines the desired state of WlmJob.",
 				Properties: map[string]spec.Schema{
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Image name to start as a job",
+							Description: "Image name to start as a job.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"resources": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Resources describes required for a job resources",
+							Description: "Resources describes required resources for a job.",
 							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"),
 						},
 					},
@@ -310,7 +310,7 @@ func schema_operator_apis_wlm_v1alpha1_WlmResources(ref common.ReferenceCallback
 					},
 					"wallTime": {
 						SchemaProps: spec.SchemaProps{
-							Description: "WallTime in seconds",
+							Description: "WallTime in seconds.",
 							Type:        []string{"integer"},
 							Format:      "int64",
 						},
