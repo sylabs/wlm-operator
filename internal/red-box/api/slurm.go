@@ -425,7 +425,7 @@ func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
 		cpuPerTaskT = `#SBATCH --cpus-per-task=%d`
 	)
 
-	lines := []string{"#!/bin/bash"}
+	lines := []string{"#!/bin/sh"}
 
 	if r.WallTime != 0 {
 		lines = append(lines, fmt.Sprintf(timeT, r.WallTime))
