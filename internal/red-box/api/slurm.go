@@ -415,15 +415,21 @@ func mapSInfoToProtoInfo(si []*slurm.JobInfo) ([]*api.JobInfo, error) {
 
 func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
 	const (
-		pullT = `srun singularity pull -U --name "%s" "%s"`
-		rmT   = `srun rm "%s"`
+		verifyT = `srun singularity verify "%s" || exit`
+		rmT     = `srun rm "%s"`
 
 		timeT       = `#SBATCH --time=0:%d` //seconds
 		memT        = `#SBATCH --mem=%d`    //mbs
 		nodesT      = `#SBATCH --nodes=%d`
 		cpuPerTaskT = `#SBATCH --cpus-per-task=%d`
 	)
+
 	runT := buildRunCommand(r.Options)
+
+	pullT := `srun singularity pull --name "%s" "%s" || exit` // secure pull
+	if r.Options.AllowUnsigned {
+		pullT = `srun singularity pull -U --name "%s" "%s" || exit` // unsecured pull
+	}
 
 	lines := []string{"#!/bin/sh"}
 
@@ -446,6 +452,9 @@ func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
 	// checks if sif is located somewhere on the host machine
 	if strings.HasPrefix(r.ImageName, "file://") {
 		image := strings.TrimPrefix(r.ImageName, "file://")
+		if !r.Options.AllowUnsigned {
+			lines = append(lines, fmt.Sprintf(verifyT, image))
+		}
 		lines = append(lines, fmt.Sprintf(runT, image))
 	} else {
 		id := uuid.New().String()
@@ -495,5 +504,5 @@ func buildRunCommand(opt *api.SingularityOptions) string {
 	if len(flags) != 0 {
 		run = fmt.Sprintf("%s %s", run, strings.Join(flags, " "))
 	}
-	return run + " " + `"%s"`
+	return run + " " + `"%s" || exit`
 }

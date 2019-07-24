@@ -108,7 +108,7 @@ func Test_buildRunCommand(t *testing.T) {
 		require.EqualValues(t, expected, buildRunCommand(o))
 	}
 
-	f(&api.SingularityOptions{}, `srun singularity run "%s"`)
+	f(&api.SingularityOptions{}, `srun singularity run "%s" || exit`)
 	f(&api.SingularityOptions{
 		ClearEnv: true,
 		FakeRoot: true,
@@ -119,5 +119,5 @@ func Test_buildRunCommand(t *testing.T) {
 		HostName: "test1",
 		App:      "main",
 		Binds:    []string{"b1", "b2"},
-	}, `srun singularity run --app="main" --hostname="test1" --bind="b1,b2" -c -f -i -p --no-privs -w "%s"`)
+	}, `srun singularity run --app="main" --hostname="test1" --bind="b1,b2" -c -f -i -p --no-privs -w "%s" || exit`)
 }
