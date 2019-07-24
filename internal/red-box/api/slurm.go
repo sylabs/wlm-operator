@@ -415,7 +415,6 @@ func mapSInfoToProtoInfo(si []*slurm.JobInfo) ([]*api.JobInfo, error) {
 
 func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
 	const (
-		runT  = `srun singularity run "%s"`
 		pullT = `srun singularity pull -U --name "%s" "%s"`
 		rmT   = `srun rm "%s"`
 
@@ -424,6 +423,7 @@ func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
 		nodesT      = `#SBATCH --nodes=%d`
 		cpuPerTaskT = `#SBATCH --cpus-per-task=%d`
 	)
+	runT := buildRunCommand(r.Options)
 
 	lines := []string{"#!/bin/sh"}
 
@@ -455,4 +455,45 @@ func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+func buildRunCommand(opt *api.SingularityOptions) string {
+	run := "srun singularity run"
+	flags := []string{}
+
+	if opt.App != "" {
+		flags = append(flags, fmt.Sprintf(`--app="%s"`, opt.App))
+	}
+	if opt.HostName != "" {
+		flags = append(flags, fmt.Sprintf(`--hostname="%s"`, opt.HostName))
+	}
+
+	if len(opt.Binds) != 0 {
+		bind := strings.Join(opt.Binds, ",")
+		flags = append(flags, fmt.Sprintf(`--bind="%s"`, bind))
+	}
+
+	if opt.ClearEnv {
+		flags = append(flags, "-c")
+	}
+	if opt.FakeRoot {
+		flags = append(flags, "-f")
+	}
+	if opt.Ipc {
+		flags = append(flags, "-i")
+	}
+	if opt.Pid {
+		flags = append(flags, "-p")
+	}
+	if opt.NoPrivs {
+		flags = append(flags, "--no-privs")
+	}
+	if opt.Writable {
+		flags = append(flags, "-w")
+	}
+
+	if len(flags) != 0 {
+		run = fmt.Sprintf("%s %s", run, strings.Join(flags, " "))
+	}
+	return run + " " + `"%s"`
 }

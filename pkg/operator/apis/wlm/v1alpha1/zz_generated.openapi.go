@@ -27,14 +27,15 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults":     schema_operator_apis_wlm_v1alpha1_JobResults(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJob":       schema_operator_apis_wlm_v1alpha1_SlurmJob(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobSpec":   schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobStatus": schema_operator_apis_wlm_v1alpha1_SlurmJobStatus(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJob":         schema_operator_apis_wlm_v1alpha1_WlmJob(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobSpec":     schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobStatus":   schema_operator_apis_wlm_v1alpha1_WlmJobStatus(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources":   schema_operator_apis_wlm_v1alpha1_WlmResources(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults":         schema_operator_apis_wlm_v1alpha1_JobResults(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SingularityOptions": schema_operator_apis_wlm_v1alpha1_SingularityOptions(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJob":           schema_operator_apis_wlm_v1alpha1_SlurmJob(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobSpec":       schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobStatus":     schema_operator_apis_wlm_v1alpha1_SlurmJobStatus(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJob":             schema_operator_apis_wlm_v1alpha1_WlmJob(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobSpec":         schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobStatus":       schema_operator_apis_wlm_v1alpha1_WlmJobStatus(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources":       schema_operator_apis_wlm_v1alpha1_WlmResources(ref),
 	}
 }
 
@@ -63,6 +64,96 @@ func schema_operator_apis_wlm_v1alpha1_JobResults(ref common.ReferenceCallback) 
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_operator_apis_wlm_v1alpha1_SingularityOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SingularityOptions singularity run options.",
+				Properties: map[string]spec.Schema{
+					"app": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Set an application to run inside a container.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"allowUnsigned": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Allow to pull and run unsigned images.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"binds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Binds a user-bind path specification. Spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src. Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"cleanEnv": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Clean environment before running container.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"fakeRoot": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Run container in new user namespace as uid 0.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"hostName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Set container hostname.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ipc": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Run container in a new IPC namespace.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"pid": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Run container in a new PID namespace.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"noPrivs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Drop all privileges from root user in container.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"writable": {
+						SchemaProps: spec.SchemaProps{
+							Description: "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -228,6 +319,12 @@ func schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options singularity run options.",
+							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SingularityOptions"),
+						},
+					},
 					"resources": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Resources describes required resources for a job.",
@@ -259,7 +356,7 @@ func schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults", "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"},
+			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults", "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SingularityOptions", "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"},
 	}
 }
 

@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sylabs/wlm-operator/pkg/workload/api"
+
 	"github.com/stretchr/testify/require"
 	"github.com/sylabs/wlm-operator/pkg/slurm"
 )
@@ -99,4 +101,23 @@ func Test_mapSStepsToProtoSteps(t *testing.T) {
 		require.EqualValues(t, steps[i].ExitCode, pSteps[i].ExitCode)
 		require.EqualValues(t, steps[i].State, pSteps[i].Status.String())
 	}
+}
+
+func Test_buildRunCommand(t *testing.T) {
+	f := func(o *api.SingularityOptions, expected string) {
+		require.EqualValues(t, expected, buildRunCommand(o))
+	}
+
+	f(&api.SingularityOptions{}, `srun singularity run "%s"`)
+	f(&api.SingularityOptions{
+		ClearEnv: true,
+		FakeRoot: true,
+		Ipc:      true,
+		Pid:      true,
+		NoPrivs:  true,
+		Writable: true,
+		HostName: "test1",
+		App:      "main",
+		Binds:    []string{"b1", "b2"},
+	}, `srun singularity run --app="main" --hostname="test1" --bind="b1,b2" -c -f -i -p --no-privs -w "%s"`)
 }

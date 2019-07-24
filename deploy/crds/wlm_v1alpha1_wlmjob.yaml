@@ -48,6 +48,49 @@ spec:
                 WlmJob to fit on a node. Selector which must match a node''s labels
                 for the WlmJob to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.'
               type: object
+            options:
+              description: Options singularity run options.
+              properties:
+                allowUnsigned:
+                  description: Allow to pull and run unsigned images.
+                  type: boolean
+                app:
+                  description: Set an application to run inside a container.
+                  type: string
+                binds:
+                  description: Binds a user-bind path specification. Spec has the
+                    format src[:dest[:opts]], where src and dest are outside and inside
+                    paths.  If dest is not given, it is set equal to src. Mount options
+                    ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write,
+                    which is the default). Multiple bind paths can be given by a comma
+                    separated list.
+                  items:
+                    type: string
+                  type: array
+                cleanEnv:
+                  description: Clean environment before running container.
+                  type: boolean
+                fakeRoot:
+                  description: Run container in new user namespace as uid 0.
+                  type: boolean
+                hostName:
+                  description: Set container hostname.
+                  type: string
+                ipc:
+                  description: Run container in a new IPC namespace.
+                  type: boolean
+                noPrivs:
+                  description: Drop all privileges from root user in container.
+                  type: boolean
+                pid:
+                  description: Run container in a new PID namespace.
+                  type: boolean
+                writable:
+                  description: By default all Singularity containers are available
+                    as read only. This option makes the file system accessible as
+                    read/write.
+                  type: boolean
+              type: object
             resources:
               description: Resources describes required resources for a job.
               properties:

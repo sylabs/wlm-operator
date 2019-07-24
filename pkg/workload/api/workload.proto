@@ -148,6 +148,21 @@ message SubmitJobContainerRequest {
     string partition = 6;
     // ID of a client who submitted this job.
     string client_id = 7;
+
+    SingularityOptions options = 8;
+}
+
+message SingularityOptions {
+    string app = 1;
+    bool allowUnsigned = 2;
+    repeated string binds = 3;
+    bool clearEnv = 4;
+    bool fakeRoot = 5;
+    string hostName = 6;
+    bool ipc = 7;
+    bool pid = 8;
+    bool noPrivs = 9;
+    bool writable = 10;
 }
 
 message SubmitJobContainerResponse {

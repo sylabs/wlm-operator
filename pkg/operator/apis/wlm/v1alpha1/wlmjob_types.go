@@ -61,6 +61,9 @@ type WlmJobSpec struct {
 	// Image name to start as a job.
 	Image string `json:"image"`
 
+	// Options singularity run options.
+	Options SingularityOptions `json:"options,omitempty"`
+
 	// Resources describes required resources for a job.
 	Resources WlmResources `json:"resources,omitempty"`
 
@@ -73,6 +76,40 @@ type WlmJobSpec struct {
 	// When specified, after job is completed all results will be downloaded from WLM
 	// cluster with respect to this configuration.
 	Results *JobResults `json:"results,omitempty"`
+}
+
+// SingularityOptions singularity run options.
+// +k8s:openapi-gen=true
+type SingularityOptions struct {
+	// Set an application to run inside a container.
+	App string `json:"app,omitempty"`
+	// Allow to pull and run unsigned images.
+	AllowUnsigned bool `json:"allowUnsigned,omitempty"`
+	// Binds a user-bind path specification. Spec has
+	// the format src[:dest[:opts]], where src and
+	// dest are outside and inside paths.  If dest
+	// is not given, it is set equal to src.
+	// Mount options ('opts') may be specified as
+	// 'ro' (read-only) or 'rw' (read/write, which
+	// is the default). Multiple bind paths can be
+	// given by a comma separated list.
+	Binds []string `json:"binds,omitempty"`
+	// Clean environment before running container.
+	CleanEnv bool `json:"cleanEnv,omitempty"`
+	// Run container in new user namespace as uid 0.
+	FakeRoot bool `json:"fakeRoot,omitempty"`
+	// Set container hostname.
+	HostName string `json:"hostName,omitempty"`
+	// Run container in a new IPC namespace.
+	IPC bool `json:"ipc,omitempty"`
+	// Run container in a new PID namespace.
+	PID bool `json:"pid,omitempty"`
+	// Drop all privileges from root user in container.
+	NoPrivs bool `json:"noPrivs,omitempty"`
+	// By default all Singularity containers are
+	// available as read only. This option makes
+	// the file system accessible as read/write.
+	Writable bool `json:"writable,omitempty"`
 }
 
 // WlmResources is a schema for wlm resources.
