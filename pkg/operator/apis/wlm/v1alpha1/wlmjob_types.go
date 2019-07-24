@@ -87,8 +87,6 @@ type SingularityOptions struct {
 	CleanEnv bool `json:"cleanEnv,omitempty"`
 	// Run container in new user namespace as uid 0.
 	FakeRoot bool `json:"fakeRoot,omitempty"`
-	// Set container hostname.
-	HostName string `json:"hostName,omitempty"`
 	// Run container in a new IPC namespace.
 	IPC bool `json:"ipc,omitempty"`
 	// Run container in a new PID namespace.
@@ -101,6 +99,8 @@ type SingularityOptions struct {
 	Writable bool `json:"writable,omitempty"`
 	// Set an application to run inside a container.
 	App string `json:"app,omitempty"`
+	// Set container hostname.
+	HostName string `json:"hostName,omitempty"`
 	// Binds a user-bind path specification. Spec has
 	// the format src[:dest[:opts]], where src and
 	// dest are outside and inside paths.  If dest
