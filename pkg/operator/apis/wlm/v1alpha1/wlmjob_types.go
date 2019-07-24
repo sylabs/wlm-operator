@@ -81,19 +81,8 @@ type WlmJobSpec struct {
 // SingularityOptions singularity run options.
 // +k8s:openapi-gen=true
 type SingularityOptions struct {
-	// Set an application to run inside a container.
-	App string `json:"app,omitempty"`
 	// Allow to pull and run unsigned images.
 	AllowUnsigned bool `json:"allowUnsigned,omitempty"`
-	// Binds a user-bind path specification. Spec has
-	// the format src[:dest[:opts]], where src and
-	// dest are outside and inside paths.  If dest
-	// is not given, it is set equal to src.
-	// Mount options ('opts') may be specified as
-	// 'ro' (read-only) or 'rw' (read/write, which
-	// is the default). Multiple bind paths can be
-	// given by a comma separated list.
-	Binds []string `json:"binds,omitempty"`
 	// Clean environment before running container.
 	CleanEnv bool `json:"cleanEnv,omitempty"`
 	// Run container in new user namespace as uid 0.
@@ -110,6 +99,17 @@ type SingularityOptions struct {
 	// available as read only. This option makes
 	// the file system accessible as read/write.
 	Writable bool `json:"writable,omitempty"`
+	// Set an application to run inside a container.
+	App string `json:"app,omitempty"`
+	// Binds a user-bind path specification. Spec has
+	// the format src[:dest[:opts]], where src and
+	// dest are outside and inside paths.  If dest
+	// is not given, it is set equal to src.
+	// Mount options ('opts') may be specified as
+	// 'ro' (read-only) or 'rw' (read/write, which
+	// is the default). Multiple bind paths can be
+	// given by a comma separated list.
+	Binds []string `json:"binds,omitempty"`
 }
 
 // WlmResources is a schema for wlm resources.
