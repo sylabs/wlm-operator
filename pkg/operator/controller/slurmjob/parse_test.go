@@ -18,15 +18,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sylabs/wlm-operator/pkg/operator/controller"
+
 	"github.com/stretchr/testify/require"
-	"github.com/sylabs/wlm-operator/pkg/slurm"
 )
 
 func TestExtractBatchResources(t *testing.T) {
 	tt := []struct {
 		name            string
 		script          string
-		expectResources *slurm.Resources
+		expectResources *controller.Resources
 		expectError     bool
 	}{
 		{
@@ -37,7 +38,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{},
+			expectResources: &controller.Resources{},
 		},
 		{
 			name: "wall time",
@@ -48,7 +49,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{
+			expectResources: &controller.Resources{
 				WallTime: time.Minute * 5,
 			},
 		},
@@ -72,7 +73,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{
+			expectResources: &controller.Resources{
 				WallTime: time.Hour * 31,
 				Nodes:    5,
 			},
@@ -89,7 +90,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{
+			expectResources: &controller.Resources{
 				WallTime: time.Minute * 5,
 				Nodes:    5,
 			},
@@ -104,7 +105,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{
+			expectResources: &controller.Resources{
 				WallTime: time.Minute * 5,
 				Nodes:    5,
 			},
@@ -129,7 +130,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{
+			expectResources: &controller.Resources{
 				MemPerNode: 24000,
 			},
 		},
@@ -153,7 +154,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{
+			expectResources: &controller.Resources{
 				CPUPerNode: 3,
 			},
 		},
@@ -177,7 +178,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{
+			expectResources: &controller.Resources{
 				CPUPerNode: 8,
 			},
 		},
@@ -201,7 +202,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{
+			expectResources: &controller.Resources{
 				CPUPerNode: 4,
 			},
 		},
@@ -216,7 +217,7 @@ srun singularity pull -U library://sylabsed/examples/lolcow
 srun singularity run lolcow_latest.sif
 srun rm lolcow_latest.sif
 `,
-			expectResources: &slurm.Resources{
+			expectResources: &controller.Resources{
 				CPUPerNode: 24,
 				Nodes:      3,
 			},

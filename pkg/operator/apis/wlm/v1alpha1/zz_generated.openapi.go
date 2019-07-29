@@ -27,10 +27,133 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJob":        schema_operator_apis_wlm_v1alpha1_SlurmJob(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobResults": schema_operator_apis_wlm_v1alpha1_SlurmJobResults(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobSpec":    schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref),
-		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobStatus":  schema_operator_apis_wlm_v1alpha1_SlurmJobStatus(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults":         schema_operator_apis_wlm_v1alpha1_JobResults(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SingularityOptions": schema_operator_apis_wlm_v1alpha1_SingularityOptions(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJob":           schema_operator_apis_wlm_v1alpha1_SlurmJob(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobSpec":       schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobStatus":     schema_operator_apis_wlm_v1alpha1_SlurmJobStatus(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJob":             schema_operator_apis_wlm_v1alpha1_WlmJob(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobSpec":         schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobStatus":       schema_operator_apis_wlm_v1alpha1_WlmJobStatus(ref),
+		"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources":       schema_operator_apis_wlm_v1alpha1_WlmResources(ref),
+	}
+}
+
+func schema_operator_apis_wlm_v1alpha1_JobResults(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "JobResults is a schema for results collection.",
+				Properties: map[string]spec.Schema{
+					"mount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Mount is a directory where job results will be stored. After results collection all job generated files can be found in Mount/<SlurmJob.Name> directory.",
+							Ref:         ref("k8s.io/api/core/v1.Volume"),
+						},
+					},
+					"from": {
+						SchemaProps: spec.SchemaProps{
+							Description: "From is a path to the results to be collected from a Slurm cluster.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"mount", "from"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_operator_apis_wlm_v1alpha1_SingularityOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SingularityOptions singularity run options.",
+				Properties: map[string]spec.Schema{
+					"app": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Set an application to run inside a container.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"allowUnsigned": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Allow to pull and run unsigned images.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"binds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Binds a user-bind path specification. Spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src. Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"cleanEnv": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Clean environment before running container.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"fakeRoot": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Run container in new user namespace as uid 0.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"hostName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Set container hostname.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ipc": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Run container in a new IPC namespace.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"pid": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Run container in a new PID namespace.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"noPrivs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Drop all privileges from root user in container.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"writable": {
+						SchemaProps: spec.SchemaProps{
+							Description: "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -77,34 +200,6 @@ func schema_operator_apis_wlm_v1alpha1_SlurmJob(ref common.ReferenceCallback) co
 	}
 }
 
-func schema_operator_apis_wlm_v1alpha1_SlurmJobResults(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "SlurmJobResults is a schema for results collection.",
-				Properties: map[string]spec.Schema{
-					"mount": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Mount is a directory where job results will be stored. After results collection all job generated files can be found in Mount/<SlurmJob.Name> directory.",
-							Ref:         ref("k8s.io/api/core/v1.Volume"),
-						},
-					},
-					"from": {
-						SchemaProps: spec.SchemaProps{
-							Description: "From is a path to the results to be collected from a Slurm cluster.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"mount", "from"},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.Volume"},
-	}
-}
-
 func schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -135,7 +230,7 @@ func schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallback
 					"results": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Results may be specified for an optional results collection step. When specified, after job is completed all results will be downloaded from Slurm cluster with respect to this configuration.",
-							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobResults"),
+							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults"),
 						},
 					},
 				},
@@ -143,7 +238,7 @@ func schema_operator_apis_wlm_v1alpha1_SlurmJobSpec(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SlurmJobResults"},
+			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults"},
 	}
 }
 
@@ -162,6 +257,162 @@ func schema_operator_apis_wlm_v1alpha1_SlurmJobStatus(ref common.ReferenceCallba
 					},
 				},
 				Required: []string{"status"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_operator_apis_wlm_v1alpha1_WlmJob(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "WlmJob is the Schema for the wlm jobs API.",
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobSpec", "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmJobStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_operator_apis_wlm_v1alpha1_WlmJobSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "WlmJobSpec defines the desired state of WlmJob.",
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image name to start as a job.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options singularity run options.",
+							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SingularityOptions"),
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources describes required resources for a job.",
+							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"),
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the WlmJob to fit on a node. Selector which must match a node's labels for the WlmJob to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"results": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Results may be specified for an optional results collection step. When specified, after job is completed all results will be downloaded from WLM cluster with respect to this configuration.",
+							Ref:         ref("github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults"),
+						},
+					},
+				},
+				Required: []string{"image"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.JobResults", "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.SingularityOptions", "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1.WlmResources"},
+	}
+}
+
+func schema_operator_apis_wlm_v1alpha1_WlmJobStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "WlmJobStatus defines the observed state of a WlmJob.",
+				Properties: map[string]spec.Schema{
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status reflects job status, e.g running, succeeded.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"status"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_operator_apis_wlm_v1alpha1_WlmResources(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "WlmResources is a schema for wlm resources.",
+				Properties: map[string]spec.Schema{
+					"nodes": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int64",
+						},
+					},
+					"cpuPerNode": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int64",
+						},
+					},
+					"memPerNode": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int64",
+						},
+					},
+					"wallTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WallTime in seconds.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
 			},
 		},
 		Dependencies: []string{},

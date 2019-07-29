@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sylabs/wlm-operator/pkg/operator/controller"
+
 	"github.com/pkg/errors"
 	"github.com/sylabs/wlm-operator/pkg/slurm"
 )
@@ -27,11 +29,11 @@ import (
 // job to run. More particularly, the following SBATCH directives are parsed:
 // nodes, time, mem, ntasks and/or (n)tasks-per-node.
 // A zero value is returned if corresponding value is not provided.
-func extractBatchResources(script string) (*slurm.Resources, error) {
+func extractBatchResources(script string) (*controller.Resources, error) {
 	const sbatchHeader = "#SBATCH"
 
 	var err error
-	var res slurm.Resources
+	var res controller.Resources
 
 	s := bufio.NewScanner(strings.NewReader(script))
 	for s.Scan() {
@@ -68,7 +70,7 @@ func extractBatchResources(script string) (*slurm.Resources, error) {
 	return &res, nil
 }
 
-func applySbatchParam(res slurm.Resources, param, value string) (slurm.Resources, error) {
+func applySbatchParam(res controller.Resources, param, value string) (controller.Resources, error) {
 	const (
 		timeLimit        = "--time"
 		timeLimitShort   = "-t"
@@ -84,7 +86,7 @@ func applySbatchParam(res slurm.Resources, param, value string) (slurm.Resources
 	case timeLimit, timeLimitShort:
 		duration, err := slurm.ParseDuration(value)
 		if err != nil && err != slurm.ErrDurationIsUnlimited {
-			return slurm.Resources{}, errors.Wrapf(err, "could not parse time limit")
+			return controller.Resources{}, errors.Wrapf(err, "could not parse time limit")
 		}
 		if duration != nil {
 			res.WallTime = *duration
@@ -97,20 +99,20 @@ func applySbatchParam(res slurm.Resources, param, value string) (slurm.Resources
 		}
 		nodes, err := strconv.ParseInt(value, 10, 0)
 		if err != nil {
-			return slurm.Resources{}, errors.Wrapf(err, "could not parse amount of nodes")
+			return controller.Resources{}, errors.Wrapf(err, "could not parse amount of nodes")
 		}
 		res.Nodes = nodes
 	case mem:
 		// suffixes are not supported yet
 		mem, err := strconv.ParseInt(value, 10, 0)
 		if err != nil {
-			return slurm.Resources{}, errors.Wrapf(err, "could not parse memory")
+			return controller.Resources{}, errors.Wrapf(err, "could not parse memory")
 		}
 		res.MemPerNode = mem
 	case cpusPerTask, cpusPerTaskShort:
 		cpus, err := strconv.ParseInt(value, 10, 0)
 		if err != nil {
-			return slurm.Resources{}, errors.Wrapf(err, "could not parse cpus per node")
+			return controller.Resources{}, errors.Wrapf(err, "could not parse cpus per node")
 		}
 		if res.CPUPerNode == 0 {
 			res.CPUPerNode = 1
@@ -119,7 +121,7 @@ func applySbatchParam(res slurm.Resources, param, value string) (slurm.Resources
 	case tasksPerNode:
 		tasks, err := strconv.ParseInt(value, 10, 0)
 		if err != nil {
-			return slurm.Resources{}, errors.Wrapf(err, "could not parse tasks per node")
+			return controller.Resources{}, errors.Wrapf(err, "could not parse tasks per node")
 		}
 		if res.CPUPerNode == 0 {
 			res.CPUPerNode = 1

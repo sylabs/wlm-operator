@@ -23,3 +23,11 @@ type SlurmJobListerExpansion interface{}
 // SlurmJobNamespaceListerExpansion allows custom methods to be added to
 // SlurmJobNamespaceLister.
 type SlurmJobNamespaceListerExpansion interface{}
+
+// WlmJobListerExpansion allows custom methods to be added to
+// WlmJobLister.
+type WlmJobListerExpansion interface{}
+
+// WlmJobNamespaceListerExpansion allows custom methods to be added to
+// WlmJobNamespaceLister.
+type WlmJobNamespaceListerExpansion interface{}

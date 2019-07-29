@@ -12,67 +12,62 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package slurmjob
+package wlmjob
 
 import (
-	"github.com/sylabs/wlm-operator/pkg/operator/controller"
+	"time"
 
 	"github.com/pkg/errors"
 	wlmv1alpha1 "github.com/sylabs/wlm-operator/pkg/operator/apis/wlm/v1alpha1"
+	"github.com/sylabs/wlm-operator/pkg/operator/controller"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var errAffinityIsNotRequired = errors.New("affinity selectors is not required")
-
-// newPodForSJ returns a job-companion pod for the slurm job.
-func (r *Reconciler) newPodForSJ(sj *wlmv1alpha1.SlurmJob) (*corev1.Pod, error) {
-	affinity, err := affinityForSj(sj)
-	if err != nil && err != errAffinityIsNotRequired {
-		return nil, errors.Wrap(err, "could not form slurm job pod affinity")
+// newPodForWJ returns a job-companion pod for the wlm job.
+func (r *Reconciler) newPodForWJ(wj *wlmv1alpha1.WlmJob) (*corev1.Pod, error) {
+	res := controller.Resources{
+		Nodes:      wj.Spec.Resources.Nodes,
+		MemPerNode: wj.Spec.Resources.MemPerNode,
+		CPUPerNode: wj.Spec.Resources.CPUPerNode,
+		WallTime:   time.Duration(wj.Spec.Resources.WallTime) * time.Second,
+	}
+	affinity, err := controller.AffinityForResources(res)
+	if err != nil && err != controller.ErrAffinityIsNotRequired {
+		return nil, errors.Wrap(err, "could not get job affinity")
 	}
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      sj.Name + "-job",
-			Namespace: sj.Namespace,
+			Name:      wj.Name + "-wlm-job",
+			Namespace: wj.Namespace,
 		},
 		Spec: corev1.PodSpec{
-			Affinity: affinity,
 			SecurityContext: &corev1.PodSecurityContext{
 				RunAsUser:  &r.jcUID,
 				RunAsGroup: &r.jcGID,
 			},
-			Tolerations: controller.DefaultTolerations,
 			Containers: []corev1.Container{
 				{
-					Name:  "jt1",
+					Name:  "jt2",
 					Image: "no-image",
 				},
 			},
-			NodeSelector:  nodeSelectorForSj(sj),
 			RestartPolicy: corev1.RestartPolicyNever,
+			Affinity:      affinity,
+			Tolerations:   controller.DefaultTolerations,
+			NodeSelector:  nodeSelectorForWj(wj),
 		},
 	}, nil
 }
 
-func affinityForSj(sj *wlmv1alpha1.SlurmJob) (*corev1.Affinity, error) {
-	requiredResources, err := extractBatchResources(sj.Spec.Batch)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not extract required resources")
-	}
-
-	return controller.AffinityForResources(*requiredResources)
-}
-
-func nodeSelectorForSj(sj *wlmv1alpha1.SlurmJob) map[string]string {
+func nodeSelectorForWj(wj *wlmv1alpha1.WlmJob) map[string]string {
 	nodeSelector := make(map[string]string)
-
 	for k, v := range controller.DefaultNodeSelectors {
 		nodeSelector[k] = v
 	}
 
-	for k, v := range sj.Spec.NodeSelector {
+	for k, v := range wj.Spec.NodeSelector {
 		nodeSelector[k] = v
 	}
 	return nodeSelector

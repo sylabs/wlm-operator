@@ -65,6 +65,7 @@ rules:
       - wlm.sylabs.io
     resources:
       - slurmjobs
+      - wlmjobs
     verbs:
       - get
 ---

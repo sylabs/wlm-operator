@@ -10,6 +10,7 @@ linters:
     - gochecknoinits
     - prealloc
     - errcheck
+    - dupl
 
 linters-settings:
   govet:
@@ -41,12 +42,15 @@ issues:
     - path: _test\.go
       linters:
         - errcheck
-        - dupl
         - gosec
         - lll
         - scopelint
 
     - path: generate.go
+      linters:
+        - lll
+
+    - path: internal/red-box/api/slurm.go
       linters:
         - lll
 

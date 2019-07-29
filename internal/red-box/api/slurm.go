@@ -16,10 +16,14 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
@@ -79,6 +83,20 @@ func (s *Slurm) SubmitJob(ctx context.Context, req *api.SubmitJobRequest) (*api.
 	}
 
 	return &api.SubmitJobResponse{
+		JobId: id,
+	}, nil
+}
+
+// SubmitJobContainer starts a container from the provided image name inside a sbatch script.
+func (s *Slurm) SubmitJobContainer(ctx context.Context, r *api.SubmitJobContainerRequest) (*api.SubmitJobContainerResponse, error) {
+	script := buildSLURMScript(r)
+
+	id, err := s.client.SBatch(script, r.Partition)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not submit sbatch script")
+	}
+
+	return &api.SubmitJobContainerResponse{
 		JobId: id,
 	}, nil
 }
@@ -393,4 +411,98 @@ func mapSInfoToProtoInfo(si []*slurm.JobInfo) ([]*api.JobInfo, error) {
 	}
 
 	return pInfs, nil
+}
+
+func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
+	const (
+		verifyT = `srun singularity verify "%s" || exit`
+		rmT     = `srun rm "%s"`
+
+		timeT       = `#SBATCH --time=0:%d` //seconds
+		memT        = `#SBATCH --mem=%d`    //mbs
+		nodesT      = `#SBATCH --nodes=%d`
+		cpuPerTaskT = `#SBATCH --cpus-per-task=%d`
+	)
+
+	runT := buildRunCommand(r.Options)
+
+	pullT := `srun singularity pull --name "%s" "%s" || exit` // secure pull
+	if r.Options.AllowUnsigned {
+		pullT = `srun singularity pull -U --name "%s" "%s" || exit` // unsecured pull
+	}
+
+	lines := []string{"#!/bin/sh"}
+
+	if r.WallTime != 0 {
+		lines = append(lines, fmt.Sprintf(timeT, r.WallTime))
+	}
+
+	if r.MemPerNode != 0 {
+		lines = append(lines, fmt.Sprintf(memT, r.MemPerNode))
+	}
+
+	if r.Nodes != 0 {
+		lines = append(lines, fmt.Sprintf(nodesT, r.Nodes))
+	}
+
+	if r.CpuPerNode != 0 {
+		lines = append(lines, fmt.Sprintf(cpuPerTaskT, r.CpuPerNode))
+	}
+
+	// checks if sif is located somewhere on the host machine
+	if strings.HasPrefix(r.ImageName, "file://") {
+		image := strings.TrimPrefix(r.ImageName, "file://")
+		if !r.Options.AllowUnsigned {
+			lines = append(lines, fmt.Sprintf(verifyT, image))
+		}
+		lines = append(lines, fmt.Sprintf(runT, image))
+	} else {
+		id := uuid.New().String()
+		lines = append(lines, fmt.Sprintf(pullT, id, r.ImageName))
+		lines = append(lines, fmt.Sprintf(runT, id))
+		lines = append(lines, fmt.Sprintf(rmT, id))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func buildRunCommand(opt *api.SingularityOptions) string {
+	run := "srun singularity run"
+	flags := []string{}
+
+	if opt.App != "" {
+		flags = append(flags, fmt.Sprintf(`--app="%s"`, opt.App))
+	}
+	if opt.HostName != "" {
+		flags = append(flags, fmt.Sprintf(`--hostname="%s"`, opt.HostName))
+	}
+
+	if len(opt.Binds) != 0 {
+		bind := strings.Join(opt.Binds, ",")
+		flags = append(flags, fmt.Sprintf(`--bind="%s"`, bind))
+	}
+
+	if opt.ClearEnv {
+		flags = append(flags, "-c")
+	}
+	if opt.FakeRoot {
+		flags = append(flags, "-f")
+	}
+	if opt.Ipc {
+		flags = append(flags, "-i")
+	}
+	if opt.Pid {
+		flags = append(flags, "-p")
+	}
+	if opt.NoPrivs {
+		flags = append(flags, "--no-privs")
+	}
+	if opt.Writable {
+		flags = append(flags, "-w")
+	}
+
+	if len(flags) != 0 {
+		run = fmt.Sprintf("%s %s", run, strings.Join(flags, " "))
+	}
+	return run + " " + `"%s" || exit`
 }

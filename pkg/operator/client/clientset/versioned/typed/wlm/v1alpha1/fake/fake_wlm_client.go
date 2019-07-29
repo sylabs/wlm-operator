@@ -30,6 +30,10 @@ func (c *FakeWlmV1alpha1) SlurmJobs(namespace string) v1alpha1.SlurmJobInterface
 	return &FakeSlurmJobs{c, namespace}
 }
 
+func (c *FakeWlmV1alpha1) WlmJobs(namespace string) v1alpha1.WlmJobInterface {
+	return &FakeWlmJobs{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeWlmV1alpha1) RESTClient() rest.Interface {

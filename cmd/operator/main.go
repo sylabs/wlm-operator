@@ -27,6 +27,7 @@ import (
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/sylabs/wlm-operator/pkg/operator/apis"
 	"github.com/sylabs/wlm-operator/pkg/operator/controller/slurmjob"
+	"github.com/sylabs/wlm-operator/pkg/operator/controller/wlmjob"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -94,7 +95,12 @@ func main() {
 
 	sj := slurmjob.NewReconciler(mgr)
 	if err := sj.AddToManager(mgr); err != nil {
-		glog.Fatalf("Failed to add controller to manager: %v", err)
+		glog.Fatalf("Failed to add slurm job controller to manager: %v", err)
+	}
+
+	wj := wlmjob.NewReconciler(mgr)
+	if err := wj.AddToManager(mgr); err != nil {
+		glog.Fatalf("Failed to add wlm job controller to manager: %v", err)
 	}
 
 	// Create Service object to expose the metrics port.
