@@ -33,6 +33,8 @@ import (
 	"github.com/sylabs/wlm-operator/pkg/workload/api"
 )
 
+const localFilePrefix = "local.file"
+
 type (
 	// Slurm implements WorkloadManagerServer.
 	Slurm struct {
@@ -450,8 +452,8 @@ func buildSLURMScript(r *api.SubmitJobContainerRequest) string {
 	}
 
 	// checks if sif is located somewhere on the host machine
-	if strings.HasPrefix(r.ImageName, "file://") {
-		image := strings.TrimPrefix(r.ImageName, "file://")
+	if strings.HasPrefix(r.ImageName, localFilePrefix) {
+		image := strings.TrimPrefix(r.ImageName, localFilePrefix)
 		if !r.Options.AllowUnsigned {
 			lines = append(lines, fmt.Sprintf(verifyT, image))
 		}
