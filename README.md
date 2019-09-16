@@ -216,7 +216,7 @@ install and configure all necessary software:
 
 ```bash
 cd vagrant
-vagrnat up && vagrant ssh k8s-master
+vagrant up && vagrant ssh k8s-master
 ```
 _NOTE_: `vagrant up` may take about 15 minutes to start as k8s cluster will be installed from scratch.
 
