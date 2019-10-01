@@ -16,7 +16,7 @@ sudo -E sh -c 'cat >> /etc/systemd/system/kubelet.service.d/10-kubeadm.conf <<EO
 Environment="KUBELET_EXTRA_ARGS=--node-ip=${IPADDR}"
 EOF'
 
-kubectl apply -f /sync/etc/flannel.yaml
+kubectl apply -f /sync/etc/calico.yaml
 
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
