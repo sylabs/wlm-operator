@@ -102,25 +102,7 @@ jobs:
             fi
 
             cd wlm-operator
-            cat > push.sh <<EOF
-            #!/usr/bin/expect -f
-            set timeout -1
-            spawn make push TAG=${TAG}
-
-            expect "Enter key passphrase : "
-            send -- "\r"
-            expect "Enter key passphrase : "
-            send -- "\r"
-            expect "Enter key passphrase : "
-            send -- "\r"
-            expect eof
-
-            foreach {pid spawnid os_error_flag value} [wait] break
-            exit $value
-            EOF
-            chmod +x push.sh
-            ./push.sh
-
+            make push TAG=${TAG}
   release_binaries:
     docker:
       - image: circleci/golang:1.12
