@@ -81,11 +81,7 @@ jobs:
             #!/usr/bin/expect -f
             set timeout -1
             spawn singularity keys import key
-            expect "Enter your old password : "
-            send -- "\r"
-            expect "Enter a new password for this key : "
-            send -- "\r"
-            expect  "Retype your passphrase : "
+            expect "Enter your key password : "
             send -- "\r"
             expect eof
             EOF
