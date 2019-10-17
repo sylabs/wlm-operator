@@ -38,36 +38,6 @@ git clone ${SINGULARITY_WLM_OPERATOR_REPO} ${HOME}/wlm-operator
 
 # set up CNI config
 sudo mkdir -p /etc/cni/net.d
-sudo sh -c 'cat > /etc/cni/net.d/11_bridge.conflist <<EOF
-{
-    "cniVersion": "0.3.1",
-    "name": "bridge",
-    "plugins": [
-        {
-            "type": "loopback"
-        },
-        {
-            "type": "bridge",
-            "bridge": "cbr0",
-            "isGateway": true,
-            "isDefaultGateway": true,
-            "ipMasq": true,
-            "capabilities": {"ipRanges": true},
-            "ipam": {
-                "type": "host-local",
-                "routes": [
-                    { "dst": "0.0.0.0/0" }
-                ]
-            }
-        },
-        {
-            "type": "portmap",
-            "capabilities": {"portMappings": true},
-            "snat": true
-        }
-    ]
-}
-EOF'
 
 # set up sycri service
 sudo sh -c 'cat > /etc/systemd/system/sycri.service <<EOF
