@@ -107,6 +107,3 @@ EOF
 sudo modprobe br_netfilter
 sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
 sudo sysctl -w net.ipv4.ip_forward=1
-
-# crete flannel dir
-sudo mkdir -p /run/flannel
