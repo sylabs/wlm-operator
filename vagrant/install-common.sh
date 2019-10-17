@@ -51,7 +51,7 @@ Restart=always
 RestartSec=30
 User=root
 Group=root
-ExecStart=${HOME}/singularity-cri/bin/sycri
+ExecStart=${HOME}/singularity-cri/bin/sycri -v 2
 EOF'
 sudo systemctl start sycri
 sudo systemctl status sycri
