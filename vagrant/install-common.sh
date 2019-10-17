@@ -6,7 +6,7 @@ sudo -E apt-get update
 sudo -E apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev libseccomp-dev pkg-config squashfs-tools
 
 # install go
-export VERSION=1.12.6 OS=linux ARCH=amd64
+export VERSION=1.13.1 OS=linux ARCH=amd64
 wget -q -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz
 sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
 rm /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -107,6 +107,3 @@ EOF
 sudo modprobe br_netfilter
 sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
 sudo sysctl -w net.ipv4.ip_forward=1
-
-# crete flannel dir
-sudo mkdir -p /run/flannel
